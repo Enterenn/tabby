@@ -97,8 +97,6 @@ class _LoadedBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final me = tokenStorage.userId ?? '';
 
     return Scaffold(
@@ -112,47 +110,12 @@ class _LoadedBody extends StatelessWidget {
             SliverToBoxAdapter(
               child: _TotalHero(expenses: expenses),
             ),
-          // ── 1. Dépenses ──────────────────────────────────────────────────
-          _SectionHeader(
-            title: expenses.isEmpty
-                ? 'Dépenses'
-                : 'Dépenses (${expenses.length})',
-            icon: Symbols.receipt_long_rounded,
-          ),
-          if (expenses.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                child: Center(
-                  child: Text(
-                    'Aucune dépense pour ce groupe.',
-                    style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList.separated(
-                itemCount: expenses.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (ctx, i) =>
-                    _ExpenseTile(expense: expenses[i], currentUserId: me),
-              ),
-            ),
-          // ── 2. Membres ───────────────────────────────────────────────────
-          _SectionHeader(title: 'Membres', icon: Symbols.group_rounded),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList.separated(
-              itemCount: group.members.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (ctx, i) => _MemberTile(
-                member: group.members[i],
-                balances: balances,
-                currentUserId: me,
-              ),
+          SliverToBoxAdapter(
+            child: _GroupDetailSheet(
+              group: group,
+              expenses: expenses,
+              balances: balances,
+              currentUserId: me,
             ),
           ),
           // ── 3. À régler ──────────────────────────────────────────────────
@@ -562,43 +525,211 @@ class _MemberTile extends StatelessWidget {
       balLabel = 'Soldé';
     }
 
-    return Card(
-      color: cs.surfaceContainerHighest,
-      child: ListTile(
-        leading: ExpressiveAvatar(label: member.user.name, size: 40),
-        title: Row(
-          children: [
-            Text(member.user.name, style: tt.titleSmall),
-            if (isMe) ...[
-              const SizedBox(width: 6),
-              ExpressiveBadge(
-                label: 'Moi',
-                color: cs.primaryContainer,
-                textColor: cs.onPrimaryContainer,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              ),
-            ],
-          ],
-        ),
-        subtitle: Text(
-          'Rejoint le ${DateFormat('d MMM yyyy', 'fr_FR').format(member.joinedAt)}',
-          style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-        ),
-        trailing: Text(
-          balLabel,
-          style: tt.titleMedium?.copyWith(
-            color: balColor,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ExpressiveAvatar(label: member.user.name, size: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      member.user.name,
+                      style: tt.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                    ),
+                    if (isMe)
+                      ExpressiveBadge(
+                        label: 'Moi',
+                        color: cs.primaryContainer,
+                        textColor: cs.onPrimaryContainer,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        labelStyle: tt.labelSmall?.copyWith(
+                          color: cs.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                          height: 1.1,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Rejoint le ${DateFormat('d MMM yyyy', 'fr_FR').format(member.joinedAt)}',
+                  style: tt.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 12),
+          Text(
+            balLabel,
+            style: tt.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: balColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Group sheet (dépenses + membres) ─────────────────────────────────────────
+
+class _GroupDetailSheet extends StatelessWidget {
+  const _GroupDetailSheet({
+    required this.group,
+    required this.expenses,
+    required this.balances,
+    required this.currentUserId,
+  });
+
+  final Group group;
+  final List<Expense> expenses;
+  final List<BalanceEntry> balances;
+  final String currentUserId;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Material(
+        color: cs.surfaceContainerLowest,
+        elevation: 0,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(shapes.cornerExtraLarge),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _GroupedSection(
+              title: expenses.isEmpty
+                  ? 'Dépenses'
+                  : 'Dépenses (${expenses.length})',
+              emptyMessage: expenses.isEmpty
+                  ? 'Aucune dépense pour ce groupe.'
+                  : null,
+              itemCount: expenses.length,
+              itemBuilder: (i) => _ExpenseTile(
+                expense: expenses[i],
+                currentUserId: currentUserId,
+              ),
+            ),
+            _GroupedSection(
+              title: 'Membres (${group.members.length})',
+              topPadding: 8,
+              itemCount: group.members.length,
+              itemBuilder: (i) => _MemberTile(
+                member: group.members[i],
+                balances: balances,
+                currentUserId: currentUserId,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
   }
 }
 
-// ─── Expense tile ─────────────────────────────────────────────────────────────
+class _GroupedSection extends StatelessWidget {
+  const _GroupedSection({
+    required this.title,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.emptyMessage,
+    this.topPadding = 0,
+  });
+
+  final String title;
+  final int itemCount;
+  final Widget Function(int index) itemBuilder;
+  final String? emptyMessage;
+  final double topPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
+    final tt = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
+            child: Text(
+              title,
+              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (emptyMessage != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              child: Text(
+                emptyMessage!,
+                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+              ),
+            )
+          else if (itemCount > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Material(
+                color: cs.surfaceContainerLow,
+                borderRadius: shapes.radiusLarge,
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < itemCount; i++) ...[
+                      itemBuilder(i),
+                      if (i < itemCount - 1)
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: cs.surfaceContainerLowest,
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Expense row ──────────────────────────────────────────────────────────────
 
 class _ExpenseTile extends StatelessWidget {
-  const _ExpenseTile({required this.expense, required this.currentUserId});
+  const _ExpenseTile({
+    required this.expense,
+    required this.currentUserId,
+  });
+
   final Expense expense;
   final String currentUserId;
 
@@ -606,61 +737,90 @@ class _ExpenseTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final isPaidByMe = expense.paidBy == currentUserId;
+    final shapes = context.tabbyShapes;
 
-    return Card(
-      color: cs.surfaceContainerHighest,
-      child: InkWell(
-        borderRadius: context.tabbyShapes.radiusExtraLarge,
-        onLongPress: () => _showExpenseActions(context),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              // Icône / emoji catégorie
-              Material(
-                color: expense.category.flutterColor.withValues(alpha: 0.12),
-                shape: context.tabbyShapes.circle(),
-                clipBehavior: Clip.antiAlias,
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Center(
-                    child: expense.category.iconWidget(
-                      size: 22,
-                      color: expense.category.flutterColor,
-                    ),
+    final payerLabel = expense.paidBy == currentUserId
+        ? 'Vous'
+        : expense.paidByName;
+    final metaLine =
+        '$payerLabel - ${_formatRelativeDateFr(expense.expenseDate)}';
+
+    return InkWell(
+      onLongPress: () => _showExpenseActions(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Material(
+              color: expense.category.flutterColor.withValues(alpha: 0.14),
+              shape: shapes.circle(),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: expense.category.iconWidget(
+                    size: 20,
+                    color: expense.category.flutterColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(expense.name,
-                        style: tt.titleSmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${isPaidByMe ? 'Payé par vous' : 'Payé par ${expense.paidByName}'} · ${DateFormat('d MMM', 'fr_FR').format(expense.expenseDate)}',
-                      style: tt.bodySmall
-                          ?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        expense.name,
+                        style: tt.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
+                      ExpressiveBadge(
+                        label: expense.category.name,
+                        color: expense.category.flutterColor
+                            .withValues(alpha: 0.14),
+                        textColor: expense.category.flutterColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        labelStyle: tt.labelSmall?.copyWith(
+                          color: expense.category.flutterColor,
+                          fontWeight: FontWeight.w600,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    metaLine,
+                    style: tt.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      height: 1.25,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              ExpressiveFigure(
-                value: expense.amount.toStringAsFixed(2),
-                suffix: ' €',
-                size: ExpressiveFigureSize.small,
-                color: isPaidByMe
-                    ? context.tabbySemantic.success
-                    : cs.onSurface,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '${expense.amount.toStringAsFixed(2)} €',
+              style: tt.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -907,5 +1067,16 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
       Navigator.pop(context);
     }
   }
+}
+
+String _formatRelativeDateFr(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final expenseDay = DateTime(date.year, date.month, date.day);
+  final days = today.difference(expenseDay).inDays;
+
+  if (days <= 0) return 'Aujourd\'hui';
+  if (days == 1) return 'Il y a 1 jour';
+  return 'Il y a $days jours';
 }
 

@@ -60,81 +60,42 @@ class ExpressiveHeroBanner extends StatelessWidget {
     final Color figureColor =
         isBalance ? semantic.balanceColor(bal) : fg;
 
+    final content = isBalance
+        ? _BalanceHeroContent(
+            label: label,
+            displayValue: displayValue,
+            prefix: prefix,
+            suffix: suffix,
+            subtitle: subtitle,
+            figureSize: figureSize,
+            figureColor: figureColor,
+            fg: fg,
+            tt: tt,
+            isNeutral: isNeutral,
+            isPositive: isPositive,
+            accentIcon: accentIcon,
+            accentBg: isBalance && !isNeutral
+                ? figureColor.withValues(alpha: 0.22)
+                : cs.primary,
+            accentFg: isBalance && !isNeutral ? figureColor : cs.onPrimary,
+          )
+        : _ValueHeroContent(
+            label: label,
+            value: value!,
+            suffix: suffix,
+            subtitle: subtitle,
+            figureSize: figureSize,
+            fg: fg,
+            tt: tt,
+            accentIcon: accentIcon,
+            accentBg: cs.primary,
+            accentFg: cs.onPrimary,
+          );
+
     return ExpressiveTonalCard(
       variant: effectiveVariant,
       margin: margin,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        label.toUpperCase(),
-                        style: tt.labelMedium?.copyWith(
-                          color: fg.withValues(alpha: 0.85),
-                          letterSpacing: 2.2,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    if (isBalance)
-                      ExpressiveBadge(
-                        label: isNeutral
-                            ? 'Réglé ✓'
-                            : isPositive
-                                ? 'On te doit'
-                                : 'Tu dois',
-                        color: figureColor.withValues(alpha: 0.2),
-                        textColor: figureColor,
-                        icon: isNeutral
-                            ? Icons.check_rounded
-                            : isPositive
-                                ? Symbols.south_west_rounded
-                                : Symbols.north_east_rounded,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: ExpressiveFigure(
-                    value: displayValue,
-                    prefix: prefix,
-                    suffix: suffix,
-                    size: figureSize,
-                    color: figureColor,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    subtitle!,
-                    style: tt.bodyMedium?.copyWith(
-                      color: fg.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (accentIcon != null) ...[
-            const SizedBox(width: 12),
-            ExpressiveAccentIcon(
-              icon: accentIcon!,
-              color: isBalance && !isNeutral
-                  ? figureColor.withValues(alpha: 0.22)
-                  : cs.primary,
-              iconColor: isBalance && !isNeutral ? figureColor : cs.onPrimary,
-            ),
-          ],
-        ],
-      ),
+      child: content,
     );
   }
 
@@ -170,5 +131,220 @@ class ExpressiveHeroBanner extends StatelessWidget {
           s.onDangerContainer,
         ),
     };
+  }
+}
+
+class _BalanceHeroContent extends StatelessWidget {
+  const _BalanceHeroContent({
+    required this.label,
+    required this.displayValue,
+    required this.prefix,
+    required this.suffix,
+    required this.subtitle,
+    required this.figureSize,
+    required this.figureColor,
+    required this.fg,
+    required this.tt,
+    required this.isNeutral,
+    required this.isPositive,
+    required this.accentIcon,
+    required this.accentBg,
+    required this.accentFg,
+  });
+
+  final String label;
+  final String displayValue;
+  final String? prefix;
+  final String suffix;
+  final String? subtitle;
+  final ExpressiveFigureSize figureSize;
+  final Color figureColor;
+  final Color fg;
+  final TextTheme tt;
+  final bool isNeutral;
+  final bool isPositive;
+  final IconData? accentIcon;
+  final Color accentBg;
+  final Color accentFg;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.tabbyType;
+    final figureStyle = switch (figureSize) {
+      ExpressiveFigureSize.hero => type.figureHero,
+      ExpressiveFigureSize.large => type.figureLarge,
+      ExpressiveFigureSize.medium => type.figureMedium,
+      ExpressiveFigureSize.small => type.figureSmall,
+    };
+    final prefixStyle = figureStyle.copyWith(
+      fontSize: (figureStyle.fontSize ?? 16) * 0.72,
+      color: figureColor,
+    );
+    final suffixStyle = figureStyle.copyWith(
+      fontSize: (figureStyle.fontSize ?? 16) * 0.5,
+      color: figureColor.withValues(alpha: 0.85),
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(right: accentIcon != null ? 56 : 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: tt.labelMedium?.copyWith(
+                  color: fg.withValues(alpha: 0.85),
+                  letterSpacing: 2.2,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ExpressiveBadge(
+                label: isNeutral
+                    ? 'Réglé ✓'
+                    : isPositive
+                        ? 'On te doit'
+                        : 'Tu dois',
+                color: figureColor.withValues(alpha: 0.18),
+                textColor: figureColor,
+                icon: isNeutral
+                    ? Icons.check_rounded
+                    : isPositive
+                        ? Symbols.south_west_rounded
+                        : Symbols.north_east_rounded,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              ),
+              const SizedBox(height: 14),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    if (prefix != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 2),
+                        child: Text(prefix!, style: prefixStyle),
+                      ),
+                    Text(displayValue, style: figureStyle.copyWith(color: figureColor)),
+                    if (suffix.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Text(suffix, style: suffixStyle),
+                      ),
+                  ],
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  subtitle!,
+                  style: tt.bodyMedium?.copyWith(
+                    color: fg.withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (accentIcon != null)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: ExpressiveAccentIcon(
+              icon: accentIcon!,
+              size: 48,
+              color: accentBg,
+              iconColor: accentFg,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ValueHeroContent extends StatelessWidget {
+  const _ValueHeroContent({
+    required this.label,
+    required this.value,
+    required this.suffix,
+    required this.subtitle,
+    required this.figureSize,
+    required this.fg,
+    required this.tt,
+    required this.accentIcon,
+    required this.accentBg,
+    required this.accentFg,
+  });
+
+  final String label;
+  final String value;
+  final String suffix;
+  final String? subtitle;
+  final ExpressiveFigureSize figureSize;
+  final Color fg;
+  final TextTheme tt;
+  final IconData? accentIcon;
+  final Color accentBg;
+  final Color accentFg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(right: accentIcon != null ? 56 : 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: tt.labelMedium?.copyWith(
+                  color: fg.withValues(alpha: 0.85),
+                  letterSpacing: 2.2,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: ExpressiveFigure(
+                  value: value,
+                  suffix: suffix,
+                  size: figureSize,
+                  color: fg,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  subtitle!,
+                  style: tt.bodyMedium?.copyWith(
+                    color: fg.withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (accentIcon != null)
+          Positioned(
+            top: 0,
+            right: 0,
+            child: ExpressiveAccentIcon(
+              icon: accentIcon!,
+              size: 48,
+              color: accentBg,
+              iconColor: accentFg,
+            ),
+          ),
+      ],
+    );
   }
 }

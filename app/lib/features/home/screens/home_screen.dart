@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
@@ -80,12 +79,6 @@ class _HomeView extends StatelessWidget {
           'assets/images/tabby_color.svg',
           height: 28,
         ),
-        actions: [
-          const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: _HealthIndicator(),
-          ),
-        ],
       ),
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
@@ -152,63 +145,6 @@ class _HomeView extends StatelessWidget {
     );
   }
 }
-
-class _HealthIndicator extends StatefulWidget {
-  const _HealthIndicator();
-
-  @override
-  State<_HealthIndicator> createState() => _HealthIndicatorState();
-}
-
-class _HealthIndicatorState extends State<_HealthIndicator> {
-  _Status _status = _Status.checking;
-
-  @override
-  void initState() {
-    super.initState();
-    _check();
-  }
-
-  Future<void> _check() async {
-    setState(() => _status = _Status.checking);
-    try {
-      await apiClient.dio.get('/health');
-      if (mounted) setState(() => _status = _Status.ok);
-    } catch (_) {
-      if (mounted) setState(() => _status = _Status.error);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _check,
-      child: Tooltip(
-        message: switch (_status) {
-          _Status.checking => 'Vérification connexion serveur…',
-          _Status.ok => 'Serveur connecté ✓',
-          _Status.error => 'Serveur inaccessible — tap pour réessayer',
-        },
-        child: SizedBox(
-          width: 14,
-          height: 14,
-          child: Material(
-            color: switch (_status) {
-              _Status.checking => context.tabbySemantic.warning,
-              _Status.ok => context.tabbySemantic.success,
-              _Status.error => context.tabbySemantic.danger,
-            },
-            elevation: 0,
-            shape: context.tabbyShapes.circle(),
-            clipBehavior: Clip.antiAlias,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-enum _Status { checking, ok, error }
 
 // ─── Hero solde global ────────────────────────────────────────────────────────
 

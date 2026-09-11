@@ -36,13 +36,6 @@ class _BudgetView extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: const Text('Budget')),
-          floatingActionButton: state is BudgetLoaded
-              ? FloatingActionButton.extended(
-                  onPressed: () => _showCreateDialog(context, state),
-                  icon: const Icon(Symbols.add_rounded, fill: 1),
-                  label: const Text('Nouveau budget'),
-                )
-              : null,
           body: switch (state) {
             BudgetInitial() || BudgetLoading() =>
               const Center(child: CircularProgressIndicator()),
@@ -59,7 +52,10 @@ class _BudgetView extends StatelessWidget {
                   ],
                 ),
               ),
-            BudgetLoaded() => _BudgetContent(state: state),
+            BudgetLoaded() => _BudgetContent(
+                state: state,
+                onCreateBudget: () => _showCreateDialog(context, state),
+              ),
             _ => const SizedBox.shrink(),
           },
         );
@@ -81,8 +77,13 @@ class _BudgetView extends StatelessWidget {
 // ─── Full content (scrollable) ────────────────────────────────────────────────
 
 class _BudgetContent extends StatelessWidget {
-  const _BudgetContent({required this.state});
+  const _BudgetContent({
+    required this.state,
+    required this.onCreateBudget,
+  });
+
   final BudgetLoaded state;
+  final VoidCallback onCreateBudget;
 
   @override
   Widget build(BuildContext context) {
@@ -130,27 +131,49 @@ class _BudgetContent extends StatelessWidget {
         ),
 
         // ── Section budgets ────────────────────────────────────────────────
-        if (state.budgets.isNotEmpty) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text(
-                'Budgets du mois',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Text(
+              'Budgets du mois',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
+        ),
+        if (state.budgets.isNotEmpty)
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, i) => _BudgetCard(budget: state.budgets[i]),
                 childCount: state.budgets.length,
               ),
             ),
+          )
+        else
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                'Aucun budget ce mois — fixe un plafond par catégorie.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.tabbyColors.onSurfaceVariant,
+                    ),
+              ),
+            ),
           ),
-        ] else
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            child: Center(
+              child: ExpressiveCtaButton(
+                label: 'Nouveau budget',
+                onPressed: onCreateBudget,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -222,31 +245,88 @@ class _GroupFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<BudgetCubit>();
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Chip "Tous"
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: const Text('Tous'),
+            child: _GroupFilterChip(
+              label: 'Tous',
               selected: selectedGroupId == null,
-              onSelected: (_) =>
-                  context.read<BudgetCubit>().selectGroup(null),
+              onTap: () => cubit.selectGroup(null),
             ),
           ),
-          ...groups.map((g) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(g.name),
-                  selected: selectedGroupId == g.id,
-                  onSelected: (_) =>
-                      context.read<BudgetCubit>().selectGroup(g.id),
-                ),
-              )),
+          ...groups.map(
+            (g) => Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _GroupFilterChip(
+                label: g.name,
+                selected: selectedGroupId == g.id,
+                onTap: () => cubit.selectGroup(g.id),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _GroupFilterChip extends StatelessWidget {
+  const _GroupFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
+    final tt = Theme.of(context).textTheme;
+
+    return Material(
+      color: selected ? cs.secondaryContainer : cs.surfaceContainerHighest,
+      elevation: 0,
+      shape: shapes.pill(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: shapes.radiusFull,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selected) ...[
+                Icon(
+                  Symbols.check_rounded,
+                  size: 16,
+                  color: cs.onSecondaryContainer,
+                  fill: 1,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: tt.labelLarge?.copyWith(
+                  color: selected
+                      ? cs.onSecondaryContainer
+                      : cs.onSurfaceVariant,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -268,6 +348,7 @@ class _StatsSectionState extends State<_StatsSection> {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
+    final semantic = context.tabbySemantic;
     final tt = Theme.of(context).textTheme;
     final shapes = context.tabbyShapes;
     final stats = widget.stats;
@@ -324,6 +405,7 @@ class _StatsSectionState extends State<_StatsSection> {
           ...stats.categories.asMap().entries.map((entry) {
             final i = entry.key;
             final cat = entry.value;
+            final catColor = semantic.chartColorFor(cat.category);
             final isSelected = _touchedIndex == i;
 
             return GestureDetector(
@@ -337,9 +419,7 @@ class _StatsSectionState extends State<_StatsSection> {
                   color: cs.surfaceContainerHighest,
                   borderRadius: shapes.radiusLarge,
                   border: Border.all(
-                    color: isSelected
-                        ? cat.category.flutterColor
-                        : Colors.transparent,
+                    color: isSelected ? catColor : Colors.transparent,
                     width: 1.5,
                   ),
                 ),
@@ -350,8 +430,7 @@ class _StatsSectionState extends State<_StatsSection> {
                       children: [
                         // Icône catégorie
                         Material(
-                          color: cat.category.flutterColor
-                              .withValues(alpha: 0.15),
+                          color: catColor.withValues(alpha: 0.15),
                           shape: shapes.circle(),
                           clipBehavior: Clip.antiAlias,
                           child: SizedBox(
@@ -360,7 +439,7 @@ class _StatsSectionState extends State<_StatsSection> {
                           child: Center(
                             child: cat.category.iconWidget(
                               size: 18,
-                              color: cat.category.flutterColor,
+                              color: catColor,
                               fill: 1,
                             ),
                           ),
@@ -396,10 +475,8 @@ class _StatsSectionState extends State<_StatsSection> {
                       child: LinearProgressIndicator(
                         value: cat.percent / 100,
                         minHeight: 5,
-                        backgroundColor:
-                            cat.category.flutterColor.withValues(alpha: 0.15),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            cat.category.flutterColor),
+                        backgroundColor: catColor.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(catColor),
                       ),
                     ),
                   ],
@@ -426,8 +503,118 @@ class _BudgetCard extends StatelessWidget {
     final semantic = context.tabbySemantic;
     final shapes = context.tabbyShapes;
     final b = budget;
+    final catColor = semantic.chartColorFor(b.category);
     final statusColor = b.statusColor(semantic);
     final clampedPercent = (b.percent / 100).clamp(0.0, 1.0);
+    final isDanger = b.status == BudgetStatus.danger;
+    final mutedColor = isDanger
+        ? semantic.onDangerContainer.withValues(alpha: 0.78)
+        : cs.onSurfaceVariant;
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Material(
+              color: isDanger
+                  ? semantic.onDangerContainer.withValues(alpha: 0.12)
+                  : catColor.withValues(alpha: 0.15),
+              shape: shapes.circle(),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: Center(
+                  child: b.category.iconWidget(
+                    size: 22,
+                    color: isDanger ? semantic.onDangerContainer : catColor,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    b.category.name,
+                    style: tt.titleMedium?.copyWith(
+                      color: isDanger ? semantic.onDangerContainer : null,
+                    ),
+                  ),
+                  Text(
+                    'Budget ${b.limitAmount.toStringAsFixed(0)} €/mois',
+                    style: tt.bodySmall?.copyWith(color: mutedColor),
+                  ),
+                ],
+              ),
+            ),
+            ExpressiveBadge(
+              label: b.status == BudgetStatus.danger
+                  ? 'Dépassé'
+                  : b.status == BudgetStatus.warning
+                      ? 'Attention'
+                      : 'OK',
+              color: isDanger
+                  ? semantic.onDangerContainer.withValues(alpha: 0.16)
+                  : statusColor.withValues(alpha: 0.15),
+              textColor: isDanger ? semantic.onDangerContainer : statusColor,
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        ClipRRect(
+          borderRadius: shapes.radiusExtraSmall,
+          child: LinearProgressIndicator(
+            value: clampedPercent,
+            minHeight: 8,
+            backgroundColor: isDanger
+                ? semantic.onDangerContainer.withValues(alpha: 0.16)
+                : cs.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isDanger ? semantic.danger : statusColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${b.spentAmount.toStringAsFixed(2)} € dépensés',
+              style: tt.bodySmall?.copyWith(
+                color: isDanger ? semantic.onDangerContainer : null,
+              ),
+            ),
+            Text(
+              b.remaining >= 0
+                  ? '${b.remaining.toStringAsFixed(2)} € restants'
+                  : '${b.remaining.abs().toStringAsFixed(2)} € de dépassement',
+              style: tt.bodySmall?.copyWith(
+                color: isDanger ? semantic.onDangerContainer : mutedColor,
+                fontWeight: isDanger ? FontWeight.w700 : null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    if (isDanger) {
+      return GestureDetector(
+        onLongPress: () => _showActions(context),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: ExpressiveTonalCard(
+            variant: ExpressiveTonalVariant.danger,
+            padding: const EdgeInsets.all(16),
+            child: content,
+          ),
+        ),
+      );
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -436,84 +623,7 @@ class _BudgetCard extends StatelessWidget {
         onLongPress: () => _showActions(context),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Material(
-                    color: b.category.flutterColor.withValues(alpha: 0.15),
-                    shape: shapes.circle(),
-                    clipBehavior: Clip.antiAlias,
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: Center(
-                        child: b.category.iconWidget(
-                          size: 22,
-                          color: b.category.flutterColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(b.category.name, style: tt.titleMedium),
-                        Text(
-                          'Budget ${b.limitAmount.toStringAsFixed(0)} €/mois',
-                          style: tt.bodySmall
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ExpressiveBadge(
-                    label: b.status == BudgetStatus.danger
-                        ? 'Dépassé'
-                        : b.status == BudgetStatus.warning
-                            ? 'Attention'
-                            : 'OK',
-                    color: statusColor.withValues(alpha: 0.15),
-                    textColor: statusColor,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              ClipRRect(
-                borderRadius: shapes.radiusExtraSmall,
-                child: LinearProgressIndicator(
-                  value: clampedPercent,
-                  minHeight: 8,
-                  backgroundColor: cs.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('${b.spentAmount.toStringAsFixed(2)} € dépensés',
-                      style: tt.bodySmall),
-                  Text(
-                    b.remaining >= 0
-                        ? '${b.remaining.toStringAsFixed(2)} € restants'
-                        : '${b.remaining.abs().toStringAsFixed(2)} € de dépassement',
-                    style: tt.bodySmall?.copyWith(
-                      color: b.status == BudgetStatus.danger
-                          ? semantic.danger
-                          : cs.onSurfaceVariant,
-                      fontWeight: b.status == BudgetStatus.danger
-                          ? FontWeight.w700
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          child: content,
         ),
       ),
     );
@@ -551,7 +661,7 @@ class _BudgetCard extends StatelessWidget {
                   children: [
                     budget.category.iconWidget(
                       size: 20,
-                      color: budget.category.flutterColor,
+                      color: context.tabbySemantic.chartColorFor(budget.category),
                     ),
                     const SizedBox(width: 10),
                     Text(budget.category.name, style: tt.titleMedium),
@@ -669,6 +779,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final b = widget.budget;
+    final catColor = context.tabbySemantic.chartColorFor(b.category);
 
     return AlertDialog(
       title: const Text('Modifier le budget'),
@@ -681,13 +792,13 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
               Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: b.category.flutterColor.withValues(alpha: 0.15),
+                  color: catColor.withValues(alpha: 0.15),
                   borderRadius: context.tabbyShapes.radiusMedium,
                 ),
                 child: Center(
                   child: b.category.iconWidget(
                     size: 20,
-                    color: b.category.flutterColor,
+                    color: catColor,
                   ),
                 ),
               ),
@@ -791,6 +902,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final semantic = context.tabbySemantic;
 
     return AlertDialog(
       title: const Text('Nouveau budget'),
@@ -828,7 +940,10 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                         value: c,
                         child: Row(
                           children: [
-                            c.iconWidget(size: 18, color: c.flutterColor),
+                            c.iconWidget(
+                              size: 18,
+                              color: semantic.chartColorFor(c),
+                            ),
                             const SizedBox(width: 8),
                             Text(c.name),
                           ],

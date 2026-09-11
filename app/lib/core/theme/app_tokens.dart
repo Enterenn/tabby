@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../shared/models/budget.dart';
+import '../../shared/models/category.dart';
 import 'app_colors.dart';
 
 // ─── Accès contextuel ───────────────────────────────────────────────────────
@@ -389,6 +390,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     required this.expressivePinkContainer,
     required this.expressiveYellowContainer,
     required this.categoryPalette,
+    required this.chartPalette,
     required this.avatarPalette,
   });
 
@@ -419,7 +421,15 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
   final Color expressiveYellowContainer;
 
   final List<Color> categoryPalette;
+  final List<Color> chartPalette;
   final List<Color> avatarPalette;
+
+  /// Couleur de segment / icône harmonisée au thème (indépendante du hex DB).
+  Color chartColorFor(Category category) {
+    final index =
+        category.sortOrder >= 0 ? category.sortOrder : category.id.hashCode.abs();
+    return chartPalette[index % chartPalette.length];
+  }
 
   static TabbySemanticColors light = TabbySemanticColors(
     success: AppColors.success,
@@ -443,6 +453,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     expressivePinkContainer: AppColors.expressivePinkContainerLight,
     expressiveYellowContainer: AppColors.expressiveYellowContainerLight,
     categoryPalette: AppColors.categoryPalette,
+    chartPalette: AppColors.chartPaletteLight,
     avatarPalette: AppColors.avatarPalette,
   );
 
@@ -468,6 +479,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     expressivePinkContainer: AppColors.expressivePinkContainerDark,
     expressiveYellowContainer: AppColors.expressiveYellowContainerDark,
     categoryPalette: AppColors.categoryPalette,
+    chartPalette: AppColors.chartPaletteDark,
     avatarPalette: AppColors.avatarPalette,
   );
 
@@ -500,6 +512,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     Color? expressivePinkContainer,
     Color? expressiveYellowContainer,
     List<Color>? categoryPalette,
+    List<Color>? chartPalette,
     List<Color>? avatarPalette,
   }) {
     return TabbySemanticColors(
@@ -528,6 +541,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
       expressiveYellowContainer:
           expressiveYellowContainer ?? this.expressiveYellowContainer,
       categoryPalette: categoryPalette ?? this.categoryPalette,
+      chartPalette: chartPalette ?? this.chartPalette,
       avatarPalette: avatarPalette ?? this.avatarPalette,
     );
   }
@@ -567,6 +581,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
       expressiveYellowContainer:
           lerpC(expressiveYellowContainer, other.expressiveYellowContainer),
       categoryPalette: t < 0.5 ? categoryPalette : other.categoryPalette,
+      chartPalette: t < 0.5 ? chartPalette : other.chartPalette,
       avatarPalette: t < 0.5 ? avatarPalette : other.avatarPalette,
     );
   }

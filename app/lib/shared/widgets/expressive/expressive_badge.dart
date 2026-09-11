@@ -11,6 +11,8 @@ class ExpressiveBadge extends StatelessWidget {
     this.textColor,
     this.icon,
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    this.labelStyle,
+    this.iconSize = 16,
   });
 
   final String label;
@@ -18,6 +20,8 @@ class ExpressiveBadge extends StatelessWidget {
   final Color? textColor;
   final IconData? icon;
   final EdgeInsets padding;
+  final TextStyle? labelStyle;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +41,16 @@ class ExpressiveBadge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 16, color: fg, fill: 1),
-              const SizedBox(width: 6),
+              Icon(icon, size: iconSize, color: fg, fill: 1),
+              SizedBox(width: iconSize >= 16 ? 6 : 4),
             ],
             Text(
               label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: fg,
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: labelStyle ??
+                  Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: fg,
+                        fontWeight: FontWeight.w700,
+                      ),
             ),
           ],
         ),
@@ -72,11 +77,11 @@ class ExpressiveBalanceBadge extends StatelessWidget {
     final isPositive = amount > 0.01;
 
     if (isNeutral) {
+      final cs = context.tabbyColors;
       return ExpressiveBadge(
-        label: 'Réglé ✓',
-        color: semantic.successContainer,
-        textColor: semantic.onSuccessContainer,
-        icon: Icons.check_rounded,
+        label: '0,00 €',
+        color: cs.surfaceContainerHighest,
+        textColor: cs.onSurfaceVariant,
       );
     }
 

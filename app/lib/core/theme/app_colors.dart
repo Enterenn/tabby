@@ -86,7 +86,7 @@ abstract final class AppColors {
   static const Color warningContainerDark = Color(0xFF6B4400);
   static const Color onWarningContainerDark = Color(0xFFFFE0B2);
 
-  // ── Palette catégories (saturée) ───────────────────────────────────────────
+  // ── Palette catégories (saturée — création / édition) ──────────────────────
   static const List<Color> categoryPalette = [
     Color(0xFFFF6B35),
     Color(0xFF2EAA6B),
@@ -98,6 +98,29 @@ abstract final class AppColors {
     Color(0xFF78909C),
     Color(0xFFFF9800),
     Color(0xFFB8FF3C),
+  ];
+
+  /// Tons harmonisés M3 Expressive — graphiques budget / donut (pas les hex DB).
+  static const List<Color> chartPaletteLight = [
+    secondary,
+    tertiary,
+    expressivePink,
+    success,
+    Color(0xFF6750A4),
+    Color(0xFF006874),
+    Color(0xFF984061),
+    Color(0xFF7D5260),
+  ];
+
+  static const List<Color> chartPaletteDark = [
+    secondaryDark,
+    tertiaryDark,
+    expressivePinkDark,
+    successDark,
+    Color(0xFFCCC2DC),
+    Color(0xFF4FD8EB),
+    Color(0xFFFFB1C8),
+    Color(0xFFEFB8C8),
   ];
 
   // ── Surfaces Dark Expressive (plum profond) ────────────────────────────────

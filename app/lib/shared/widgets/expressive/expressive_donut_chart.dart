@@ -8,7 +8,7 @@ import '../../models/stats.dart';
 import 'expressive_figure.dart';
 import 'expressive_tonal_card.dart';
 
-/// Donut chart M3 Expressive — segments pill espacés, dégradés, icônes.
+/// Donut chart M3 Expressive — segments espacés, aplats, icônes.
 class ExpressiveDonutChart extends StatelessWidget {
   const ExpressiveDonutChart({
     super.key,
@@ -28,10 +28,17 @@ class ExpressiveDonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
+    final semantic = context.tabbySemantic;
     final tt = Theme.of(context).textTheme;
-    final touched = (selectedIndex != null &&
-            selectedIndex! < sections.length)
+    final segmentColors = [
+      for (final s in sections) semantic.chartColorFor(s.category),
+    ];
+    final touched = (selectedIndex != null && selectedIndex! < sections.length)
         ? sections[selectedIndex!]
+        : null;
+    final touchedColor =
+        selectedIndex != null && selectedIndex! < segmentColors.length
+        ? segmentColors[selectedIndex!]
         : null;
 
     return ExpressiveTonalCard(
@@ -39,34 +46,34 @@ class ExpressiveDonutChart extends StatelessWidget {
       margin: EdgeInsets.zero,
       padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
       child: SizedBox(
-          height: height,
-          width: double.infinity,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final size = Size(constraints.maxWidth, height);
-              final iconSlots = _ExpressiveDonutGeometry.iconSlots(
-                size,
-                sections,
-                selectedIndex,
-              );
-              final labelSlots = _ExpressiveDonutGeometry.percentLabelSlots(
-                size,
-                sections,
-              );
+        height: height,
+        width: double.infinity,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final size = Size(constraints.maxWidth, height);
+            final iconSlots = _ExpressiveDonutGeometry.iconSlots(
+              size,
+              sections,
+              segmentColors,
+              selectedIndex,
+            );
+            final labelSlots = _ExpressiveDonutGeometry.percentLabelSlots(
+              size,
+              sections,
+              segmentColors,
+            );
 
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (details) {
-                  final hit = _ExpressiveDonutGeometry.hitTest(
-                    details.localPosition,
-                    size,
-                    sections,
-                  );
-                  onSelectedIndexChanged?.call(
-                    hit == selectedIndex ? null : hit,
-                  );
-                },
-                child: Stack(
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (details) {
+                final hit = _ExpressiveDonutGeometry.hitTest(
+                  details.localPosition,
+                  size,
+                  sections,
+                );
+                onSelectedIndexChanged?.call(hit == selectedIndex ? null : hit);
+              },
+              child: Stack(
                 alignment: Alignment.center,
                 clipBehavior: Clip.none,
                 children: [
@@ -74,6 +81,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                     size: size,
                     painter: _ExpressiveDonutPainter(
                       sections: sections,
+                      segmentColors: segmentColors,
                       selectedIndex: selectedIndex,
                       trackColor: cs.outlineVariant.withValues(alpha: 0.28),
                     ),
@@ -95,8 +103,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: slot.stat.category.flutterColor
-                                      .withValues(alpha: 0.35),
+                                  color: slot.color.withValues(alpha: 0.35),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -125,7 +132,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: tt.labelSmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: slot.stat.category.flutterColor,
+                            color: slot.color,
                           ),
                         ),
                       ),
@@ -146,7 +153,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                               value: touched.percent.toStringAsFixed(1),
                               suffix: '%',
                               size: ExpressiveFigureSize.medium,
-                              color: touched.category.flutterColor,
+                              color: touchedColor,
                             )
                           : ExpressiveFigure(
                               value: total.toStringAsFixed(2),
@@ -165,10 +172,10 @@ class ExpressiveDonutChart extends StatelessWidget {
                   ),
                 ],
               ),
-              );
-            },
-          ),
+            );
+          },
         ),
+      ),
     );
   }
 }
@@ -177,24 +184,31 @@ class _DonutIconSlot {
   const _DonutIconSlot({
     required this.offset,
     required this.stat,
+    required this.color,
     required this.selected,
   });
 
   final Offset offset;
   final CategoryStat stat;
+  final Color color;
   final bool selected;
 }
 
 class _DonutLabelSlot {
-  const _DonutLabelSlot({required this.offset, required this.stat});
+  const _DonutLabelSlot({
+    required this.offset,
+    required this.stat,
+    required this.color,
+  });
 
   final Offset offset;
   final CategoryStat stat;
+  final Color color;
 }
 
 abstract final class _ExpressiveDonutGeometry {
-  static const strokeWidth = 46.0;
-  static const gapDeg = 14.0;
+  static const strokeWidth = 40.0;
+  static const gapDeg = 11.0;
   static const selectedBoost = 7.0;
   static const minArcForIcon = 36.0;
 
@@ -205,8 +219,7 @@ abstract final class _ExpressiveDonutGeometry {
 
   static double get _gapRad => gapDeg * math.pi / 180;
 
-  static double _availableRad(int count) =>
-      2 * math.pi - _gapRad * 2 * count;
+  static double _availableRad(int count) => 2 * math.pi - _gapRad * 2 * count;
 
   static _SegmentLayout _layout(Size size, List<CategoryStat> sections) {
     final center = _center(size);
@@ -231,11 +244,7 @@ abstract final class _ExpressiveDonutGeometry {
     return _SegmentLayout(center: center, segments: segments);
   }
 
-  static int? hitTest(
-    Offset local,
-    Size size,
-    List<CategoryStat> sections,
-  ) {
+  static int? hitTest(Offset local, Size size, List<CategoryStat> sections) {
     if (sections.isEmpty) return null;
 
     final layout = _layout(size, sections);
@@ -260,6 +269,7 @@ abstract final class _ExpressiveDonutGeometry {
   static List<_DonutIconSlot> iconSlots(
     Size size,
     List<CategoryStat> sections,
+    List<Color> segmentColors,
     int? selectedIndex,
   ) {
     final layout = _layout(size, sections);
@@ -267,8 +277,7 @@ abstract final class _ExpressiveDonutGeometry {
 
     for (final seg in layout.segments) {
       final selected = selectedIndex == seg.index;
-      final radius =
-          seg.radius + (selected ? selectedBoost / 2 : 0);
+      final radius = seg.radius + (selected ? selectedBoost / 2 : 0);
       final mid = seg.startAngle + seg.sweepAngle / 2;
       if (radius * seg.sweepAngle < minArcForIcon) continue;
 
@@ -279,6 +288,7 @@ abstract final class _ExpressiveDonutGeometry {
             layout.center.dy + radius * math.sin(mid),
           ),
           stat: sections[seg.index],
+          color: segmentColors[seg.index],
           selected: selected,
         ),
       );
@@ -304,6 +314,7 @@ abstract final class _ExpressiveDonutGeometry {
   static List<_DonutLabelSlot> percentLabelSlots(
     Size size,
     List<CategoryStat> sections,
+    List<Color> segmentColors,
   ) {
     if (sections.length > 6) return const [];
 
@@ -321,6 +332,7 @@ abstract final class _ExpressiveDonutGeometry {
             layout.center.dy + labelRadius * math.sin(mid),
           ),
           stat: sections[seg.index],
+          color: segmentColors[seg.index],
         ),
       );
     }
@@ -352,23 +364,23 @@ class _SegmentLayout {
 class _ExpressiveDonutPainter extends CustomPainter {
   const _ExpressiveDonutPainter({
     required this.sections,
+    required this.segmentColors,
     required this.selectedIndex,
     required this.trackColor,
   });
 
   final List<CategoryStat> sections;
+  final List<Color> segmentColors;
   final int? selectedIndex;
   final Color trackColor;
-
-  static Color _shade(Color base, double amount) {
-    if (amount >= 0) return Color.lerp(base, Colors.white, amount)!;
-    return Color.lerp(base, Colors.black, -amount)!;
-  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final layout = _ExpressiveDonutGeometry._layout(size, sections);
-    final rect = Rect.fromCircle(center: layout.center, radius: _ExpressiveDonutGeometry._baseRadius(size));
+    final rect = Rect.fromCircle(
+      center: layout.center,
+      radius: _ExpressiveDonutGeometry._baseRadius(size),
+    );
 
     // Piste de fond — anneau continu discret
     canvas.drawArc(
@@ -384,41 +396,32 @@ class _ExpressiveDonutPainter extends CustomPainter {
     );
 
     for (final seg in layout.segments) {
-      final cat = sections[seg.index];
       final selected = selectedIndex == seg.index;
-      final sw = _ExpressiveDonutGeometry.strokeWidth +
+      final sw =
+          _ExpressiveDonutGeometry.strokeWidth +
           (selected ? _ExpressiveDonutGeometry.selectedBoost : 0);
-      final radius = seg.radius + (selected ? _ExpressiveDonutGeometry.selectedBoost / 2 : 0);
-      final base = cat.category.flutterColor;
+      final radius =
+          seg.radius +
+          (selected ? _ExpressiveDonutGeometry.selectedBoost / 2 : 0);
       final arcRect = Rect.fromCircle(center: layout.center, radius: radius);
-
-      final paint = Paint()
-        ..shader = SweepGradient(
-          startAngle: seg.startAngle,
-          endAngle: seg.startAngle + seg.sweepAngle,
-          colors: [
-            _shade(base, -0.06),
-            _shade(base, 0.22),
-            _shade(base, 0.08),
-          ],
-          stops: const [0.0, 0.55, 1.0],
-          transform: GradientRotation(0),
-        ).createShader(arcRect.inflate(sw))
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = sw
-        ..strokeCap = StrokeCap.round;
 
       canvas.drawArc(
         arcRect,
         seg.startAngle,
         seg.sweepAngle,
         false,
-        paint,
+        Paint()
+          ..color = segmentColors[seg.index]
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = sw
+          ..strokeCap = StrokeCap.round,
       );
     }
   }
 
   @override
   bool shouldRepaint(covariant _ExpressiveDonutPainter old) =>
-      old.selectedIndex != selectedIndex || old.sections != sections;
+      old.selectedIndex != selectedIndex ||
+      old.sections != sections ||
+      old.segmentColors != segmentColors;
 }

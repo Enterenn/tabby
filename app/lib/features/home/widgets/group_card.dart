@@ -27,83 +27,78 @@ class _GroupCardState extends State<GroupCard> {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
-    final shapes = context.tabbyShapes;
     final group = widget.group;
     final balance = group.balance;
-    final isNeutral = balance.abs() < 0.01;
+    final memberCount = group.members.length;
+    final onCard = cs.onSecondaryContainer;
 
-    final balanceLabel = isNeutral ? 'Tout est réglé ✓' : null;
+    void openGroup() => context.push('/groups/${group.id}');
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        context.push('/groups/${group.id}');
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOut,
-        child: Card(
-          margin: const EdgeInsets.only(bottom: 16),
+    return AnimatedScale(
+      scale: _pressed ? 0.98 : 1.0,
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.easeOut,
+      child: Card(
+        color: cs.secondaryContainer,
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: cs.secondaryContainer,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(shapes.cornerExtraLarge),
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
+              GestureDetector(
+                onTapDown: (_) => setState(() => _pressed = true),
+                onTapUp: (_) {
+                  setState(() => _pressed = false);
+                  openGroup();
+                },
+                onTapCancel: () => setState(() => _pressed = false),
+                behavior: HitTestBehavior.opaque,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        group.name,
-                        style: tt.headlineSmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            group.name,
+                            style: tt.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: onCard,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$memberCount membre${memberCount > 1 ? 's' : ''}',
+                            style: tt.bodySmall?.copyWith(
+                              color: onCard.withValues(alpha: 0.72),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(width: 12),
                     ExpressiveBalanceBadge(amount: balance),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 16, 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ExpressiveAvatarStack(
-                          names: group.members.map((m) => m.user.name).toList(),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${group.members.length} membre${group.members.length > 1 ? 's' : ''}',
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    if (isNeutral && balanceLabel != null)
-                      Text(
-                        balanceLabel,
-                        style: tt.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: openGroup,
+                      behavior: HitTestBehavior.opaque,
+                      child: ExpressiveAvatarStack(
+                        names: group.members.map((m) => m.user.name).toList(),
                       ),
-                    const SizedBox(width: 8),
-                    _AddExpenseButton(group: group),
-                  ],
-                ),
+                    ),
+                  ),
+                  _AddExpenseButton(group: group),
+                ],
               ),
             ],
           ),
@@ -124,31 +119,40 @@ class _AddExpenseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
-    return FilledButton.tonal(
-      style: FilledButton.styleFrom(
-        backgroundColor: cs.primaryContainer,
-        foregroundColor: cs.onPrimaryContainer,
-        minimumSize: const Size(0, 40),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        shape: shapes.buttonShape,
-        textStyle: Theme.of(context).textTheme.labelLarge,
-      ),
-      onPressed: () async {
-        final added = await showAddExpenseSheet(
-          context,
-          groupId: group.id,
-        );
-        if ((added ?? false) && context.mounted) {
-          context.read<HomeCubit>().loadGroups();
-        }
-      },
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Symbols.add_rounded, size: 16, fill: 1),
-          SizedBox(width: 4),
-          Text('Dépense'),
-        ],
+
+    return Material(
+      color: cs.primary,
+      elevation: 0,
+      shape: shapes.pill(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () async {
+          final added = await showAddExpenseSheet(
+            context,
+            groupId: group.id,
+          );
+          if ((added ?? false) && context.mounted) {
+            context.read<HomeCubit>().loadGroups();
+          }
+        },
+        customBorder: shapes.pill(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Symbols.add_rounded, size: 18, color: cs.onPrimary, fill: 1),
+              const SizedBox(width: 6),
+              Text(
+                'Dépense',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: cs.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
