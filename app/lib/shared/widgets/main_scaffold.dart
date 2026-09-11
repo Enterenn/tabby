@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/theme/app_colors.dart';
 
@@ -11,12 +10,12 @@ class MainScaffold extends StatelessWidget {
 
   static const _paths = ['/home', '/budget', '/add-expense', '/cards', '/profile'];
   static const _labels = ['Home', 'Budget', 'Add', 'Cards', 'Profil'];
-  static final _icons = [
-    LucideIcons.home,
-    LucideIcons.piggyBank,
-    LucideIcons.plusCircle,
-    LucideIcons.creditCard,
-    LucideIcons.user,
+  static const _icons = [
+    Icons.home_rounded,
+    Icons.savings_rounded,
+    Icons.add_circle_rounded,
+    Icons.credit_card_rounded,
+    Icons.person_rounded,
   ];
 
   int _currentIndex(BuildContext context) {

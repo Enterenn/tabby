@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../auth/cubit/auth_cubit.dart';
@@ -61,7 +60,7 @@ class ProfileScreen extends StatelessWidget {
               Text('Compte', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               _ActionTile(
-                icon: LucideIcons.logOut,
+                icon: Icons.logout_rounded,
                 label: 'Se déconnecter',
                 color: AppColors.danger,
                 onTap: () async {
@@ -124,7 +123,7 @@ class _ActionTile extends StatelessWidget {
           label,
           style: TextStyle(color: color ?? AppColors.textPrimary),
         ),
-        trailing: Icon(LucideIcons.chevronRight, color: AppColors.textSecondary, size: 18),
+        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 20),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),

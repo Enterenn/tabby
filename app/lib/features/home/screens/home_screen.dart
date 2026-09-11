@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_colors.dart';
@@ -94,7 +93,7 @@ class _HomeView extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => context.push('/groups/create'),
-                          icon: const Icon(LucideIcons.plus, size: 18),
+                          icon: const Icon(Icons.add_rounded, size: 18),
                           label: const Text('Créer'),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 52),
@@ -109,7 +108,7 @@ class _HomeView extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => context.push('/groups/join'),
-                          icon: const Icon(LucideIcons.userPlus, size: 18),
+                          icon: const Icon(Icons.person_add_rounded, size: 18),
                           label: const Text('Rejoindre'),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 52),
