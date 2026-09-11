@@ -1,33 +1,44 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// Stockage chiffré des tokens JWT (Keystore Android / Keychain iOS).
 class TokenStorage {
   static const _accessKey = 'access_token';
   static const _refreshKey = 'refresh_token';
 
-  final SharedPreferences _prefs;
+  // v11+: AES-GCM + RSA OAEP key wrapping par défaut — aucun paramètre requis.
+  static const _storage = FlutterSecureStorage();
 
-  TokenStorage(this._prefs);
+  String? _cachedAccess;
+  String? _cachedRefresh;
 
-  String? get accessToken => _prefs.getString(_accessKey);
-  String? get refreshToken => _prefs.getString(_refreshKey);
+  String? get accessToken => _cachedAccess;
+  String? get refreshToken => _cachedRefresh;
+  bool get hasTokens => _cachedAccess != null;
+
+  /// Charge les tokens depuis le stockage sécurisé au démarrage.
+  Future<void> load() async {
+    _cachedAccess = await _storage.read(key: _accessKey);
+    _cachedRefresh = await _storage.read(key: _refreshKey);
+  }
 
   Future<void> save({required String access, required String refresh}) async {
-    await _prefs.setString(_accessKey, access);
-    await _prefs.setString(_refreshKey, refresh);
+    _cachedAccess = access;
+    _cachedRefresh = refresh;
+    await _storage.write(key: _accessKey, value: access);
+    await _storage.write(key: _refreshKey, value: refresh);
   }
 
   Future<void> clear() async {
-    await _prefs.remove(_accessKey);
-    await _prefs.remove(_refreshKey);
+    _cachedAccess = null;
+    _cachedRefresh = null;
+    await _storage.delete(key: _accessKey);
+    await _storage.delete(key: _refreshKey);
   }
-
-  bool get hasTokens => accessToken != null;
 }
 
-// Instance initialisée au démarrage de l'app
 late TokenStorage tokenStorage;
 
 Future<void> initTokenStorage() async {
-  final prefs = await SharedPreferences.getInstance();
-  tokenStorage = TokenStorage(prefs);
+  tokenStorage = TokenStorage();
+  await tokenStorage.load();
 }
