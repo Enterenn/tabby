@@ -45,6 +45,7 @@ dependencies:
   fl_chart: ^1.2.0
   mobile_scanner: ^7.4.1
   barcode_widget: ^2.0.4
+  permission_handler: ^13.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

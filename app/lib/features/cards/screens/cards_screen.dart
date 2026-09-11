@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/loyalty_card.dart';
@@ -354,6 +355,86 @@ class _CardFullScreen extends StatelessWidget {
   }
 }
 
+// ─── Scanner widget ───────────────────────────────────────────────────────────
+
+class _ScannerView extends StatefulWidget {
+  const _ScannerView({required this.onDetected, required this.onCancel});
+
+  final ValueChanged<String> onDetected;
+  final VoidCallback onCancel;
+
+  @override
+  State<_ScannerView> createState() => _ScannerViewState();
+}
+
+class _ScannerViewState extends State<_ScannerView> {
+  late final MobileScannerController _ctrl;
+  bool _detected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = MobileScannerController();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 220,
+            child: Stack(
+              children: [
+                MobileScanner(
+                  controller: _ctrl,
+                  onDetect: (capture) {
+                    if (_detected) return;
+                    final value = capture.barcodes.firstOrNull?.rawValue;
+                    if (value != null && value.isNotEmpty) {
+                      _detected = true;
+                      widget.onDetected(value);
+                    }
+                  },
+                ),
+                // Viseur central
+                Center(
+                  child: Container(
+                    width: 200,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: widget.onCancel,
+          icon: const Icon(Symbols.close_rounded, size: 16),
+          label: const Text('Annuler le scan'),
+          style: TextButton.styleFrom(
+            foregroundColor: cs.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ─── Add card bottom sheet ────────────────────────────────────────────────────
 
 class _AddCardSheet extends StatefulWidget {
@@ -468,24 +549,12 @@ class _AddCardSheetState extends State<_AddCardSheet> {
 
             // Scanner ou saisie manuelle
             if (_scanning)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: SizedBox(
-                  height: 200,
-                  child: MobileScanner(
-                    onDetect: (capture) {
-                      final barcodes = capture.barcodes;
-                      if (barcodes.isEmpty) return;
-                      final value = barcodes.first.rawValue;
-                      if (value != null && value.isNotEmpty) {
-                        setState(() {
-                          _codeValue = value;
-                          _scanning = false;
-                        });
-                      }
-                    },
-                  ),
-                ),
+              _ScannerView(
+                onDetected: (value) => setState(() {
+                  _codeValue = value;
+                  _scanning = false;
+                }),
+                onCancel: () => setState(() => _scanning = false),
               )
             else ...[
               if (_codeValue.isNotEmpty) ...[
@@ -528,8 +597,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () =>
-                          setState(() => _scanning = true),
+                      onPressed: _startScan,
                       icon: const Icon(Symbols.photo_camera_rounded),
                       label: Text(_codeValue.isEmpty
                           ? 'Scanner'
@@ -598,6 +666,15 @@ class _AddCardSheetState extends State<_AddCardSheet> {
         ),
       ),
     );
+  }
+
+  Future<void> _startScan() async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) {
+      setState(() => _scanning = true);
+    } else if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    }
   }
 
   void _showManualInput(BuildContext context) {
