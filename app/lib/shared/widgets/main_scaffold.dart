@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+import '../../core/theme/app_colors.dart';
 
 class MainScaffold extends StatelessWidget {
   const MainScaffold({super.key, required this.child});
 
   final Widget child;
 
-  static const _tabs = [
-    (icon: Icons.home_rounded, label: 'Home', path: '/home'),
-    (icon: Icons.savings_rounded, label: 'Budget', path: '/budget'),
-    (icon: Icons.add_circle_rounded, label: 'Add', path: '/add-expense'),
-    (icon: Icons.credit_card_rounded, label: 'Cards', path: '/cards'),
-    (icon: Icons.person_rounded, label: 'Profile', path: '/profile'),
+  static const _paths = ['/home', '/budget', '/add-expense', '/cards', '/profile'];
+  static const _labels = ['Home', 'Budget', 'Add', 'Cards', 'Profil'];
+  static final _icons = [
+    LucideIcons.home,
+    LucideIcons.piggyBank,
+    LucideIcons.plusCircle,
+    LucideIcons.creditCard,
+    LucideIcons.user,
   ];
 
   int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    final index = _tabs.indexWhere((t) => location.startsWith(t.path));
+    final index = _paths.indexWhere((p) => location.startsWith(p));
     return index < 0 ? 0 : index;
   }
 
@@ -27,24 +32,24 @@ class MainScaffold extends StatelessWidget {
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
-        onDestinationSelected: (i) => context.go(_tabs[i].path),
-        destinations: _tabs.map((tab) {
-          final isAdd = tab.path == '/add-expense';
+        onDestinationSelected: (i) => context.go(_paths[i]),
+        destinations: List.generate(_paths.length, (i) {
+          final isAdd = _paths[i] == '/add-expense';
           return NavigationDestination(
             icon: isAdd
                 ? Container(
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF2C230),
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(tab.icon, color: const Color(0xFF2E2A22)),
+                    child: Icon(_icons[i], color: AppColors.textPrimary, size: 22),
                   )
-                : Icon(tab.icon),
-            label: tab.label,
+                : Icon(_icons[i], size: 22),
+            label: _labels[i],
           );
-        }).toList(),
+        }),
       ),
     );
   }

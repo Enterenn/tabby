@@ -18,6 +18,13 @@ class ApiClient {
 
     _dio.interceptors.addAll([
       _AuthInterceptor(_dio),
+      LogInterceptor(
+        requestBody: true,
+        responseBody: true,
+        error: true,
+        // ignore: avoid_print
+        logPrint: (o) => print('[Dio] $o'),
+      ),
     ]);
   }
 

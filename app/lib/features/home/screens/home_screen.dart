@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_colors.dart';
@@ -27,7 +28,7 @@ class _HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tabby', style: GoogleFonts.baloo2(fontWeight: FontWeight.w800)),
+        title: Text('Tabby', style: GoogleFonts.figtree(fontWeight: FontWeight.w800, fontSize: 22)),
         actions: [
           const Padding(
             padding: EdgeInsets.only(right: 16),
@@ -88,17 +89,38 @@ class _HomeView extends StatelessWidget {
                   else
                     ...state.groups.map((g) => GroupCard(group: g)),
                   const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => context.push('/groups/create'),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Créer un groupe'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 52),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/groups/create'),
+                          icon: const Icon(LucideIcons.plus, size: 18),
+                          label: const Text('Créer'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 52),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: const BorderSide(color: AppColors.divider, width: 1.5),
+                          ),
+                        ),
                       ),
-                      side: const BorderSide(color: AppColors.divider, width: 1.5),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/groups/join'),
+                          icon: const Icon(LucideIcons.userPlus, size: 18),
+                          label: const Text('Rejoindre'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 52),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            side: const BorderSide(color: AppColors.divider, width: 1.5),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

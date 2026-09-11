@@ -35,7 +35,6 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(AuthLoading());
     try {
-      // Inscription puis connexion automatique
       await apiClient.dio.post('/auth/register', data: {
         'name': name,
         'email': email,
@@ -43,8 +42,9 @@ class AuthCubit extends Cubit<AuthState> {
       });
       await login(email: email, password: password);
     } on DioException catch (e) {
-      final msg = e.response?.data?['detail'] ?? 'Erreur lors de l\'inscription';
-      emit(AuthError(msg.toString()));
+      emit(AuthError(_extractDetail(e, 'Erreur lors de l\'inscription')));
+    } catch (e) {
+      emit(AuthError('Erreur inattendue : $e'));
     }
   }
 
@@ -61,14 +61,27 @@ class AuthCubit extends Cubit<AuthState> {
       await tokenStorage.save(access: access, refresh: refresh);
       apiClient.setAccessToken(access);
 
-      // Récupérer le profil
       final profileResponse = await apiClient.dio.get('/auth/me');
       final user = User.fromJson(profileResponse.data as Map<String, dynamic>);
       emit(AuthAuthenticated(user));
     } on DioException catch (e) {
-      final msg = e.response?.data?['detail'] ?? 'Email ou mot de passe incorrect';
-      emit(AuthError(msg.toString()));
+      emit(AuthError(_extractDetail(e, 'Email ou mot de passe incorrect')));
+    } catch (e) {
+      emit(AuthError('Erreur inattendue : $e'));
     }
+  }
+
+  /// Extrait `detail` depuis la réponse d'erreur FastAPI,
+  /// quelle que soit la forme de `response.data` (Map, String, null).
+  static String _extractDetail(DioException e, String fallback) {
+    final data = e.response?.data;
+    if (data is Map) {
+      final detail = data['detail'];
+      if (detail != null) return detail.toString();
+    }
+    final status = e.response?.statusCode;
+    if (status != null) return '$fallback (HTTP $status)';
+    return '$fallback (${e.type.name}: ${e.message})';
   }
 
   Future<void> logout() async {

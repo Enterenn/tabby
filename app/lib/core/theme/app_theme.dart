@@ -31,9 +31,9 @@ abstract final class AppTheme {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: GoogleFonts.baloo2(
+        titleTextStyle: GoogleFonts.figtree(
           fontSize: 22,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
         ),
       ),
@@ -49,7 +49,7 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textPrimary,
-          textStyle: GoogleFonts.manrope(
+          textStyle: GoogleFonts.figtree(
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -75,7 +75,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
-        labelStyle: GoogleFonts.manrope(color: AppColors.textSecondary),
+        labelStyle: GoogleFonts.figtree(color: AppColors.textSecondary),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
@@ -94,7 +94,7 @@ abstract final class AppTheme {
           return const IconThemeData(color: AppColors.textSecondary);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          final base = GoogleFonts.manrope(fontSize: 11);
+          final base = GoogleFonts.figtree(fontSize: 11);
           if (states.contains(WidgetState.selected)) {
             return base.copyWith(
               fontWeight: FontWeight.w700,
@@ -108,76 +108,76 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         backgroundColor: AppColors.textPrimary,
-        contentTextStyle: GoogleFonts.manrope(color: AppColors.surface),
+        contentTextStyle: GoogleFonts.figtree(color: AppColors.surface),
       ),
     );
   }
 
   static TextTheme _textTheme(TextTheme base) {
-    // Titres/montants → Baloo 2 (police display arrondie)
-    // Texte courant → Manrope (lisibilité)
+    // Figtree pour toute la typographie — poids élevés pour les titres/montants,
+    // poids normaux pour le corps de texte.
     return base.copyWith(
-      displayLarge: GoogleFonts.baloo2(
+      displayLarge: GoogleFonts.figtree(
         fontSize: 48,
         fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
       ),
-      displayMedium: GoogleFonts.baloo2(
+      displayMedium: GoogleFonts.figtree(
         fontSize: 36,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
         color: AppColors.textPrimary,
       ),
-      displaySmall: GoogleFonts.baloo2(
+      displaySmall: GoogleFonts.figtree(
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      headlineLarge: GoogleFonts.baloo2(
+      headlineLarge: GoogleFonts.figtree(
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      headlineMedium: GoogleFonts.baloo2(
+      headlineMedium: GoogleFonts.figtree(
         fontSize: 20,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      headlineSmall: GoogleFonts.baloo2(
+      headlineSmall: GoogleFonts.figtree(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
-      titleLarge: GoogleFonts.manrope(
+      titleLarge: GoogleFonts.figtree(
         fontSize: 16,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       ),
-      titleMedium: GoogleFonts.manrope(
+      titleMedium: GoogleFonts.figtree(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       ),
-      titleSmall: GoogleFonts.manrope(
+      titleSmall: GoogleFonts.figtree(
         fontSize: 12,
         fontWeight: FontWeight.w600,
         color: AppColors.textSecondary,
       ),
-      bodyLarge: GoogleFonts.manrope(
+      bodyLarge: GoogleFonts.figtree(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: AppColors.textPrimary,
       ),
-      bodyMedium: GoogleFonts.manrope(
+      bodyMedium: GoogleFonts.figtree(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.textPrimary,
       ),
-      bodySmall: GoogleFonts.manrope(
+      bodySmall: GoogleFonts.figtree(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: AppColors.textSecondary,
       ),
-      labelLarge: GoogleFonts.manrope(
+      labelLarge: GoogleFonts.figtree(
         fontSize: 14,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../auth/cubit/auth_cubit.dart';
@@ -18,7 +18,6 @@ class ProfileScreen extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             children: [
-              // En-tête utilisateur
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -59,23 +58,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text('Groupes', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              _ActionTile(
-                icon: Icons.add_circle_outline,
-                label: 'Créer un groupe',
-                onTap: () => context.push('/groups/create'),
-              ),
-              _ActionTile(
-                icon: Icons.group_add_outlined,
-                label: 'Rejoindre un groupe',
-                onTap: () => context.push('/groups/join'),
-              ),
-              const SizedBox(height: 24),
               Text('Compte', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               _ActionTile(
-                icon: Icons.logout,
+                icon: LucideIcons.logOut,
                 label: 'Se déconnecter',
                 color: AppColors.danger,
                 onTap: () async {
@@ -90,7 +76,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(
+                          child: const Text(
                             'Déconnecter',
                             style: TextStyle(color: AppColors.danger),
                           ),
@@ -133,12 +119,12 @@ class _ActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: ListTile(
-        leading: Icon(icon, color: color ?? AppColors.textPrimary),
+        leading: Icon(icon, color: color ?? AppColors.textPrimary, size: 20),
         title: Text(
           label,
           style: TextStyle(color: color ?? AppColors.textPrimary),
         ),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+        trailing: Icon(LucideIcons.chevronRight, color: AppColors.textSecondary, size: 18),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
