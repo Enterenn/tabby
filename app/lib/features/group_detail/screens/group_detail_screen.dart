@@ -32,7 +32,8 @@ class _GroupDetailView extends StatelessWidget {
     return BlocConsumer<GroupDetailCubit, GroupDetailState>(
       listener: (context, state) {
         if (state is GroupDetailLeft) {
-          context.go('/home');
+          // pop() résout la Future de context.push() dans GroupCard → loadGroups() est appelé
+          context.pop();
         }
         if (state is GroupDetailError) {
           ScaffoldMessenger.of(context).showSnackBar(
