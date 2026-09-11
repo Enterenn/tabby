@@ -9,6 +9,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.categories import router as categories_router
 from app.api.v1.expenses import router as expenses_router
 from app.api.v1.groups import router as groups_router
+from app.api.v1.loyalty_cards import router as loyalty_cards_router
 from app.api.v1.stats import router as stats_router
 from app.api.v1.budgets import (
     global_router as budgets_global_router,
@@ -59,3 +60,4 @@ app.include_router(recurring_global_router)
 app.include_router(budgets_router)
 app.include_router(budgets_global_router)
 app.include_router(stats_router)
+app.include_router(loyalty_cards_router)

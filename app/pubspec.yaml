@@ -43,6 +43,8 @@ dependencies:
   material_symbols_icons: ^4.2960.0
   flutter_svg: ^2.3.0
   fl_chart: ^1.2.0
+  mobile_scanner: ^7.4.1
+  barcode_widget: ^2.0.4
 dev_dependencies:
   flutter_test:
     sdk: flutter
