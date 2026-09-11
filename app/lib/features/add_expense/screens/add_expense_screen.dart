@@ -798,44 +798,13 @@ class _CreateCategorySheet extends StatefulWidget {
 
 class _CreateCategorySheetState extends State<_CreateCategorySheet> {
   final _nameCtrl = TextEditingController();
-  final _emojiCtrl = TextEditingController();
-  String _selectedEmoji = '📦';
+  String _selectedIcon = 'category';
   Color _selectedColor = AppColors.categoryPalette[0];
   bool _loading = false;
-
-  // Palette d'emojis proposés, groupés par thème
-  static const _emojis = [
-    // Nourriture & boissons
-    '🍕', '🍔', '🍜', '🍣', '🍱', '🥗', '🌮', '🍳',
-    '☕', '🧃', '🍺', '🍷', '🧁', '🍰', '🍫', '🧇',
-    // Transport
-    '🚗', '✈️', '🚂', '🛵', '🚲', '🚕', '⛽', '🛳️',
-    // Maison & vie
-    '🏠', '🛒', '💡', '🛋️', '🔑', '🪴', '🧹', '🚿',
-    // Shopping
-    '👗', '👟', '💄', '🎁', '👜', '🕶️', '⌚', '💍',
-    // Santé & sport
-    '💊', '🏥', '🧘', '🏋️', '⚽', '🎾', '🏊', '🚴',
-    // Divertissement
-    '🎮', '🎬', '🎵', '🎧', '📚', '🎨', '🎤', '🎭',
-    // Tech & travail
-    '💻', '📱', '💼', '📞', '🖥️', '🖨️', '⌨️', '🖱️',
-    // Animaux
-    '🐾', '🐶', '🐱', '🐠', '🐇', '🦜', '🐾', '🌿',
-    // Divers
-    '🎓', '🏨', '📺', '💰', '🌍', '🎪', '🏖️', '📦',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _emojiCtrl.text = _selectedEmoji;
-  }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _emojiCtrl.dispose();
     super.dispose();
   }
 
@@ -851,7 +820,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
     final cat = await context.read<AddExpenseCubit>().createCategory(
           groupId: widget.groupId,
           name: name,
-          icon: _selectedEmoji,
+          icon: _selectedIcon,
           color: _colorToHex(_selectedColor),
         );
     if (mounted) {
@@ -879,7 +848,8 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
         top: 24,
         bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
       ),
-      child: Column(
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -911,8 +881,12 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                   border: Border.all(color: _selectedColor, width: 2),
                 ),
                 child: Center(
-                  child: Text(_selectedEmoji,
-                      style: const TextStyle(fontSize: 26)),
+                  child: Icon(
+                    CategoryIcons.resolve(_selectedIcon),
+                    size: 26,
+                    color: _selectedColor,
+                    fill: 1,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -929,53 +903,18 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
 
           const SizedBox(height: 20),
 
-          // Champ emoji libre + grille de suggestions
-          Row(
-            children: [
-              Text('Emoji', style: tt.titleSmall),
-              const Spacer(),
-              SizedBox(
-                width: 80,
-                child: TextField(
-                  controller: _emojiCtrl,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 22),
-                  maxLength: 2,
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: '📦',
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 8),
-                    filled: true,
-                    fillColor: cs.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (v) {
-                    if (v.isNotEmpty) setState(() => _selectedEmoji = v.trim());
-                  },
-                ),
-              ),
-            ],
-          ),
+          // Grille d'icônes Material Symbols
+          Text('Icône', style: tt.titleSmall),
           const SizedBox(height: 10),
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: _emojis.map((e) {
-              final isSelected = e == _selectedEmoji;
+            children: CategoryIcons.all.map((entry) {
+              final id = entry.$1;
+              final icon = entry.$2;
+              final isSelected = id == _selectedIcon;
               return GestureDetector(
-                onTap: () {
-                  setState(() => _selectedEmoji = e);
-                  _emojiCtrl.text = e;
-                },
+                onTap: () => setState(() => _selectedIcon = id),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 120),
                   width: 42,
@@ -991,8 +930,13 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                       width: 2,
                     ),
                   ),
-                  child: Center(
-                    child: Text(e, style: const TextStyle(fontSize: 20)),
+                  child: Icon(
+                    icon,
+                    size: 22,
+                    color: isSelected
+                        ? _selectedColor
+                        : cs.onSurfaceVariant,
+                    fill: isSelected ? 1 : 0,
                   ),
                 ),
               );
@@ -1043,6 +987,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                 : const Text('Créer la catégorie'),
           ),
         ],
+        ),
       ),
     );
   }

@@ -14,7 +14,7 @@ class Category extends Equatable {
 
   final String id;
   final String name;
-  /// Emoji ou nom d'icône legacy (ex. '🏠' ou 'home').
+  /// Identifiant Material Symbols (ex. 'home') ou ancien emoji.
   final String icon;
   /// Couleur hex (ex. '#E67E22').
   final String color;
@@ -35,38 +35,106 @@ class Category extends Equatable {
     return Color(int.parse('FF$code', radix: 16));
   }
 
-  /// True si le champ icon contient un emoji (non-ASCII).
-  bool get isEmoji => !_iconMap.containsKey(icon);
+  IconData get flutterIcon => CategoryIcons.resolve(icon);
 
-  IconData get flutterIcon => _iconMap[icon] ?? Symbols.category_rounded;
-
-  /// Widget à afficher partout pour l'icône : emoji ou Material icon.
-  Widget iconWidget({double size = 20, Color? color}) {
-    if (isEmoji) {
-      return Text(icon, style: TextStyle(fontSize: size * 1.1));
-    }
-    return Icon(flutterIcon, size: size, color: color);
+  Widget iconWidget({double size = 20, Color? color, double fill = 0}) {
+    return Icon(flutterIcon, size: size, color: color, fill: fill);
   }
-
-  static const _iconMap = <String, IconData>{
-    'home': Symbols.home_rounded,
-    'shopping_cart': Symbols.shopping_cart_rounded,
-    'restaurant': Symbols.restaurant_rounded,
-    'directions_car': Symbols.directions_car_rounded,
-    'sports_esports': Symbols.sports_esports_rounded,
-    'subscriptions': Symbols.subscriptions_rounded,
-    'local_hospital': Symbols.local_hospital_rounded,
-    'category': Symbols.category_rounded,
-    'pets': Symbols.pets_rounded,
-    'school': Symbols.school_rounded,
-    'flight': Symbols.flight_rounded,
-    'hotel': Symbols.hotel_rounded,
-    'fitness_center': Symbols.fitness_center_rounded,
-    'phone': Symbols.phone_rounded,
-    'shopping_bag': Symbols.shopping_bag_rounded,
-    'local_gas_station': Symbols.local_gas_station_rounded,
-  };
 
   @override
   List<Object?> get props => [id, name, icon, color, isDefault, sortOrder];
+}
+
+/// Catalogue d'icônes Material Symbols pour les catégories.
+abstract final class CategoryIcons {
+  static const List<(String id, IconData icon)> all = [
+    ('home', Symbols.home_rounded),
+    ('apartment', Symbols.apartment_rounded),
+    ('shopping_cart', Symbols.shopping_cart_rounded),
+    ('shopping_bag', Symbols.shopping_bag_rounded),
+    ('storefront', Symbols.storefront_rounded),
+    ('restaurant', Symbols.restaurant_rounded),
+    ('local_cafe', Symbols.local_cafe_rounded),
+    ('liquor', Symbols.liquor_rounded),
+    ('bakery_dining', Symbols.bakery_dining_rounded),
+    ('directions_car', Symbols.directions_car_rounded),
+    ('directions_bus', Symbols.directions_bus_rounded),
+    ('directions_bike', Symbols.directions_bike_rounded),
+    ('flight', Symbols.flight_rounded),
+    ('local_gas_station', Symbols.local_gas_station_rounded),
+    ('sports_esports', Symbols.sports_esports_rounded),
+    ('sports_soccer', Symbols.sports_soccer_rounded),
+    ('movie', Symbols.movie_rounded),
+    ('music_note', Symbols.music_note_rounded),
+    ('theater_comedy', Symbols.theater_comedy_rounded),
+    ('subscriptions', Symbols.subscriptions_rounded),
+    ('live_tv', Symbols.live_tv_rounded),
+    ('local_hospital', Symbols.local_hospital_rounded),
+    ('vaccines', Symbols.vaccines_rounded),
+    ('fitness_center', Symbols.fitness_center_rounded),
+    ('spa', Symbols.spa_rounded),
+    ('school', Symbols.school_rounded),
+    ('work', Symbols.work_rounded),
+    ('pets', Symbols.pets_rounded),
+    ('child_care', Symbols.child_care_rounded),
+    ('phone', Symbols.phone_rounded),
+    ('wifi', Symbols.wifi_rounded),
+    ('bolt', Symbols.bolt_rounded),
+    ('water_drop', Symbols.water_drop_rounded),
+    ('local_laundry_service', Symbols.local_laundry_service_rounded),
+    ('cleaning_services', Symbols.cleaning_services_rounded),
+    ('hotel', Symbols.hotel_rounded),
+    ('beach_access', Symbols.beach_access_rounded),
+    ('card_giftcard', Symbols.card_giftcard_rounded),
+    ('cake', Symbols.cake_rounded),
+    ('payments', Symbols.payments_rounded),
+    ('account_balance', Symbols.account_balance_rounded),
+    ('savings', Symbols.savings_rounded),
+    ('category', Symbols.category_rounded),
+  ];
+
+  static const Map<String, String> _emojiToId = {
+    '🏠': 'home',
+    '🛒': 'shopping_cart',
+    '🍽️': 'restaurant',
+    '🍕': 'restaurant',
+    '🍔': 'restaurant',
+    '🍜': 'restaurant',
+    '🍣': 'restaurant',
+    '☕': 'local_cafe',
+    '🍺': 'liquor',
+    '🚗': 'directions_car',
+    '✈️': 'flight',
+    '🚲': 'directions_bike',
+    '⛽': 'local_gas_station',
+    '🎮': 'sports_esports',
+    '🎬': 'movie',
+    '🎵': 'music_note',
+    '📺': 'live_tv',
+    '🏥': 'local_hospital',
+    '💊': 'vaccines',
+    '🏋️': 'fitness_center',
+    '🎓': 'school',
+    '🐾': 'pets',
+    '🐶': 'pets',
+    '🐱': 'pets',
+    '📞': 'phone',
+    '💡': 'bolt',
+    '🚿': 'water_drop',
+    '🧹': 'cleaning_services',
+    '🏨': 'hotel',
+    '🏖️': 'beach_access',
+    '🎁': 'card_giftcard',
+    '💰': 'payments',
+    '📦': 'category',
+  };
+
+  static final Map<String, IconData> _byId = {
+    for (final e in all) e.$1: e.$2,
+  };
+
+  static IconData resolve(String raw) {
+    final id = _byId.containsKey(raw) ? raw : (_emojiToId[raw] ?? 'category');
+    return _byId[id] ?? Symbols.category_rounded;
+  }
 }

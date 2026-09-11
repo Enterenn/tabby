@@ -345,7 +345,11 @@ class _StatsSectionState extends State<_StatsSection> {
                           height: 26,
                           child: IgnorePointer(
                             child: Center(
-                              child: slot.stat.category.iconWidget(size: 18),
+                              child: slot.stat.category.iconWidget(
+                                size: 18,
+                                color: Colors.white,
+                                fill: 1,
+                              ),
                             ),
                           ),
                         ),
@@ -436,6 +440,7 @@ class _StatsSectionState extends State<_StatsSection> {
                             child: cat.category.iconWidget(
                               size: 18,
                               color: cat.category.flutterColor,
+                              fill: 1,
                             ),
                           ),
                         ),
