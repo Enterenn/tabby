@@ -341,16 +341,11 @@ class _BudgetCard extends StatelessWidget {
   }
 
   void _showEditSheet(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (_) => BlocProvider.value(
         value: context.read<BudgetCubit>(),
-        child: _EditBudgetSheet(budget: budget),
+        child: _EditBudgetDialog(budget: budget),
       ),
     );
   }
@@ -383,17 +378,17 @@ class _BudgetCard extends StatelessWidget {
   }
 }
 
-// ─── Edit budget bottom sheet ─────────────────────────────────────────────────
+// ─── Edit budget dialog ───────────────────────────────────────────────────────
 
-class _EditBudgetSheet extends StatefulWidget {
-  const _EditBudgetSheet({required this.budget});
+class _EditBudgetDialog extends StatefulWidget {
+  const _EditBudgetDialog({required this.budget});
   final Budget budget;
 
   @override
-  State<_EditBudgetSheet> createState() => _EditBudgetSheetState();
+  State<_EditBudgetDialog> createState() => _EditBudgetDialogState();
 }
 
-class _EditBudgetSheetState extends State<_EditBudgetSheet> {
+class _EditBudgetDialogState extends State<_EditBudgetDialog> {
   late final TextEditingController _ctrl;
   bool _loading = false;
 
@@ -427,78 +422,60 @@ class _EditBudgetSheetState extends State<_EditBudgetSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final b = widget.budget;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 24, right: 24, top: 24,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
-      ),
-      child: Column(
+    return AlertDialog(
+      title: const Text('Modifier le budget'),
+      content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 32, height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: cs.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
+          // Catégorie (lecture seule)
           Row(
             children: [
               Container(
-                width: 44, height: 44,
+                width: 36, height: 36,
                 decoration: BoxDecoration(
                   color: b.category.flutterColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(b.category.flutterIcon,
-                    color: b.category.flutterColor, size: 24),
+                    color: b.category.flutterColor, size: 20),
               ),
-              const SizedBox(width: 12),
-              Text(b.category.name, style: tt.headlineSmall),
+              const SizedBox(width: 10),
+              Text(b.category.name, style: tt.titleMedium),
             ],
           ),
           const SizedBox(height: 20),
+          Text('Plafond mensuel', style: tt.labelLarge),
+          const SizedBox(height: 6),
           TextField(
             controller: _ctrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
             ],
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Plafond mensuel',
-              suffixText: '€',
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Annuler'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: _loading ? null : _save,
-                child: _loading
-                    ? const SizedBox(
-                        height: 18, width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Enregistrer'),
-              ),
-            ],
+            decoration: const InputDecoration(suffixText: '€'),
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: _loading ? null : _save,
+          child: _loading
+              ? const SizedBox(
+                  height: 16, width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Enregistrer'),
+        ),
+      ],
     );
   }
 }
