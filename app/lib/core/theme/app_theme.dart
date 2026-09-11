@@ -1,192 +1,153 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'app_colors.dart';
 
 abstract final class AppTheme {
   static ThemeData get light => _build(Brightness.light);
-  static ThemeData get dark => _buildDark();
+  static ThemeData get dark => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final base = ThemeData(
-      useMaterial3: true,
+    // M3 génère toute la palette tonale depuis la couleur de marque.
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
       brightness: brightness,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: brightness,
-        primary: AppColors.primary,
-        onPrimary: AppColors.textPrimary,
-        surface: AppColors.surface,
-        onSurface: AppColors.textPrimary,
-        error: AppColors.danger,
-      ),
-      scaffoldBackgroundColor: AppColors.background,
-      cardColor: AppColors.surface,
-      dividerColor: AppColors.divider,
+      // On garde la teinte exacte de la marque pour primary.
+      primary: AppColors.primary,
+      onPrimary: const Color(0xFF2E2A22),
+      // error mappe sur notre couleur danger
+      error: AppColors.danger,
+      onError: Colors.white,
     );
 
-    return base.copyWith(
-      textTheme: _textTheme(base.textTheme),
+    // Figtree appliqué à tout le type scale M3 en une ligne.
+    final textTheme = GoogleFonts.figtreeTextTheme(
+      ThemeData(brightness: brightness).textTheme,
+    ).apply(
+      bodyColor: scheme.onSurface,
+      displayColor: scheme.onSurface,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      textTheme: textTheme,
+
+      // Fond légèrement teinté (surfaceContainerLow = teinte chaude générée par M3)
+      scaffoldBackgroundColor: scheme.surfaceContainerLow,
+
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: scheme.surfaceContainerLow,
+        foregroundColor: scheme.onSurface,
         elevation: 0,
-        scrolledUnderElevation: 0,
+        scrolledUnderElevation: 1,
+        surfaceTintColor: scheme.primary,
         titleTextStyle: GoogleFonts.figtree(
           fontSize: 22,
           fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
+          color: scheme.onSurface,
         ),
       ),
+
+      // M3 Card : elevation 1 avec teinture primaire
       cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        elevation: 1,
+        surfaceTintColor: scheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: EdgeInsets.zero,
       ),
+
+      // FilledButton M3 : utilise primary/onPrimary du scheme
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textPrimary,
-          textStyle: GoogleFonts.figtree(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
           minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: GoogleFonts.figtree(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
+
+      // OutlinedButton M3
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          side: BorderSide(color: scheme.outlineVariant),
+          textStyle: GoogleFonts.figtree(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ),
+
+      // TextButton
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          textStyle: GoogleFonts.figtree(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+
+      // Input M3 : fond surfaceContainerHighest, bords arrondis
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: scheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.divider),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.divider),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
+          borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
-        labelStyle: GoogleFonts.figtree(color: AppColors.textSecondary),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: scheme.error),
+        ),
+        labelStyle: GoogleFonts.figtree(color: scheme.onSurfaceVariant),
+        floatingLabelStyle: GoogleFonts.figtree(color: scheme.primary),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-      ),
+
+      // NavigationBar M3
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.2),
+        backgroundColor: scheme.surfaceContainer,
+        indicatorColor: scheme.primaryContainer,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.textPrimary);
+            return IconThemeData(color: scheme.onPrimaryContainer);
           }
-          return const IconThemeData(color: AppColors.textSecondary);
+          return IconThemeData(color: scheme.onSurfaceVariant);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final base = GoogleFonts.figtree(fontSize: 11);
           if (states.contains(WidgetState.selected)) {
-            return base.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            );
+            return base.copyWith(fontWeight: FontWeight.w700, color: scheme.onSurface);
           }
-          return base.copyWith(color: AppColors.textSecondary);
+          return base.copyWith(color: scheme.onSurfaceVariant);
         }),
+        elevation: 3,
+        surfaceTintColor: scheme.primary,
       ),
+
+      // SnackBar M3
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        backgroundColor: scheme.inverseSurface,
+        contentTextStyle: GoogleFonts.figtree(color: scheme.onInverseSurface),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: AppColors.textPrimary,
-        contentTextStyle: GoogleFonts.figtree(color: AppColors.surface),
       ),
-    );
-  }
 
-  static TextTheme _textTheme(TextTheme base) {
-    // Figtree pour toute la typographie — poids élevés pour les titres/montants,
-    // poids normaux pour le corps de texte.
-    return base.copyWith(
-      displayLarge: GoogleFonts.figtree(
-        fontSize: 48,
-        fontWeight: FontWeight.w800,
-        color: AppColors.textPrimary,
+      // Dialog M3
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        titleTextStyle: GoogleFonts.figtree(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: scheme.onSurface,
+        ),
       ),
-      displayMedium: GoogleFonts.figtree(
-        fontSize: 36,
-        fontWeight: FontWeight.w800,
-        color: AppColors.textPrimary,
-      ),
-      displaySmall: GoogleFonts.figtree(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-      headlineLarge: GoogleFonts.figtree(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-      headlineMedium: GoogleFonts.figtree(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-      headlineSmall: GoogleFonts.figtree(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      ),
-      titleLarge: GoogleFonts.figtree(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-      titleMedium: GoogleFonts.figtree(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      ),
-      titleSmall: GoogleFonts.figtree(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
-      ),
-      bodyLarge: GoogleFonts.figtree(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-      ),
-      bodyMedium: GoogleFonts.figtree(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textPrimary,
-      ),
-      bodySmall: GoogleFonts.figtree(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: AppColors.textSecondary,
-      ),
-      labelLarge: GoogleFonts.figtree(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-    );
-  }
 
-  static ThemeData _buildDark() {
-    // Dark mode différé au Lot 8 — on retourne le thème clair pour l'instant
-    return _build(Brightness.light);
+      // Divider
+      dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1),
+    );
   }
 }

@@ -13,7 +13,7 @@ class MainScaffold extends StatelessWidget {
   static const _icons = [
     Icons.home_rounded,
     Icons.savings_rounded,
-    Icons.add_circle_rounded,
+    Icons.add_rounded,
     Icons.credit_card_rounded,
     Icons.person_rounded,
   ];
@@ -27,6 +27,7 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentIndex = _currentIndex(context);
+
     return Scaffold(
       body: child,
       bottomNavigationBar: NavigationBar(
@@ -34,18 +35,27 @@ class MainScaffold extends StatelessWidget {
         onDestinationSelected: (i) => context.go(_paths[i]),
         destinations: List.generate(_paths.length, (i) {
           final isAdd = _paths[i] == '/add-expense';
+          if (isAdd) {
+            // Bouton central M3 — FloatingActionButton-like dans la nav bar
+            return NavigationDestination(
+              icon: Container(
+                width: 56,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  _icons[i],
+                  color: const Color(0xFF2E2A22),
+                  size: 20,
+                ),
+              ),
+              label: _labels[i],
+            );
+          }
           return NavigationDestination(
-            icon: isAdd
-                ? Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(_icons[i], color: AppColors.textPrimary, size: 22),
-                  )
-                : Icon(_icons[i], size: 22),
+            icon: Icon(_icons[i], size: 24),
             label: _labels[i],
           );
         }),

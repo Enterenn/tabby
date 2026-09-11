@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/app_colors.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});
@@ -32,15 +31,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       });
       final groupId = response.data['id'] as String;
       if (mounted) {
-        // Proposer immédiatement d'inviter quelqu'un
         context.pushReplacement('/groups/$groupId/invite');
       }
     } on DioException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.response?.data?['detail']?.toString() ?? 'Erreur'),
-          ),
+          SnackBar(content: Text(e.response?.data?['detail']?.toString() ?? 'Erreur')),
         );
       }
     } finally {
@@ -50,6 +46,8 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Nouveau groupe')),
       body: Padding(
@@ -60,15 +58,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              Text(
-                'Donne un nom à ton groupe',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text('Donne un nom à ton groupe',
+                  style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
                 'Ex. Couple, Vacances été, Coloc…',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: cs.onSurfaceVariant,
                     ),
               ),
               const SizedBox(height: 32),
@@ -89,10 +85,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.textPrimary,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Créer le groupe'),
               ),

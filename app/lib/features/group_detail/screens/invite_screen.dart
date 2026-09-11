@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/app_colors.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.groupId});
@@ -28,7 +27,8 @@ class _InviteScreenState extends State<InviteScreen> {
   Future<void> _generateCode() async {
     setState(() => _loading = true);
     try {
-      final response = await apiClient.dio.post('/groups/${widget.groupId}/invite');
+      final response =
+          await apiClient.dio.post('/groups/${widget.groupId}/invite');
       setState(() {
         _code = response.data['code'] as String;
         _loading = false;
@@ -37,8 +37,8 @@ class _InviteScreenState extends State<InviteScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.response?.data?['detail']?.toString() ?? 'Erreur'),
-          ),
+              content:
+                  Text(e.response?.data?['detail']?.toString() ?? 'Erreur')),
         );
         setState(() => _loading = false);
       }
@@ -47,6 +47,8 @@ class _InviteScreenState extends State<InviteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Inviter un membre')),
       body: Padding(
@@ -55,15 +57,13 @@ class _InviteScreenState extends State<InviteScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 32),
-            Text(
-              'Code d\'invitation',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('Code d\'invitation',
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
               'Partage ce code avec la personne à inviter. Il est valable 24h.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: cs.onSurfaceVariant,
                   ),
             ),
             const SizedBox(height: 48),
@@ -80,23 +80,21 @@ class _InviteScreenState extends State<InviteScreen> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 28,
-                    ),
+                        horizontal: 40, vertical: 28),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.15),
+                      // M3 : primaryContainer pour le fond, primary pour la bordure
+                      color: cs.primaryContainer,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: AppColors.primary,
-                        width: 2,
-                      ),
+                      border: Border.all(color: cs.primary, width: 2),
                     ),
                     child: Text(
                       _code!,
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                            letterSpacing: 12,
-                            color: AppColors.textPrimary,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.displayMedium?.copyWith(
+                                letterSpacing: 12,
+                                color: cs.onPrimaryContainer,
+                                fontWeight: FontWeight.w800,
+                              ),
                     ),
                   ),
                 ),
@@ -105,20 +103,17 @@ class _InviteScreenState extends State<InviteScreen> {
               Center(
                 child: Text(
                   'Tap pour copier',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
               const SizedBox(height: 40),
               OutlinedButton.icon(
                 onPressed: _generateCode,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Générer un nouveau code'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
               ),
             ],
             const Spacer(),

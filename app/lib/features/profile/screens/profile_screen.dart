@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../auth/cubit/auth_cubit.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -12,48 +11,52 @@ class ProfileScreen extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         final user = state is AuthAuthenticated ? state.user : null;
+        final cs = Theme.of(context).colorScheme;
+
         return Scaffold(
           appBar: AppBar(title: const Text('Profil')),
           body: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.primary,
-                      child: Text(
-                        user?.name.isNotEmpty == true
-                            ? user!.name[0].toUpperCase()
-                            : '?',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              color: AppColors.textPrimary,
+              // Carte profil M3 — utilise Card du thème
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: cs.primaryContainer,
+                        child: Text(
+                          user?.name.isNotEmpty == true
+                              ? user!.name[0].toUpperCase()
+                              : '?',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(color: cs.onPrimaryContainer),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(user?.name ?? '',
+                                style:
+                                    Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              user?.email ?? '',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant),
                             ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.name ?? '',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          Text(
-                            user?.email ?? '',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -62,7 +65,7 @@ class ProfileScreen extends StatelessWidget {
               _ActionTile(
                 icon: Icons.logout_rounded,
                 label: 'Se déconnecter',
-                color: AppColors.danger,
+                color: cs.error,
                 onTap: () async {
                   final confirm = await showDialog<bool>(
                     context: context,
@@ -75,9 +78,9 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text(
+                          child: Text(
                             'Déconnecter',
-                            style: TextStyle(color: AppColors.danger),
+                            style: TextStyle(color: cs.error),
                           ),
                         ),
                       ],
@@ -111,19 +114,18 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final cs = Theme.of(context).colorScheme;
+
+    return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-      ),
       child: ListTile(
-        leading: Icon(icon, color: color ?? AppColors.textPrimary, size: 20),
+        leading: Icon(icon, color: color ?? cs.onSurface, size: 20),
         title: Text(
           label,
-          style: TextStyle(color: color ?? AppColors.textPrimary),
+          style: TextStyle(color: color ?? cs.onSurface),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 20),
+        trailing: Icon(Icons.chevron_right_rounded,
+            color: cs.onSurfaceVariant, size: 20),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),

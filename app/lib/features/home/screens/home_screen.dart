@@ -25,9 +25,14 @@ class _HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tabby', style: GoogleFonts.figtree(fontWeight: FontWeight.w800, fontSize: 22)),
+        title: Text(
+          'Tabby',
+          style: GoogleFonts.figtree(fontWeight: FontWeight.w800, fontSize: 22),
+        ),
         actions: [
           const Padding(
             padding: EdgeInsets.only(right: 16),
@@ -66,8 +71,11 @@ class _HomeView extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 64),
                       child: Column(
                         children: [
-                          const Icon(Icons.group_outlined,
-                              size: 64, color: AppColors.disabled),
+                          Icon(
+                            Icons.group_outlined,
+                            size: 64,
+                            color: cs.outlineVariant,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Pas encore de groupe',
@@ -78,7 +86,7 @@ class _HomeView extends StatelessWidget {
                           Text(
                             'Crée un groupe pour commencer à partager tes dépenses',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
+                                  color: cs.onSurfaceVariant,
                                 ),
                             textAlign: TextAlign.center,
                           ),
@@ -95,13 +103,6 @@ class _HomeView extends StatelessWidget {
                           onPressed: () => context.push('/groups/create'),
                           icon: const Icon(Icons.add_rounded, size: 18),
                           label: const Text('Créer'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 52),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            side: const BorderSide(color: AppColors.divider, width: 1.5),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -110,13 +111,6 @@ class _HomeView extends StatelessWidget {
                           onPressed: () => context.push('/groups/join'),
                           icon: const Icon(Icons.person_add_rounded, size: 18),
                           label: const Text('Rejoindre'),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 52),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            side: const BorderSide(color: AppColors.divider, width: 1.5),
-                          ),
                         ),
                       ),
                     ],
