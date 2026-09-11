@@ -504,6 +504,11 @@ class _BalanceTile extends StatelessWidget {
             ),
             if (isMine)
               FilledButton.tonal(
+                // Override nécessaire : le thème global force minimumSize à double.infinity
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(72, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
                 onPressed: () => _confirmSettle(context),
                 child: const Text('Régler'),
               ),
