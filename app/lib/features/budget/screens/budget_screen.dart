@@ -100,7 +100,7 @@ class _BudgetContent extends StatelessWidget {
               value: state.stats.total.toStringAsFixed(2),
               suffix: ' €',
               subtitle: state.stats.monthLabel,
-              variant: ExpressiveTonalVariant.neutral,
+              variant: ExpressiveTonalVariant.coral,
               accentIcon: Symbols.payments_rounded,
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             ),
@@ -294,7 +294,7 @@ class _GroupFilterChip extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return Material(
-      color: selected ? cs.secondaryContainer : cs.surfaceContainerHighest,
+      color: selected ? cs.secondaryContainer : cs.surfaceContainerLow,
       elevation: 0,
       shape: shapes.pill(),
       clipBehavior: Clip.antiAlias,
@@ -416,21 +416,20 @@ class _StatsSectionState extends State<_StatsSection> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                 decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
+                  color: isSelected
+                      ? catColor
+                      : cs.surfaceContainerLow,
                   borderRadius: shapes.radiusLarge,
-                  border: Border.all(
-                    color: isSelected ? catColor : Colors.transparent,
-                    width: 1.5,
-                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        // Icône catégorie
                         Material(
-                          color: catColor.withValues(alpha: 0.15),
+                          color: isSelected
+                              ? semantic.onFor(catColor, cs)
+                              : catColor,
                           shape: shapes.circle(),
                           clipBehavior: Clip.antiAlias,
                           child: SizedBox(
@@ -439,7 +438,9 @@ class _StatsSectionState extends State<_StatsSection> {
                           child: Center(
                             child: cat.category.iconWidget(
                               size: 18,
-                              color: catColor,
+                              color: isSelected
+                                  ? catColor
+                                  : semantic.onFor(catColor, cs),
                               fill: 1,
                             ),
                           ),
@@ -451,12 +452,21 @@ class _StatsSectionState extends State<_StatsSection> {
                             crossAxisAlignment:
                                 CrossAxisAlignment.start,
                             children: [
-                              Text(cat.category.name,
-                                  style: tt.titleSmall),
+                              Text(
+                                cat.category.name,
+                                style: tt.titleSmall?.copyWith(
+                                  color: isSelected
+                                      ? semantic.onFor(catColor, cs)
+                                      : null,
+                                ),
+                              ),
                               Text(
                                 '${cat.percent.toStringAsFixed(1)}% du total',
                                 style: tt.bodySmall?.copyWith(
-                                    color: cs.onSurfaceVariant),
+                                  color: isSelected
+                                      ? semantic.onFor(catColor, cs)
+                                      : cs.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
@@ -465,6 +475,9 @@ class _StatsSectionState extends State<_StatsSection> {
                           value: cat.amount.toStringAsFixed(2),
                           suffix: ' €',
                           size: ExpressiveFigureSize.small,
+                          color: isSelected
+                              ? semantic.onFor(catColor, cs)
+                              : null,
                         ),
                       ],
                     ),
@@ -475,8 +488,12 @@ class _StatsSectionState extends State<_StatsSection> {
                       child: LinearProgressIndicator(
                         value: cat.percent / 100,
                         minHeight: 5,
-                        backgroundColor: catColor.withValues(alpha: 0.15),
-                        valueColor: AlwaysStoppedAnimation<Color>(catColor),
+                        backgroundColor: cs.surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isSelected
+                              ? semantic.onFor(catColor, cs)
+                              : catColor,
+                        ),
                       ),
                     ),
                   ],
@@ -507,9 +524,8 @@ class _BudgetCard extends StatelessWidget {
     final statusColor = b.statusColor(semantic);
     final clampedPercent = (b.percent / 100).clamp(0.0, 1.0);
     final isDanger = b.status == BudgetStatus.danger;
-    final mutedColor = isDanger
-        ? semantic.onDangerContainer.withValues(alpha: 0.78)
-        : cs.onSurfaceVariant;
+    final mutedColor =
+        isDanger ? semantic.onDangerContainer : cs.onSurfaceVariant;
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,9 +533,7 @@ class _BudgetCard extends StatelessWidget {
         Row(
           children: [
             Material(
-              color: isDanger
-                  ? semantic.onDangerContainer.withValues(alpha: 0.12)
-                  : catColor.withValues(alpha: 0.15),
+              color: isDanger ? semantic.danger : catColor,
               shape: shapes.circle(),
               clipBehavior: Clip.antiAlias,
               child: SizedBox(
@@ -528,7 +542,9 @@ class _BudgetCard extends StatelessWidget {
                 child: Center(
                   child: b.category.iconWidget(
                     size: 22,
-                    color: isDanger ? semantic.onDangerContainer : catColor,
+                    color: isDanger
+                        ? semantic.onDanger
+                        : semantic.onFor(catColor, cs),
                   ),
                 ),
               ),
@@ -558,9 +574,15 @@ class _BudgetCard extends StatelessWidget {
                       ? 'Attention'
                       : 'OK',
               color: isDanger
-                  ? semantic.onDangerContainer.withValues(alpha: 0.16)
-                  : statusColor.withValues(alpha: 0.15),
-              textColor: isDanger ? semantic.onDangerContainer : statusColor,
+                  ? semantic.danger
+                  : b.status == BudgetStatus.warning
+                      ? semantic.warningContainer
+                      : semantic.successContainer,
+              textColor: isDanger
+                  ? semantic.onDanger
+                  : b.status == BudgetStatus.warning
+                      ? semantic.onWarningContainer
+                      : semantic.onSuccessContainer,
             ),
           ],
         ),
@@ -570,9 +592,7 @@ class _BudgetCard extends StatelessWidget {
           child: LinearProgressIndicator(
             value: clampedPercent,
             minHeight: 8,
-            backgroundColor: isDanger
-                ? semantic.onDangerContainer.withValues(alpha: 0.16)
-                : cs.surfaceContainerHighest,
+            backgroundColor: cs.surfaceContainerHighest,
             valueColor: AlwaysStoppedAnimation<Color>(
               isDanger ? semantic.danger : statusColor,
             ),
@@ -792,13 +812,16 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
               Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: catColor.withValues(alpha: 0.15),
+                  color: catColor,
                   borderRadius: context.tabbyShapes.radiusMedium,
                 ),
                 child: Center(
                   child: b.category.iconWidget(
                     size: 20,
-                    color: catColor,
+                    color: context.tabbySemantic.onFor(
+                      catColor,
+                      Theme.of(context).colorScheme,
+                    ),
                   ),
                 ),
               ),

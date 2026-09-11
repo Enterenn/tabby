@@ -38,18 +38,15 @@ class LoyaltyCardFace extends StatelessWidget {
   /// Hero vers l'écran détail (désactivé pour les aperçus).
   final bool enableHero;
 
-  LoyaltyBrand get _brand => card.brand;
-
   @override
   Widget build(BuildContext context) {
     final shapes = context.tabbyShapes;
-    final brand = _brand;
+    final brand = card.brandFor(context.tabbySemantic.brandFallback);
     final fg = brand.onPrimary;
 
     final face = Material(
       color: Colors.transparent,
-      elevation: compact ? 1 : 4,
-      shadowColor: brand.primary.withValues(alpha: 0.45),
+      elevation: 0,
       shape: shapes.cardShape,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -60,17 +57,6 @@ class LoyaltyCardFace extends StatelessWidget {
           decoration: BoxDecoration(gradient: brand.gradient),
           child: Stack(
             children: [
-              // Motif décoratif
-              Positioned(
-                right: -24,
-                top: -24,
-                child: Icon(
-                  Symbols.contactless_rounded,
-                  size: compact ? 80 : 140,
-                  color: fg.withValues(alpha: 0.07),
-                  fill: 1,
-                ),
-              ),
               Positioned(
                 left: compact ? 14 : 20,
                 right: compact ? 14 : 20,
@@ -111,7 +97,7 @@ class LoyaltyCardFace extends StatelessWidget {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: fg.withValues(alpha: 0.78),
+                                    color: fg,
                                   ),
                             ),
                             const Spacer(),
@@ -122,7 +108,7 @@ class LoyaltyCardFace extends StatelessWidget {
                                       ? Symbols.barcode_rounded
                                       : Symbols.qr_code_2_rounded,
                                   size: 16,
-                                  color: fg.withValues(alpha: 0.85),
+                                  color: fg,
                                   fill: 1,
                                 ),
                                 const SizedBox(width: 6),
@@ -134,7 +120,7 @@ class LoyaltyCardFace extends StatelessWidget {
                                       .textTheme
                                       .labelMedium
                                       ?.copyWith(
-                                        color: fg.withValues(alpha: 0.85),
+                                        color: fg,
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
@@ -142,7 +128,7 @@ class LoyaltyCardFace extends StatelessWidget {
                                 Icon(
                                   Symbols.contactless_rounded,
                                   size: 22,
-                                  color: fg.withValues(alpha: 0.55),
+                                  color: fg,
                                   fill: 1,
                                 ),
                               ],
@@ -154,7 +140,7 @@ class LoyaltyCardFace extends StatelessWidget {
                                   .textTheme
                                   .labelSmall
                                   ?.copyWith(
-                                    color: fg.withValues(alpha: 0.75),
+                                    color: fg,
                                   ),
                             ),
                         ],
@@ -222,9 +208,8 @@ class _BrandLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.22),
+        color: brand.secondary ?? brand.primary,
         shape: BoxShape.circle,
-        border: Border.all(color: fg.withValues(alpha: 0.35), width: 1.5),
       ),
       child: Center(
         child: brand.logoAsset != null

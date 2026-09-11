@@ -50,6 +50,8 @@ dependencies:
   firebase_messaging: ^15.2.5
   flutter_animate: ^4.5.2
   animations: ^3.0.0
+  # 2.x utilise material_ui.ColorScheme, incompatible avec Flutter ColorScheme.
+  dynamic_color: 1.8.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -75,9 +75,15 @@ class ExpressiveHeroBanner extends StatelessWidget {
             isPositive: isPositive,
             accentIcon: accentIcon,
             accentBg: isBalance && !isNeutral
-                ? figureColor.withValues(alpha: 0.22)
+                ? (isPositive
+                    ? semantic.successContainer
+                    : semantic.dangerContainer)
                 : cs.primary,
-            accentFg: isBalance && !isNeutral ? figureColor : cs.onPrimary,
+            accentFg: isBalance && !isNeutral
+                ? (isPositive
+                    ? semantic.onSuccessContainer
+                    : semantic.onDangerContainer)
+                : cs.onPrimary,
           )
         : _ValueHeroContent(
             label: label,
@@ -119,7 +125,7 @@ class ExpressiveHeroBanner extends StatelessWidget {
           cs.onPrimaryContainer,
         ),
       ExpressiveTonalVariant.neutral => (
-          cs.surfaceContainerHighest,
+          cs.surfaceContainerLow,
           cs.onSurface,
         ),
       ExpressiveTonalVariant.success => (
@@ -182,7 +188,7 @@ class _BalanceHeroContent extends StatelessWidget {
     );
     final suffixStyle = figureStyle.copyWith(
       fontSize: (figureStyle.fontSize ?? 16) * 0.5,
-      color: figureColor.withValues(alpha: 0.85),
+      color: figureColor,
     );
 
     return Stack(
@@ -196,7 +202,7 @@ class _BalanceHeroContent extends StatelessWidget {
               Text(
                 label.toUpperCase(),
                 style: tt.labelMedium?.copyWith(
-                  color: fg.withValues(alpha: 0.85),
+                  color: fg,
                   letterSpacing: 2.2,
                   fontWeight: FontWeight.w700,
                 ),
@@ -208,8 +214,16 @@ class _BalanceHeroContent extends StatelessWidget {
                     : isPositive
                         ? 'On te doit'
                         : 'Tu dois',
-                color: figureColor.withValues(alpha: 0.18),
-                textColor: figureColor,
+                color: isNeutral
+                    ? context.tabbyColors.surfaceContainerHighest
+                    : isPositive
+                        ? context.tabbySemantic.successContainer
+                        : context.tabbySemantic.dangerContainer,
+                textColor: isNeutral
+                    ? context.tabbyColors.onSurfaceVariant
+                    : isPositive
+                        ? context.tabbySemantic.onSuccessContainer
+                        : context.tabbySemantic.onDangerContainer,
                 icon: isNeutral
                     ? Icons.check_rounded
                     : isPositive
@@ -244,7 +258,7 @@ class _BalanceHeroContent extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: tt.bodyMedium?.copyWith(
-                    color: fg.withValues(alpha: 0.75),
+                    color: fg,
                   ),
                 ),
               ],
@@ -305,7 +319,7 @@ class _ValueHeroContent extends StatelessWidget {
               Text(
                 label.toUpperCase(),
                 style: tt.labelMedium?.copyWith(
-                  color: fg.withValues(alpha: 0.85),
+                  color: fg,
                   letterSpacing: 2.2,
                   fontWeight: FontWeight.w700,
                 ),
@@ -326,7 +340,7 @@ class _ValueHeroContent extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: tt.bodyMedium?.copyWith(
-                    color: fg.withValues(alpha: 0.75),
+                    color: fg,
                   ),
                 ),
               ],

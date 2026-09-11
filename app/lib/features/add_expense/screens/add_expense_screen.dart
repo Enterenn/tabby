@@ -272,13 +272,11 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                   border: InputBorder.none,
                                   hintText: '0,00',
                                   hintStyle: type.figureLarge.copyWith(
-                                    color: cs.onSecondaryContainer
-                                        .withValues(alpha: 0.45),
+                                    color: cs.outline,
                                   ),
                                   suffixText: '€',
                                   suffixStyle: type.figureMedium.copyWith(
-                                    color: cs.onSecondaryContainer
-                                        .withValues(alpha: 0.75),
+                                    color: cs.onSecondaryContainer,
                                   ),
                                 ),
                                 validator: (v) {
@@ -635,39 +633,36 @@ class _CategoryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
+    final semantic = context.tabbySemantic;
     final shapes = context.tabbyShapes;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: categories.map((c) {
         final isSelected = selected?.id == c.id;
+        final catColor = semantic.chartColorFor(c);
+        final onCat = semantic.onFor(catColor, cs);
         return GestureDetector(
           onTap: () => onSelect(c),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? c.flutterColor.withValues(alpha: 0.18)
-                  : cs.surfaceContainerHighest,
+              color: isSelected ? catColor : cs.surfaceContainerLow,
               borderRadius: shapes.radiusLarge,
-              border: Border.all(
-                color: isSelected ? c.flutterColor : Colors.transparent,
-                width: 2,
-              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 c.iconWidget(
                   size: 18,
-                  color: isSelected ? c.flutterColor : cs.onSurfaceVariant,
+                  color: isSelected ? onCat : cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   c.name,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: isSelected ? c.flutterColor : cs.onSurfaceVariant,
+                        color: isSelected ? onCat : cs.onSurfaceVariant,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
                       ),
@@ -745,9 +740,7 @@ class _RecurringTile extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: value
-            ? cs.primaryContainer.withValues(alpha: 0.5)
-            : cs.surfaceContainerHighest,
+        color: value ? cs.primaryContainer : cs.surfaceContainerLow,
         borderRadius: shapes.radiusLarge,
       ),
       child: SwitchListTile(
@@ -756,7 +749,7 @@ class _RecurringTile extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: shapes.radiusLarge),
         secondary: Icon(
           Symbols.repeat_rounded,
-          color: value ? cs.primary : cs.onSurfaceVariant,
+          color: value ? cs.onPrimaryContainer : cs.onSurfaceVariant,
           fill: value ? 1 : 0,
         ),
         title: const Text('Répéter chaque mois'),
@@ -839,8 +832,10 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
+    final semantic = context.tabbySemantic;
     final shapes = context.tabbyShapes;
-    final palette = context.tabbySemantic.categoryPalette;
+    final palette = semantic.categoryPalette;
+    final onSelected = semantic.onFor(_selectedColor, cs);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -864,15 +859,14 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.18),
+                  color: _selectedColor,
                   borderRadius: shapes.radiusLarge,
-                  border: Border.all(color: _selectedColor, width: 2),
                 ),
                 child: Center(
                   child: Icon(
                     CategoryIcons.resolve(_selectedIcon),
                     size: 26,
-                    color: _selectedColor,
+                    color: onSelected,
                     fill: 1,
                   ),
                 ),
@@ -910,21 +904,14 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                   height: 42,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? _selectedColor.withValues(alpha: 0.18)
-                        : cs.surfaceContainerHighest,
+                        ? _selectedColor
+                        : cs.surfaceContainerLow,
                     borderRadius: shapes.radiusMedium,
-                    border: Border.all(
-                      color:
-                          isSelected ? _selectedColor : Colors.transparent,
-                      width: 2,
-                    ),
                   ),
                   child: Icon(
                     icon,
                     size: 22,
-                    color: isSelected
-                        ? _selectedColor
-                        : cs.onSurfaceVariant,
+                    color: isSelected ? onSelected : cs.onSurfaceVariant,
                     fill: isSelected ? 1 : 0,
                   ),
                 ),
@@ -954,7 +941,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                         height: 36,
                         child: isSelected
                             ? Icon(Symbols.check_rounded,
-                                color: cs.onPrimary, size: 18)
+                                color: semantic.onFor(color, cs), size: 18)
                             : null,
                       ),
                     ),

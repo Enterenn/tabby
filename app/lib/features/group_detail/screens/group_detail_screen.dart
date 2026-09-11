@@ -390,9 +390,7 @@ class _BalanceTile extends StatelessWidget {
         entry.fromUserId == currentUserId || entry.toUserId == currentUserId;
 
     return Card(
-      color: isMine
-          ? cs.primaryContainer.withValues(alpha: 0.4)
-          : cs.surfaceContainerHighest,
+      color: isMine ? cs.primaryContainer : cs.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -738,6 +736,9 @@ class _ExpenseTile extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final shapes = context.tabbyShapes;
+    final semantic = context.tabbySemantic;
+    final catColor = semantic.chartColorFor(expense.category);
+    final onCat = semantic.onFor(catColor, cs);
 
     final payerLabel = expense.paidBy == currentUserId
         ? 'Vous'
@@ -753,7 +754,7 @@ class _ExpenseTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Material(
-              color: expense.category.flutterColor.withValues(alpha: 0.14),
+              color: catColor,
               shape: shapes.circle(),
               clipBehavior: Clip.antiAlias,
               child: SizedBox(
@@ -762,7 +763,7 @@ class _ExpenseTile extends StatelessWidget {
                 child: Center(
                   child: expense.category.iconWidget(
                     size: 20,
-                    color: expense.category.flutterColor,
+                    color: onCat,
                   ),
                 ),
               ),
@@ -786,15 +787,14 @@ class _ExpenseTile extends StatelessWidget {
                       ),
                       ExpressiveBadge(
                         label: expense.category.name,
-                        color: expense.category.flutterColor
-                            .withValues(alpha: 0.14),
-                        textColor: expense.category.flutterColor,
+                        color: catColor,
+                        textColor: onCat,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         labelStyle: tt.labelSmall?.copyWith(
-                          color: expense.category.flutterColor,
+                          color: onCat,
                           fontWeight: FontWeight.w600,
                           height: 1.1,
                         ),

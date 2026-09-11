@@ -180,7 +180,7 @@ class _CategoryManagementScreenState
                     children: [
                       ListTile(
                         leading: Material(
-                          color: cat.flutterColor.withValues(alpha: 0.15),
+                          color: context.tabbySemantic.chartColorFor(cat),
                           shape: context.tabbyShapes.circle(),
                           clipBehavior: Clip.antiAlias,
                           child: SizedBox(
@@ -189,7 +189,10 @@ class _CategoryManagementScreenState
                             child: Center(
                               child: cat.iconWidget(
                                 size: 20,
-                                color: cat.flutterColor,
+                                color: context.tabbySemantic.onFor(
+                                  context.tabbySemantic.chartColorFor(cat),
+                                  cs,
+                                ),
                               ),
                             ),
                           ),

@@ -30,7 +30,7 @@ class _GroupCardState extends State<GroupCard> {
     final group = widget.group;
     final balance = group.balance;
     final memberCount = group.members.length;
-    final onCard = cs.onSecondaryContainer;
+    final onCard = cs.onSurface;
 
     void openGroup() => context.push('/groups/${group.id}');
 
@@ -39,7 +39,7 @@ class _GroupCardState extends State<GroupCard> {
       duration: const Duration(milliseconds: 100),
       curve: Curves.easeOut,
       child: Card(
-        color: cs.secondaryContainer,
+        color: cs.surfaceContainerLow,
         margin: const EdgeInsets.only(bottom: 16),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
@@ -74,7 +74,7 @@ class _GroupCardState extends State<GroupCard> {
                           Text(
                             '$memberCount membre${memberCount > 1 ? 's' : ''}',
                             style: tt.bodySmall?.copyWith(
-                              color: onCard.withValues(alpha: 0.72),
+                              color: cs.onSurfaceVariant,
                             ),
                           ),
                         ],

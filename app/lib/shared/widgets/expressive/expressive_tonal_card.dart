@@ -47,7 +47,7 @@ class ExpressiveTonalCard extends StatelessWidget {
           cs.onPrimaryContainer,
         ),
       ExpressiveTonalVariant.neutral => (
-          cs.surfaceContainerHighest,
+          cs.surfaceContainerLow,
           cs.onSurface,
         ),
       ExpressiveTonalVariant.success => (

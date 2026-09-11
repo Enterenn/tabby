@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../shared/widgets/tabby_logo.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/group_card.dart';
 import '../widgets/new_group_sheet.dart';
@@ -75,10 +75,7 @@ class _HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: SvgPicture.asset(
-          'assets/images/tabby_color.svg',
-          height: 28,
-        ),
+        title: const TabbyLogo(height: 28),
       ),
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
@@ -226,14 +223,14 @@ class _EmptyState extends StatelessWidget {
             width: 96,
             height: 96,
             child: Material(
-              color: cs.primaryContainer.withValues(alpha: 0.5),
+              color: cs.primaryContainer,
               elevation: 0,
               shape: context.tabbyShapes.circle(),
               clipBehavior: Clip.antiAlias,
               child: Icon(
                 Symbols.group_rounded,
                 size: 48,
-                color: cs.primary,
+                color: cs.onPrimaryContainer,
                 fill: 1,
               ),
             ),

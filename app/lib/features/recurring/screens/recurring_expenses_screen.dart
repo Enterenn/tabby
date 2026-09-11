@@ -186,7 +186,7 @@ class _RecurringCard extends StatelessWidget {
             // Icône catégorie
             Material(
               color: item.active
-                  ? item.category.flutterColor.withValues(alpha: 0.15)
+                  ? context.tabbySemantic.chartColorFor(item.category)
                   : cs.surfaceContainerHighest,
               shape: shapes.circle(),
               clipBehavior: Clip.antiAlias,
@@ -196,7 +196,10 @@ class _RecurringCard extends StatelessWidget {
                 child: Icon(
                   item.category.flutterIcon,
                   color: item.active
-                      ? item.category.flutterColor
+                      ? context.tabbySemantic.onFor(
+                          context.tabbySemantic.chartColorFor(item.category),
+                          cs,
+                        )
                       : cs.onSurfaceVariant,
                   size: 22,
                 ),

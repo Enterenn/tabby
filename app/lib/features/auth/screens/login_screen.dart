@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../shared/widgets/tabby_logo.dart';
 import '../cubit/auth_cubit.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -59,10 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Logo centré
                   Center(
-                    child: SvgPicture.asset(
-                      'assets/images/tabby_color.svg',
-                      height: 44,
-                    ),
+                    child: const TabbyLogo(height: 44),
                   ),
 
                   const SizedBox(height: 40),

@@ -135,9 +135,8 @@ class _CardsView extends StatelessWidget {
                                   child: Icon(
                                     Symbols.drag_indicator_rounded,
                                     color: cards[i]
-                                        .brand
-                                        .onPrimary
-                                        .withValues(alpha: 0.7),
+                                        .brandFor(context.tabbySemantic.brandFallback)
+                                        .onPrimary,
                                   ),
                                 ),
                               ),
@@ -282,7 +281,7 @@ class _CardFullScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    final brand = card.brand;
+    final brand = card.brandFor(context.tabbySemantic.brandFallback);
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
 
@@ -296,18 +295,7 @@ class _CardFullScreen extends StatelessWidget {
         title: Text(card.brandName),
       ),
       body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              brand.primary.withValues(alpha: 0.35),
-              cs.surfaceContainerLow,
-              cs.surfaceContainerLow,
-            ],
-            stops: const [0, 0.35, 1],
-          ),
-        ),
+        decoration: BoxDecoration(color: cs.surface),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
@@ -324,9 +312,8 @@ class _CardFullScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 Card(
-                  color: cs.surface,
-                  elevation: 2,
-                  shadowColor: brand.primary.withValues(alpha: 0.2),
+                  color: cs.surfaceContainerLowest,
+                  elevation: 0,
                   shape: shapes.cardShape,
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -482,7 +469,7 @@ class _ScannerViewState extends State<_ScannerView> {
                           height: 110,
                           decoration: BoxDecoration(
                             border: Border.all(
-                              color: cs.onPrimary.withValues(alpha: 0.8),
+                              color: cs.onPrimary,
                               width: 2,
                             ),
                             borderRadius: context.tabbyShapes.radiusMedium,
@@ -672,9 +659,10 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
+    final semantic = context.tabbySemantic;
     final tt = Theme.of(context).textTheme;
     final shapes = context.tabbyShapes;
-    final palette = context.tabbySemantic.categoryPalette;
+    final palette = semantic.categoryPalette;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -836,6 +824,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                                       label: 'Autre',
                                       monogram: '+',
                                       color: cs.outlineVariant,
+                                      onColor: cs.onSurface,
                                       selected: _customBrand,
                                       onTap: _selectCustomBrand,
                                     );
@@ -847,6 +836,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                                         ? brand.name[0]
                                         : brand.monogram,
                                     color: brand.primary,
+                                    onColor: brand.onPrimary,
                                     selected: !_customBrand &&
                                         _brandId == brand.id,
                                     onTap: () => _selectBrand(brand),
@@ -890,7 +880,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                                   child: isSelected
                                       ? Icon(
                                           Symbols.check_rounded,
-                                          color: cs.onPrimary,
+                                          color: semantic.onFor(color, cs),
                                           size: 18,
                                         )
                                       : null,
@@ -998,9 +988,8 @@ class _DetectedBrandBanner extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.22),
+              color: brand.secondary ?? brand.primary,
               shape: BoxShape.circle,
-              border: Border.all(color: fg.withValues(alpha: 0.35)),
             ),
             alignment: Alignment.center,
             child: Text(
@@ -1025,9 +1014,7 @@ class _DetectedBrandBanner extends StatelessWidget {
                 ),
                 Text(
                   'Reconnue automatiquement',
-                  style: tt.bodySmall?.copyWith(
-                    color: fg.withValues(alpha: 0.78),
-                  ),
+                  style: tt.bodySmall?.copyWith(color: fg),
                 ),
               ],
             ),
@@ -1048,6 +1035,7 @@ class _BrandPickerTile extends StatelessWidget {
     required this.label,
     required this.monogram,
     required this.color,
+    required this.onColor,
     required this.selected,
     required this.onTap,
   });
@@ -1055,6 +1043,7 @@ class _BrandPickerTile extends StatelessWidget {
   final String label;
   final String monogram;
   final Color color;
+  final Color onColor;
   final bool selected;
   final VoidCallback onTap;
 
@@ -1076,9 +1065,7 @@ class _BrandPickerTile extends StatelessWidget {
             color: selected ? cs.primary : cs.outlineVariant,
             width: selected ? 2 : 1,
           ),
-          color: selected
-              ? cs.primaryContainer.withValues(alpha: 0.35)
-              : cs.surfaceContainerLow,
+          color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1094,7 +1081,7 @@ class _BrandPickerTile extends StatelessWidget {
               child: Text(
                 monogram,
                 style: tt.labelLarge?.copyWith(
-                  color: Colors.white,
+                  color: onColor,
                   fontWeight: FontWeight.w800,
                 ),
               ),

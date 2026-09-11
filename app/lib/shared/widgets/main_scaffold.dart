@@ -69,9 +69,8 @@ class _TabbyNavBar extends StatelessWidget {
     final shapes = context.tabbyShapes;
 
     return Material(
-      color: cs.surfaceContainerHigh,
-      elevation: 3,
-      shadowColor: cs.shadow.withValues(alpha: 0.18),
+      color: cs.surfaceContainer,
+      elevation: 0,
       shape: shapes.cardShape,
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
@@ -127,7 +126,7 @@ class _TabbyNavBar extends StatelessWidget {
                         MainScaffold._labels[i],
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: selected
-                                  ? cs.secondary
+                                  ? cs.onSecondaryContainer
                                   : cs.onSurfaceVariant,
                               fontWeight:
                                   selected ? FontWeight.w700 : FontWeight.w500,

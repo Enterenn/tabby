@@ -1,3 +1,4 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
@@ -7,8 +8,13 @@ import 'app_tokens.dart';
 export 'app_tokens.dart';
 
 abstract final class AppTheme {
-  static ThemeData get light => _build(Brightness.light);
-  static ThemeData get dark => _build(Brightness.dark);
+  /// [dynamicScheme] : palette système (fond d'écran Android, accent Windows…).
+  /// Absent → seed logo Tabby.
+  static ThemeData light([ColorScheme? dynamicScheme]) =>
+      _build(Brightness.light, dynamicScheme);
+
+  static ThemeData dark([ColorScheme? dynamicScheme]) =>
+      _build(Brightness.dark, dynamicScheme);
 
   static void configureSymbols() {
     MaterialSymbolsBase.setRoundedVariationDefaults(
@@ -19,16 +25,16 @@ abstract final class AppTheme {
     );
   }
 
-  static ThemeData _build(Brightness brightness) {
+  static ThemeData _build(Brightness brightness, ColorScheme? dynamicScheme) {
     final isDark = brightness == Brightness.dark;
     final grad = isDark ? -25.0 : 0.0;
     final shapes = TabbyShapeTokens.standard;
 
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.seed,
+      seedColor: dynamicScheme?.primary ?? AppColors.seed,
       brightness: brightness,
       dynamicSchemeVariant: DynamicSchemeVariant.expressive,
-    );
+    ).harmonized();
     final semantic = TabbySemanticColors.fromScheme(scheme);
 
     final typography = TabbyTypographyTokens.create(scheme: scheme, grad: grad);

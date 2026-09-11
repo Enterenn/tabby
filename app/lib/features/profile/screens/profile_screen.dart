@@ -73,7 +73,8 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Par défaut, Tabby suit le réglage système.',
+                        'Clair / sombre suit le système. Les couleurs viennent '
+                        'du fond d\'écran (Android) ou de l\'accent Windows / macOS.',
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall

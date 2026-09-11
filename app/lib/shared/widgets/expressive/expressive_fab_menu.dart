@@ -202,8 +202,7 @@ class _FabMenuItemPill extends StatelessWidget {
 
     return Material(
       color: cs.secondaryContainer,
-      elevation: 3,
-      shadowColor: cs.shadow.withValues(alpha: 0.18),
+      elevation: 0,
       shape: shapes.pill(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

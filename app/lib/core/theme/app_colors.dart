@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Seed HCT + tokens métier (success / warning).
+/// Seed de secours + tokens métier (success / warning).
 ///
-/// Tous les rôles M3 (primary, secondary, tertiary, surfaces) viennent de
-/// [ColorScheme.fromSeed] — ne pas ajouter d'accents UI ici.
+/// En priorité, le [ColorScheme] vient de Dynamic Color (système).
+/// [seed] n'est utilisée que si la plateforme n'en fournit pas.
 abstract final class AppColors {
-  /// Or Tabby — unique seed du [ColorScheme] Expressive.
-  static const Color seed = Color(0xFFC9A227);
+  /// Seed de secours (logo Tabby) — utilisée seulement si le système
+  /// n'expose pas de Dynamic Color (Android 12+, accent Windows/macOS…).
+  static const Color seed = Color(0xFFFFDB5A);
 
   static const Color success = Color(0xFF2EAA6B);
   static const Color onSuccessLight = Color(0xFFFFFFFF);

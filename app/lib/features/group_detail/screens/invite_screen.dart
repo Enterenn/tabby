@@ -84,16 +84,16 @@ class _InviteScreenState extends State<InviteScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 40, vertical: 28),
                     decoration: BoxDecoration(
-                      color: cs.primaryContainer,
+                      color: cs.tertiaryContainer,
                       borderRadius: context.tabbyShapes.radiusExtraLarge,
-                      border: Border.all(color: cs.primary, width: 2),
+                      border: Border.all(color: cs.tertiary, width: 2),
                     ),
                     child: Text(
                       _code!,
                       style: context.tabbyType.clockDisplay.copyWith(
                         fontSize: 40,
                         letterSpacing: 12,
-                        color: cs.onPrimaryContainer,
+                        color: cs.onTertiaryContainer,
                       ),
                     ),
                   ),

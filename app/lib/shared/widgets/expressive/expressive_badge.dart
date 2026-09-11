@@ -85,7 +85,6 @@ class ExpressiveBalanceBadge extends StatelessWidget {
       );
     }
 
-    final color = semantic.balanceColor(amount);
     final sign = isPositive ? '+' : '-';
     final label = showSign
         ? '$sign ${amount.abs().toStringAsFixed(2)} €'
@@ -93,8 +92,9 @@ class ExpressiveBalanceBadge extends StatelessWidget {
 
     return ExpressiveBadge(
       label: label,
-      color: color.withValues(alpha: 0.18),
-      textColor: color,
+      color: isPositive ? semantic.successContainer : semantic.dangerContainer,
+      textColor:
+          isPositive ? semantic.onSuccessContainer : semantic.onDangerContainer,
     );
   }
 }

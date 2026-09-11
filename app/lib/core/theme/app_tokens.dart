@@ -1,3 +1,4 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
 import '../../shared/models/budget.dart';
@@ -416,23 +417,24 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
 
   factory TabbySemanticColors.fromScheme(ColorScheme scheme) {
     final isDark = scheme.brightness == Brightness.dark;
+    Color hue(Color color) => color.harmonizeWith(scheme.primary);
     return TabbySemanticColors(
-      success: isDark ? AppColors.successDark : AppColors.success,
-      onSuccess: isDark ? AppColors.onSuccessDark : AppColors.onSuccessLight,
-      successContainer: isDark
+      success: hue(isDark ? AppColors.successDark : AppColors.success),
+      onSuccess: hue(isDark ? AppColors.onSuccessDark : AppColors.onSuccessLight),
+      successContainer: hue(isDark
           ? AppColors.successContainerDark
-          : AppColors.successContainerLight,
-      onSuccessContainer: isDark
+          : AppColors.successContainerLight),
+      onSuccessContainer: hue(isDark
           ? AppColors.onSuccessContainerDark
-          : AppColors.onSuccessContainerLight,
-      warning: isDark ? AppColors.warningDark : AppColors.warning,
-      onWarning: isDark ? AppColors.onWarningDark : AppColors.onWarningLight,
-      warningContainer: isDark
+          : AppColors.onSuccessContainerLight),
+      warning: hue(isDark ? AppColors.warningDark : AppColors.warning),
+      onWarning: hue(isDark ? AppColors.onWarningDark : AppColors.onWarningLight),
+      warningContainer: hue(isDark
           ? AppColors.warningContainerDark
-          : AppColors.warningContainerLight,
-      onWarningContainer: isDark
+          : AppColors.warningContainerLight),
+      onWarningContainer: hue(isDark
           ? AppColors.onWarningContainerDark
-          : AppColors.onWarningContainerLight,
+          : AppColors.onWarningContainerLight),
       danger: scheme.error,
       onDanger: scheme.onError,
       dangerContainer: scheme.errorContainer,
@@ -466,6 +468,24 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     final index =
         category.sortOrder >= 0 ? category.sortOrder : category.id.hashCode.abs();
     return chartPalette[index % chartPalette.length];
+  }
+
+  /// Paire `on*` d'une couleur issue du [ColorScheme] / des palettes.
+  Color onFor(Color color, ColorScheme scheme) {
+    if (color == scheme.primary) return scheme.onPrimary;
+    if (color == scheme.secondary) return scheme.onSecondary;
+    if (color == scheme.tertiary) return scheme.onTertiary;
+    if (color == scheme.error) return scheme.onError;
+    if (color == scheme.primaryContainer) return scheme.onPrimaryContainer;
+    if (color == scheme.secondaryContainer) return scheme.onSecondaryContainer;
+    if (color == scheme.tertiaryContainer) return scheme.onTertiaryContainer;
+    if (color == scheme.errorContainer) return scheme.onErrorContainer;
+    if (color == scheme.inversePrimary) return scheme.onPrimary;
+    if (color == success) return onSuccess;
+    if (color == successContainer) return onSuccessContainer;
+    if (color == warning) return onWarning;
+    if (color == warningContainer) return onWarningContainer;
+    return scheme.onSurface;
   }
 
   /// Retourne la couleur de solde (+/-) selon le montant.

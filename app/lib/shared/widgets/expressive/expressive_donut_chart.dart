@@ -83,7 +83,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                       sections: sections,
                       segmentColors: segmentColors,
                       selectedIndex: selectedIndex,
-                      trackColor: cs.outlineVariant.withValues(alpha: 0.28),
+                      trackColor: cs.surfaceContainerHighest,
                     ),
                   ),
                   ...iconSlots.map(
@@ -99,20 +99,13 @@ class ExpressiveDonutChart extends StatelessWidget {
                           curve: Curves.easeOut,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.28),
+                              color: cs.surface,
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: slot.color.withValues(alpha: 0.35),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
                             ),
                             child: Center(
                               child: slot.stat.category.iconWidget(
                                 size: 17,
-                                color: Colors.white,
+                                color: slot.color,
                                 fill: 1,
                               ),
                             ),
@@ -145,7 +138,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                         Icon(
                           Symbols.payments_rounded,
                           size: 22,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                          color: cs.onSurfaceVariant,
                         ),
                       if (touched == null) const SizedBox(height: 6),
                       touched != null
