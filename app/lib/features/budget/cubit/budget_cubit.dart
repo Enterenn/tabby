@@ -85,6 +85,7 @@ class BudgetCubit extends Cubit<BudgetState> {
     int? year,
     int? month,
     String? groupId,
+    bool clearGroup = false,
   }) async {
     final now = DateTime.now();
     final y = year ?? now.year;
@@ -94,7 +95,9 @@ class BudgetCubit extends Cubit<BudgetState> {
     final prev = state is BudgetLoaded ? state as BudgetLoaded : null;
     final targetYear = year ?? prev?.selectedYear ?? y;
     final targetMonth = month ?? prev?.selectedMonth ?? m;
-    final targetGroup = groupId ?? prev?.selectedGroupId;
+    // clearGroup=true → null explicite, sinon on garde l'ancienne sélection
+    final targetGroup =
+        clearGroup ? null : (groupId ?? prev?.selectedGroupId);
 
     emit(const BudgetLoading());
     try {
@@ -156,7 +159,12 @@ class BudgetCubit extends Cubit<BudgetState> {
   void selectGroup(String? groupId) {
     if (state is! BudgetLoaded) return;
     final s = state as BudgetLoaded;
-    load(year: s.selectedYear, month: s.selectedMonth, groupId: groupId);
+    load(
+      year: s.selectedYear,
+      month: s.selectedMonth,
+      groupId: groupId,
+      clearGroup: groupId == null,
+    );
   }
 
   Future<bool> createBudget({
