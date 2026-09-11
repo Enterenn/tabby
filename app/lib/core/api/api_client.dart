@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 
-/// Configuration du base URL — pointe sur l'IP Tailscale du LXC backend.
-/// Modifie [baseUrl] selon ton adresse Tailscale (ex. http://100.x.x.x:8000).
-const String _defaultBaseUrl = '192.168.1.31:8000';
+import 'token_storage.dart';
+
+/// Base URL du backend — IP locale (même réseau) ou IP Tailscale (hors réseau).
+const String _defaultBaseUrl = 'http://192.168.1.31:8000';
 
 class ApiClient {
   ApiClient({String? baseUrl}) {
@@ -16,8 +17,7 @@ class ApiClient {
     );
 
     _dio.interceptors.addAll([
-      _AuthInterceptor(),
-      LogInterceptor(requestBody: true, responseBody: true),
+      _AuthInterceptor(_dio),
     ]);
   }
 
@@ -25,7 +25,6 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  /// Injecte le JWT access token dans les requêtes
   void setAccessToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
   }
@@ -36,12 +35,56 @@ class ApiClient {
 }
 
 class _AuthInterceptor extends Interceptor {
+  _AuthInterceptor(this._dio);
+
+  final Dio _dio;
+  bool _isRefreshing = false;
+
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    // TODO (Lot 1): intercepter le 401 → refresh token → retry
-    super.onError(err, handler);
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final token = tokenStorage.accessToken;
+    if (token != null && !options.headers.containsKey('Authorization')) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.response?.statusCode == 401 && !_isRefreshing) {
+      final refresh = tokenStorage.refreshToken;
+      if (refresh == null) {
+        handler.next(err);
+        return;
+      }
+      _isRefreshing = true;
+      try {
+        final response = await _dio.post(
+          '/auth/refresh',
+          data: {'refresh_token': refresh},
+          options: Options(headers: {}), // pas de token sur ce call
+        );
+        final newAccess = response.data['access_token'] as String;
+        final newRefresh = response.data['refresh_token'] as String;
+        await tokenStorage.save(access: newAccess, refresh: newRefresh);
+        apiClient.setAccessToken(newAccess);
+
+        // Rejouer la requête initiale avec le nouveau token
+        final retryOptions = err.requestOptions;
+        retryOptions.headers['Authorization'] = 'Bearer $newAccess';
+        final retryResponse = await _dio.fetch(retryOptions);
+        handler.resolve(retryResponse);
+      } catch (_) {
+        await tokenStorage.clear();
+        handler.next(err);
+      } finally {
+        _isRefreshing = false;
+      }
+    } else {
+      handler.next(err);
+    }
   }
 }
 
-/// Singleton global — remplace l'URL en fonction de l'environnement
+/// Singleton global
 final apiClient = ApiClient();
