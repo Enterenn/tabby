@@ -20,93 +20,116 @@ class GroupCard extends StatelessWidget {
     final isPositive = balance > 0;
     final isNeutral = balance == 0;
 
-    final balanceColor =
-        isNeutral ? cs.onSurfaceVariant : (isPositive ? AppColors.success : AppColors.danger);
+    final balanceColor = isNeutral
+        ? cs.onSurfaceVariant
+        : (isPositive ? AppColors.success : AppColors.danger);
 
     final balanceLabel = isNeutral
         ? 'Tout est réglé'
         : isPositive
-            ? '+${balance.toStringAsFixed(2)} €'
-            : '${balance.toStringAsFixed(2)} €';
+            ? 'On te doit'
+            : 'Tu dois';
+
+    final balanceAmount = isNeutral
+        ? ''
+        : '${isPositive ? '' : ''}${balance.abs().toStringAsFixed(0)} €';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => context.push('/groups/${group.id}'), // Lot 8 : écran détail
+        onTap: () => context.push('/groups/${group.id}'),
         borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          child: Row(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _AvatarStack(
-                members: group.members.map((m) => m.user.name).toList(),
-                containerColor: cs.surfaceContainerHighest,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      group.name,
-                      style: tt.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+
+              // ── Ligne 1 : avatars + menu ─────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _AvatarStack(
+                    members: group.members.map((m) => m.user.name).toList(),
+                    containerColor: cs.surfaceContainerHighest,
+                  ),
+                  const Spacer(),
+                  // Bouton ··· (options groupe — Lot futur)
+                  SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Symbols.more_horiz_rounded,
+                        size: 20,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      onPressed: () {/* Lot futur : renommer / quitter */},
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              // ── Nom du groupe ─────────────────────────────────────────────
+              Text(
+                group.name,
+                style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              const SizedBox(height: 12),
+              Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
+              const SizedBox(height: 12),
+
+              // ── Solde + bouton dépense ────────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Solde
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (!isNeutral)
-                          Icon(
-                            isPositive
-                                ? Symbols.arrow_upward_rounded
-                                : Symbols.arrow_downward_rounded,
-                            size: 14,
-                            color: balanceColor,
-                            fill: 1,
-                          ),
-                        if (!isNeutral) const SizedBox(width: 2),
                         Text(
                           balanceLabel,
-                          style: tt.bodySmall?.copyWith(
-                            color: balanceColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: tt.bodySmall
+                              ?.copyWith(color: cs.onSurfaceVariant),
                         ),
+                        if (!isNeutral) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            balanceAmount,
+                            style: tt.headlineMedium?.copyWith(
+                              color: balanceColor,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonal(
-                onPressed: () async {
-                  final added =
-                      await context.push<bool>('/add-expense?groupId=${group.id}');
-                  // Rafraîchir les soldes si une dépense a été ajoutée
-                  if ((added ?? false) && context.mounted) {
-                    context.read<HomeCubit>().loadGroups();
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Symbols.add_rounded, size: 16, fill: 1),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Dépense',
-                      style: tt.labelMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+
+                  // Bouton + Dépense
+                  TextButton.icon(
+                    onPressed: () async {
+                      final added = await context
+                          .push<bool>('/add-expense?groupId=${group.id}');
+                      if ((added ?? false) && context.mounted) {
+                        context.read<HomeCubit>().loadGroups();
+                      }
+                    },
+                    icon: const Icon(Symbols.add_rounded, size: 18, fill: 1),
+                    label: const Text('Dépense'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: cs.primary,
+                      textStyle: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -115,6 +138,8 @@ class GroupCard extends StatelessWidget {
     );
   }
 }
+
+// ─── Avatar stack ─────────────────────────────────────────────────────────────
 
 class _AvatarStack extends StatelessWidget {
   const _AvatarStack({
@@ -127,8 +152,8 @@ class _AvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 36.0;
-    const overlap = 10.0;
+    const size = 38.0;
+    const overlap = 12.0;
     final displayed = members.take(3).toList();
     final width = size + (displayed.length - 1) * (size - overlap);
 
@@ -146,9 +171,9 @@ class _AvatarStack extends StatelessWidget {
               height: size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.categoryPalette[i % AppColors.categoryPalette.length],
+                color: AppColors.categoryPalette[
+                    i % AppColors.categoryPalette.length],
                 border: Border.fromBorderSide(
-                  // Bordure couleur de la card pour l'effet de séparation
                   BorderSide(color: containerColor, width: 2),
                 ),
               ),
@@ -158,7 +183,7 @@ class _AvatarStack extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                  fontSize: 14,
                 ),
               ),
             ),
