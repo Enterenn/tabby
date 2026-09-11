@@ -10,13 +10,57 @@ import '../../../core/theme/app_colors.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/group_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final HomeCubit _cubit;
+  GoRouter? _router;
+  String _lastPath = '';
+  bool _listenerAdded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = HomeCubit()..loadGroups();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_listenerAdded) {
+      _router = GoRouter.of(context);
+      _lastPath = _router!.state.uri.path;
+      _router!.routerDelegate.addListener(_onRouteChange);
+      _listenerAdded = true;
+    }
+  }
+
+  void _onRouteChange() {
+    if (!mounted) return;
+    final newPath = _router!.state.uri.path;
+    // Recharge uniquement quand on revient sur /home depuis une autre route
+    if (newPath == '/home' && _lastPath != '/home') {
+      _cubit.loadGroups();
+    }
+    _lastPath = newPath;
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_onRouteChange);
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => HomeCubit()..loadGroups(),
+    return BlocProvider.value(
+      value: _cubit,
       child: const _HomeView(),
     );
   }

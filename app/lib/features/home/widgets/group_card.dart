@@ -37,10 +37,7 @@ class GroupCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () async {
-          await context.push('/groups/${group.id}');
-          if (context.mounted) context.read<HomeCubit>().loadGroups();
-        },
+        onTap: () => context.push('/groups/${group.id}'),
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -68,10 +65,7 @@ class GroupCard extends StatelessWidget {
                         size: 20,
                         color: cs.onSurfaceVariant,
                       ),
-                      onPressed: () async {
-                        await context.push('/groups/${group.id}');
-                        if (context.mounted) context.read<HomeCubit>().loadGroups();
-                      },
+                      onPressed: () => context.push('/groups/${group.id}'),
                     ),
                   ),
                 ],
