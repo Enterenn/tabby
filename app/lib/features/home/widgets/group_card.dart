@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/group.dart';
+import '../cubit/home_cubit.dart';
 
 class GroupCard extends StatelessWidget {
   const GroupCard({super.key, required this.group});
@@ -30,7 +32,7 @@ class GroupCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
-        onTap: () => context.push('/groups/${group.id}'),
+        onTap: () => context.push('/groups/${group.id}'), // Lot 8 : écran détail
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
@@ -78,8 +80,14 @@ class GroupCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               FilledButton.tonal(
-                onPressed: () =>
-                    context.push('/add-expense?groupId=${group.id}'),
+                onPressed: () async {
+                  final added =
+                      await context.push<bool>('/add-expense?groupId=${group.id}');
+                  // Rafraîchir les soldes si une dépense a été ajoutée
+                  if ((added ?? false) && context.mounted) {
+                    context.read<HomeCubit>().loadGroups();
+                  }
+                },
                 style: FilledButton.styleFrom(
                   minimumSize: Size.zero,
                   padding:

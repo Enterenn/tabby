@@ -41,6 +41,13 @@ GoRouter buildRouter(AuthCubit authCubit) {
         builder: (context, state) =>
             InviteScreen(groupId: state.pathParameters['groupId']!),
       ),
+      // Add expense — hors ShellRoute pour un écran plein sans nav bar
+      GoRoute(
+        path: '/add-expense',
+        builder: (context, state) => AddExpenseScreen(
+          groupId: state.uri.queryParameters['groupId'],
+        ),
+      ),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
@@ -51,11 +58,6 @@ GoRouter buildRouter(AuthCubit authCubit) {
           GoRoute(
             path: '/budget',
             pageBuilder: (context, _) => const NoTransitionPage(child: BudgetScreen()),
-          ),
-          GoRoute(
-            path: '/add-expense',
-            pageBuilder: (context, _) =>
-                const NoTransitionPage(child: AddExpenseScreen()),
           ),
           GoRoute(
             path: '/cards',

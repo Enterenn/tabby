@@ -35,7 +35,14 @@ class MainScaffold extends StatelessWidget {
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
-        onDestinationSelected: (i) => context.go(_paths[i]),
+        onDestinationSelected: (i) {
+          if (_paths[i] == '/add-expense') {
+            // /add-expense est hors ShellRoute → push pour conserver l'historique
+            context.push('/add-expense');
+          } else {
+            context.go(_paths[i]);
+          }
+        },
         destinations: List.generate(_paths.length, (i) {
           final isAdd = _paths[i] == '/add-expense';
           if (isAdd) {
