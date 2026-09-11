@@ -117,6 +117,8 @@ docker compose exec api alembic upgrade head
 ```
 *Cette commande crée toutes les tables (utilisateurs, groupes, dépenses...) et ajoute les 8 catégories par défaut (Loyer, Courses, etc.). Tu dois voir des lignes défiler sans message d'erreur en rouge à la fin.*
 
+**Après chaque `git pull`** qui modifie le backend, relance la même commande pour appliquer les nouvelles migrations (ex. colonne `brand_id` sur les cartes fidélité). Le conteneur API applique aussi les migrations au démarrage, mais un `docker compose up -d --build` après pull reste la bonne habitude.
+
 Test rapide que l'API répond bien :
 ```bash
 curl http://localhost:8000/health
