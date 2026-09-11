@@ -12,6 +12,7 @@ import '../../features/profile/screens/profile_screen.dart';
 import '../../features/group_detail/screens/create_group_screen.dart';
 import '../../features/group_detail/screens/invite_screen.dart';
 import '../../features/group_detail/screens/join_group_screen.dart';
+import '../../features/profile/screens/category_management_screen.dart';
 import '../../shared/widgets/main_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -40,6 +41,10 @@ GoRouter buildRouter(AuthCubit authCubit) {
         path: '/groups/:groupId/invite',
         builder: (context, state) =>
             InviteScreen(groupId: state.pathParameters['groupId']!),
+      ),
+      GoRoute(
+        path: '/profile/categories',
+        builder: (context, _) => const CategoryManagementScreen(),
       ),
       // Add expense — hors ShellRoute pour un écran plein sans nav bar
       GoRoute(

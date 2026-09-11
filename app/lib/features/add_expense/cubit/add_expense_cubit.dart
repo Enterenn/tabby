@@ -30,6 +30,15 @@ class AddExpenseReady extends AddExpenseState {
   final List<Category> categories;
   final Group group;
 
+  AddExpenseReady copyWith({
+    List<Category>? categories,
+    Group? group,
+  }) =>
+      AddExpenseReady(
+        categories: categories ?? this.categories,
+        group: group ?? this.group,
+      );
+
   @override
   List<Object?> get props => [categories, group];
 }
@@ -55,6 +64,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
   AddExpenseCubit() : super(const AddExpenseInitial());
 
   Future<void> load(String groupId) async {
+    if (groupId.isEmpty) {
+      emit(const AddExpenseError('Aucun groupe sélectionné'));
+      return;
+    }
     emit(const AddExpenseLoading());
     try {
       final results = await Future.wait([
@@ -74,6 +87,30 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     }
   }
 
+  /// Ajoute une catégorie custom et rafraîchit la liste.
+  Future<Category?> createCategory({
+    required String groupId,
+    required String name,
+    required String icon,
+    required String color,
+  }) async {
+    final current = state;
+    if (current is! AddExpenseReady) return null;
+    try {
+      final response = await apiClient.dio.post('/categories', data: {
+        'group_id': groupId,
+        'name': name,
+        'icon': icon,
+        'color': color,
+      });
+      final newCat = Category.fromJson(response.data as Map<String, dynamic>);
+      emit(current.copyWith(categories: [...current.categories, newCat]));
+      return newCat;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool> submit({
     required String groupId,
     required String name,
@@ -81,24 +118,39 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required String categoryId,
     required String paidBy,
     required DateTime expenseDate,
+    // null = répartition égale, non-null = personnalisée
+    List<Map<String, dynamic>>? customSplits,
   }) async {
-    if (state is! AddExpenseReady) return false;
+    final current = state;
+    if (current is! AddExpenseReady) return false;
     emit(const AddExpenseSubmitting());
+
+    final dateStr =
+        '${expenseDate.year.toString().padLeft(4, '0')}-'
+        '${expenseDate.month.toString().padLeft(2, '0')}-'
+        '${expenseDate.day.toString().padLeft(2, '0')}';
+
+    final body = <String, dynamic>{
+      'name': name,
+      'amount': amount,
+      'category_id': categoryId,
+      'paid_by': paidBy,
+      'expense_date': dateStr,
+    };
+
+    if (customSplits != null) {
+      body['split_type'] = 'custom';
+      body['splits'] = customSplits;
+    } else {
+      body['split_type'] = 'equal';
+    }
+
     try {
-      await apiClient.dio.post('/groups/$groupId/expenses', data: {
-        'name': name,
-        'amount': amount,
-        'category_id': categoryId,
-        'paid_by': paidBy,
-        'expense_date':
-            '${expenseDate.year.toString().padLeft(4, '0')}-${expenseDate.month.toString().padLeft(2, '0')}-${expenseDate.day.toString().padLeft(2, '0')}',
-      });
+      await apiClient.dio.post('/groups/$groupId/expenses', data: body);
       emit(const AddExpenseSuccess());
       return true;
-    } catch (e) {
-      final ready = state;
-      // Restaurer l'état Ready pour permettre de corriger sans recharger
-      emit(ready is AddExpenseReady ? ready : const AddExpenseError('Erreur lors de la création'));
+    } catch (_) {
+      emit(current); // restaure Ready pour corriger sans recharger
       return false;
     }
   }

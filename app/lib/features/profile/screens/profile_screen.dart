@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../auth/cubit/auth_cubit.dart';
@@ -59,6 +60,15 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 24),
+              Text('Personnalisation',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              _ActionTile(
+                icon: Symbols.category_rounded,
+                label: 'Mes catégories',
+                onTap: () => context.push('/profile/categories'),
               ),
               const SizedBox(height: 24),
               Text('Compte', style: Theme.of(context).textTheme.titleMedium),

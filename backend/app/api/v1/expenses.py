@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_group_member
 from app.models.models import Category, Expense, ExpenseSplit, GroupMember, User
-from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, CategoryResponse
+from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, CategoryResponse, SplitItem
 
 router = APIRouter(prefix="/groups", tags=["expenses"])
 
@@ -79,17 +79,7 @@ async def create_expense(
     if payer_member is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payer is not a member of this group")
 
-    # Récupérer tous les membres pour la répartition égale
-    members_result = await db.execute(
-        select(GroupMember).where(GroupMember.group_id == group_id)
-    )
-    members = members_result.scalars().all()
-    n = len(members)
-
-    # Répartition égale avec gestion des centimes
     total = Decimal(str(body.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    per_person = (total / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    remainder = total - per_person * n  # peut être 0.01 ou -0.01
 
     expense = Expense(
         id=uuid.uuid4(),
@@ -103,18 +93,33 @@ async def create_expense(
     db.add(expense)
     await db.flush()
 
-    # Créer les splits — le payeur absorbe le reste d'arrondi
-    for m in members:
-        split_amount = per_person
-        if m.user_id == body.paid_by:
-            split_amount += remainder
-        split = ExpenseSplit(
-            id=uuid.uuid4(),
-            expense_id=expense.id,
-            user_id=m.user_id,
-            amount=split_amount,
+    if body.split_type == "equal":
+        # Répartition égale entre tous les membres
+        members_result = await db.execute(
+            select(GroupMember).where(GroupMember.group_id == group_id)
         )
-        db.add(split)
+        members = members_result.scalars().all()
+        n = len(members)
+        per_person = (total / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        remainder = total - per_person * n
+
+        for m in members:
+            split_amount = per_person + (remainder if m.user_id == body.paid_by else Decimal("0"))
+            db.add(ExpenseSplit(
+                id=uuid.uuid4(),
+                expense_id=expense.id,
+                user_id=m.user_id,
+                amount=split_amount,
+            ))
+    else:
+        # Répartition personnalisée — validée par le schéma Pydantic
+        for item in body.splits:  # type: ignore[union-attr]
+            db.add(ExpenseSplit(
+                id=uuid.uuid4(),
+                expense_id=expense.id,
+                user_id=item.user_id,
+                amount=Decimal(str(item.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            ))
 
     await db.flush()
 
