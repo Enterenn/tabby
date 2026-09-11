@@ -177,7 +177,6 @@ class _RecurringCard extends StatelessWidget {
     final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
     final shapes = context.tabbyShapes;
-    final semantic = context.tabbySemantic;
 
     return Card(
       child: Padding(
@@ -226,7 +225,7 @@ class _RecurringCard extends StatelessWidget {
                         suffix: ' €',
                         size: ExpressiveFigureSize.small,
                         color: item.active
-                            ? semantic.expressivePink
+                            ? cs.tertiary
                             : cs.onSurfaceVariant,
                       ),
                       Text(

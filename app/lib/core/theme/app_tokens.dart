@@ -363,9 +363,13 @@ class TabbyTypographyTokens extends ThemeExtension<TabbyTypographyTokens> {
   }
 }
 
-// ─── Couleurs sémantiques & accents Expressive ─────────────────────────────────
+// ─── Couleurs sémantiques métier ──────────────────────────────────────────────
 
-/// Tokens métier + accents saturés M3 Expressive (violet, lime, rose, jaune).
+/// Success / warning + palettes dérivées du [ColorScheme].
+///
+/// `danger*` est un alias de `ColorScheme.error*` (pas une teinte parallèle).
+/// Les couleurs de marques fidélité restent dans [LoyaltyBrand] ; le fallback
+/// hors catalogue est [brandFallback] (`secondary`).
 @immutable
 class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
   const TabbySemanticColors({
@@ -381,14 +385,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     required this.onDanger,
     required this.dangerContainer,
     required this.onDangerContainer,
-    required this.expressiveViolet,
-    required this.expressiveLime,
-    required this.expressivePink,
-    required this.expressiveYellow,
-    required this.expressiveVioletContainer,
-    required this.expressiveLimeContainer,
-    required this.expressivePinkContainer,
-    required this.expressiveYellowContainer,
+    required this.brandFallback,
     required this.categoryPalette,
     required this.chartPalette,
     required this.avatarPalette,
@@ -404,25 +401,65 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
   final Color warningContainer;
   final Color onWarningContainer;
 
+  /// Alias de [ColorScheme.error].
   final Color danger;
   final Color onDanger;
   final Color dangerContainer;
   final Color onDangerContainer;
 
-  /// Accents saturés pour actions prioritaires et badges expressifs.
-  final Color expressiveViolet;
-  final Color expressiveLime;
-  final Color expressivePink;
-  final Color expressiveYellow;
-
-  final Color expressiveVioletContainer;
-  final Color expressiveLimeContainer;
-  final Color expressivePinkContainer;
-  final Color expressiveYellowContainer;
+  /// Fallback cartes fidélité hors catalogue — [ColorScheme.secondary].
+  final Color brandFallback;
 
   final List<Color> categoryPalette;
   final List<Color> chartPalette;
   final List<Color> avatarPalette;
+
+  factory TabbySemanticColors.fromScheme(ColorScheme scheme) {
+    final isDark = scheme.brightness == Brightness.dark;
+    return TabbySemanticColors(
+      success: isDark ? AppColors.successDark : AppColors.success,
+      onSuccess: isDark ? AppColors.onSuccessDark : AppColors.onSuccessLight,
+      successContainer: isDark
+          ? AppColors.successContainerDark
+          : AppColors.successContainerLight,
+      onSuccessContainer: isDark
+          ? AppColors.onSuccessContainerDark
+          : AppColors.onSuccessContainerLight,
+      warning: isDark ? AppColors.warningDark : AppColors.warning,
+      onWarning: isDark ? AppColors.onWarningDark : AppColors.onWarningLight,
+      warningContainer: isDark
+          ? AppColors.warningContainerDark
+          : AppColors.warningContainerLight,
+      onWarningContainer: isDark
+          ? AppColors.onWarningContainerDark
+          : AppColors.onWarningContainerLight,
+      danger: scheme.error,
+      onDanger: scheme.onError,
+      dangerContainer: scheme.errorContainer,
+      onDangerContainer: scheme.onErrorContainer,
+      brandFallback: scheme.secondary,
+      categoryPalette: _paletteFrom(scheme),
+      chartPalette: _paletteFrom(scheme),
+      avatarPalette: [
+        scheme.secondary,
+        scheme.tertiary,
+        scheme.primary,
+        scheme.error,
+        scheme.primaryContainer,
+      ],
+    );
+  }
+
+  static List<Color> _paletteFrom(ColorScheme s) => [
+        s.secondary,
+        s.tertiary,
+        s.primary,
+        s.error,
+        s.secondaryContainer,
+        s.tertiaryContainer,
+        s.primaryContainer,
+        s.inversePrimary,
+      ];
 
   /// Couleur de segment / icône harmonisée au thème (indépendante du hex DB).
   Color chartColorFor(Category category) {
@@ -430,58 +467,6 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
         category.sortOrder >= 0 ? category.sortOrder : category.id.hashCode.abs();
     return chartPalette[index % chartPalette.length];
   }
-
-  static TabbySemanticColors light = TabbySemanticColors(
-    success: AppColors.success,
-    onSuccess: AppColors.onSuccessLight,
-    successContainer: AppColors.successContainerLight,
-    onSuccessContainer: AppColors.onSuccessContainerLight,
-    warning: AppColors.warning,
-    onWarning: AppColors.onWarningLight,
-    warningContainer: AppColors.warningContainerLight,
-    onWarningContainer: AppColors.onWarningContainerLight,
-    danger: AppColors.danger,
-    onDanger: AppColors.onDangerLight,
-    dangerContainer: AppColors.dangerContainerLight,
-    onDangerContainer: AppColors.onDangerContainerLight,
-    expressiveViolet: AppColors.expressiveViolet,
-    expressiveLime: AppColors.expressiveLime,
-    expressivePink: AppColors.expressivePink,
-    expressiveYellow: AppColors.expressiveYellow,
-    expressiveVioletContainer: AppColors.expressiveVioletContainerLight,
-    expressiveLimeContainer: AppColors.expressiveLimeContainerLight,
-    expressivePinkContainer: AppColors.expressivePinkContainerLight,
-    expressiveYellowContainer: AppColors.expressiveYellowContainerLight,
-    categoryPalette: AppColors.categoryPalette,
-    chartPalette: AppColors.chartPaletteLight,
-    avatarPalette: AppColors.avatarPalette,
-  );
-
-  static TabbySemanticColors dark = TabbySemanticColors(
-    success: AppColors.successDark,
-    onSuccess: AppColors.onSuccessDark,
-    successContainer: AppColors.successContainerDark,
-    onSuccessContainer: AppColors.onSuccessContainerDark,
-    warning: AppColors.warningDark,
-    onWarning: AppColors.onWarningDark,
-    warningContainer: AppColors.warningContainerDark,
-    onWarningContainer: AppColors.onWarningContainerDark,
-    danger: AppColors.dangerDark,
-    onDanger: AppColors.onDangerDark,
-    dangerContainer: AppColors.dangerContainerDark,
-    onDangerContainer: AppColors.onDangerContainerDark,
-    expressiveViolet: AppColors.expressiveVioletDark,
-    expressiveLime: AppColors.expressiveLimeDark,
-    expressivePink: AppColors.expressivePinkDark,
-    expressiveYellow: AppColors.expressiveYellowDark,
-    expressiveVioletContainer: AppColors.expressiveVioletContainerDark,
-    expressiveLimeContainer: AppColors.expressiveLimeContainerDark,
-    expressivePinkContainer: AppColors.expressivePinkContainerDark,
-    expressiveYellowContainer: AppColors.expressiveYellowContainerDark,
-    categoryPalette: AppColors.categoryPalette,
-    chartPalette: AppColors.chartPaletteDark,
-    avatarPalette: AppColors.avatarPalette,
-  );
 
   /// Retourne la couleur de solde (+/-) selon le montant.
   Color balanceColor(double amount) {
@@ -503,14 +488,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     Color? onDanger,
     Color? dangerContainer,
     Color? onDangerContainer,
-    Color? expressiveViolet,
-    Color? expressiveLime,
-    Color? expressivePink,
-    Color? expressiveYellow,
-    Color? expressiveVioletContainer,
-    Color? expressiveLimeContainer,
-    Color? expressivePinkContainer,
-    Color? expressiveYellowContainer,
+    Color? brandFallback,
     List<Color>? categoryPalette,
     List<Color>? chartPalette,
     List<Color>? avatarPalette,
@@ -528,18 +506,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
       onDanger: onDanger ?? this.onDanger,
       dangerContainer: dangerContainer ?? this.dangerContainer,
       onDangerContainer: onDangerContainer ?? this.onDangerContainer,
-      expressiveViolet: expressiveViolet ?? this.expressiveViolet,
-      expressiveLime: expressiveLime ?? this.expressiveLime,
-      expressivePink: expressivePink ?? this.expressivePink,
-      expressiveYellow: expressiveYellow ?? this.expressiveYellow,
-      expressiveVioletContainer:
-          expressiveVioletContainer ?? this.expressiveVioletContainer,
-      expressiveLimeContainer:
-          expressiveLimeContainer ?? this.expressiveLimeContainer,
-      expressivePinkContainer:
-          expressivePinkContainer ?? this.expressivePinkContainer,
-      expressiveYellowContainer:
-          expressiveYellowContainer ?? this.expressiveYellowContainer,
+      brandFallback: brandFallback ?? this.brandFallback,
       categoryPalette: categoryPalette ?? this.categoryPalette,
       chartPalette: chartPalette ?? this.chartPalette,
       avatarPalette: avatarPalette ?? this.avatarPalette,
@@ -557,29 +524,16 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
       success: lerpC(success, other.success),
       onSuccess: lerpC(onSuccess, other.onSuccess),
       successContainer: lerpC(successContainer, other.successContainer),
-      onSuccessContainer:
-          lerpC(onSuccessContainer, other.onSuccessContainer),
+      onSuccessContainer: lerpC(onSuccessContainer, other.onSuccessContainer),
       warning: lerpC(warning, other.warning),
       onWarning: lerpC(onWarning, other.onWarning),
       warningContainer: lerpC(warningContainer, other.warningContainer),
-      onWarningContainer:
-          lerpC(onWarningContainer, other.onWarningContainer),
+      onWarningContainer: lerpC(onWarningContainer, other.onWarningContainer),
       danger: lerpC(danger, other.danger),
       onDanger: lerpC(onDanger, other.onDanger),
       dangerContainer: lerpC(dangerContainer, other.dangerContainer),
       onDangerContainer: lerpC(onDangerContainer, other.onDangerContainer),
-      expressiveViolet: lerpC(expressiveViolet, other.expressiveViolet),
-      expressiveLime: lerpC(expressiveLime, other.expressiveLime),
-      expressivePink: lerpC(expressivePink, other.expressivePink),
-      expressiveYellow: lerpC(expressiveYellow, other.expressiveYellow),
-      expressiveVioletContainer:
-          lerpC(expressiveVioletContainer, other.expressiveVioletContainer),
-      expressiveLimeContainer:
-          lerpC(expressiveLimeContainer, other.expressiveLimeContainer),
-      expressivePinkContainer:
-          lerpC(expressivePinkContainer, other.expressivePinkContainer),
-      expressiveYellowContainer:
-          lerpC(expressiveYellowContainer, other.expressiveYellowContainer),
+      brandFallback: lerpC(brandFallback, other.brandFallback),
       categoryPalette: t < 0.5 ? categoryPalette : other.categoryPalette,
       chartPalette: t < 0.5 ? chartPalette : other.chartPalette,
       avatarPalette: t < 0.5 ? avatarPalette : other.avatarPalette,

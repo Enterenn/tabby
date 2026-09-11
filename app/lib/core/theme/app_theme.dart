@@ -23,66 +23,13 @@ abstract final class AppTheme {
     final isDark = brightness == Brightness.dark;
     final grad = isDark ? -25.0 : 0.0;
     final shapes = TabbyShapeTokens.standard;
-    final semantic =
-        isDark ? TabbySemanticColors.dark : TabbySemanticColors.light;
 
-    final base = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.seed,
       brightness: brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.expressive,
     );
-
-    final scheme = base.copyWith(
-      primary: isDark ? AppColors.primaryDark : AppColors.primary,
-      onPrimary: isDark ? AppColors.onPrimaryDark : AppColors.onPrimaryLight,
-      primaryContainer: isDark
-          ? AppColors.primaryContainerDark
-          : AppColors.primaryContainerLight,
-      onPrimaryContainer: isDark
-          ? AppColors.onPrimaryContainerDark
-          : AppColors.onPrimaryContainerLight,
-      secondary: isDark ? AppColors.secondaryDark : AppColors.secondary,
-      onSecondary: isDark ? AppColors.onSecondaryDark : Colors.white,
-      secondaryContainer: isDark
-          ? AppColors.secondaryContainerDark
-          : AppColors.secondaryContainerLight,
-      onSecondaryContainer: isDark
-          ? AppColors.onSecondaryContainerDark
-          : AppColors.onSecondaryContainerLight,
-      tertiary: isDark ? AppColors.tertiaryDark : AppColors.tertiary,
-      onTertiary: isDark ? AppColors.onTertiaryDark : Colors.white,
-      tertiaryContainer: isDark
-          ? AppColors.tertiaryContainerDark
-          : AppColors.tertiaryContainerLight,
-      onTertiaryContainer: isDark
-          ? AppColors.onTertiaryContainerDark
-          : AppColors.onTertiaryContainerLight,
-      error: semantic.danger,
-      onError: semantic.onDanger,
-      errorContainer: semantic.dangerContainer,
-      onErrorContainer: semantic.onDangerContainer,
-      surface: isDark ? AppColors.surfaceDark : const Color(0xFFFFFBFE),
-      onSurface: isDark ? AppColors.onSurfaceDark : const Color(0xFF1C1B1F),
-      surfaceContainerLowest: isDark
-          ? AppColors.surfaceContainerLowestDark
-          : const Color(0xFFFFFFFF),
-      surfaceContainerLow: isDark
-          ? AppColors.surfaceContainerLowDark
-          : const Color(0xFFF7F2FA),
-      surfaceContainer: isDark
-          ? AppColors.surfaceContainerDark
-          : const Color(0xFFF3EDF7),
-      surfaceContainerHigh: isDark
-          ? AppColors.surfaceContainerHighDark
-          : const Color(0xFFECE6F0),
-      surfaceContainerHighest: isDark
-          ? AppColors.surfaceContainerHighestDark
-          : const Color(0xFFE6E0E9),
-      onSurfaceVariant:
-          isDark ? const Color(0xFFCAC4D0) : const Color(0xFF49454F),
-      outline: isDark ? const Color(0xFF938F99) : const Color(0xFF79747E),
-      outlineVariant:
-          isDark ? const Color(0xFF49454F) : const Color(0xFFCAC4D0),
-    );
+    final semantic = TabbySemanticColors.fromScheme(scheme);
 
     final typography = TabbyTypographyTokens.create(scheme: scheme, grad: grad);
     final textTheme =
@@ -93,7 +40,7 @@ abstract final class AppTheme {
       colorScheme: scheme,
       fontFamily: 'GoogleSansFlex',
       textTheme: textTheme,
-      scaffoldBackgroundColor: scheme.surfaceContainerLow,
+      scaffoldBackgroundColor: scheme.surface,
       extensions: [shapes, typography, semantic],
 
       pageTransitionsTheme: const PageTransitionsTheme(
@@ -107,7 +54,7 @@ abstract final class AppTheme {
       ),
 
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surfaceContainerLow,
+        backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -124,7 +71,7 @@ abstract final class AppTheme {
 
       cardTheme: CardThemeData(
         elevation: 0,
-        color: scheme.surfaceContainerHighest,
+        color: scheme.surfaceContainerLow,
         shape: shapes.cardShape,
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -263,11 +210,12 @@ abstract final class AppTheme {
             wght: selected ? 700 : 500,
             rond: 0,
             grad: grad,
-            color: selected ? scheme.secondary : scheme.onSurfaceVariant,
+            color: selected
+                ? scheme.onSecondaryContainer
+                : scheme.onSurfaceVariant,
           );
         }),
         elevation: 0,
-        surfaceTintColor: scheme.primary,
         height: 72,
       ),
 

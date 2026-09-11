@@ -25,22 +25,28 @@ class LoyaltyCard extends Equatable {
 
   bool get isBarcode => codeType == 'barcode';
 
-  Color get flutterColor {
-    if (color == null) return AppColors.expressiveViolet;
+  Color flutterColor({Color? fallback}) {
+    final resolved = fallback ?? AppColors.seed;
+    if (color == null) return resolved;
     try {
       final hex = color!.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return AppColors.expressiveViolet;
+      return resolved;
     }
   }
 
-  LoyaltyBrand get brand {
+  LoyaltyBrand brandFor(Color fallback) {
     final known =
         LoyaltyBrand.byId(brandId) ?? LoyaltyBrand.byName(brandName);
     if (known != null) return known;
-    return LoyaltyBrand.custom(name: brandName, color: flutterColor);
+    return LoyaltyBrand.custom(
+      name: brandName,
+      color: flutterColor(fallback: fallback),
+    );
   }
+
+  LoyaltyBrand get brand => brandFor(AppColors.seed);
 
   String get heroTag => 'loyalty-card-$id';
 
