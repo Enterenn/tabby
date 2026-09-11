@@ -128,6 +128,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     double? amount,
     String? categoryId,
     String? paidBy,
+    DateTime? expenseDate,
   }) async {
     final prev = state as GroupDetailLoaded?;
     if (prev == null) return null;
@@ -137,6 +138,10 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
       if (amount != null) data['amount'] = amount;
       if (categoryId != null) data['category_id'] = categoryId;
       if (paidBy != null) data['paid_by'] = paidBy;
+      if (expenseDate != null) {
+        data['expense_date'] =
+            '${expenseDate.year}-${expenseDate.month.toString().padLeft(2, '0')}-${expenseDate.day.toString().padLeft(2, '0')}';
+      }
 
       final res = await _dio.patch(
         '/groups/$_groupId/expenses/$expenseId',

@@ -185,8 +185,10 @@ class _CategoryManagementScreenState
                             color: cat.flutterColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(cat.flutterIcon,
-                              color: cat.flutterColor, size: 20),
+                          child: Center(
+                            child: cat.iconWidget(
+                                size: 20, color: cat.flutterColor),
+                          ),
                         ),
                         title: Text(cat.name),
                         trailing: IconButton(

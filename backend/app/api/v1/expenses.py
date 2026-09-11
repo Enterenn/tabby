@@ -173,6 +173,8 @@ async def update_expense(
         if payer_member is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payer is not a member")
         expense.paid_by = body.paid_by
+    if body.expense_date is not None:
+        expense.expense_date = body.expense_date
     if body.amount is not None:
         from decimal import Decimal, ROUND_HALF_UP
         new_amount = Decimal(str(body.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

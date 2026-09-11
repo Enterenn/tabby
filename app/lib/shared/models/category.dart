@@ -14,7 +14,7 @@ class Category extends Equatable {
 
   final String id;
   final String name;
-  /// Nom de l'icône tel que stocké en base (ex. 'home', 'shopping_cart').
+  /// Emoji ou nom d'icône legacy (ex. '🏠' ou 'home').
   final String icon;
   /// Couleur hex (ex. '#E67E22').
   final String color;
@@ -35,7 +35,18 @@ class Category extends Equatable {
     return Color(int.parse('FF$code', radix: 16));
   }
 
+  /// True si le champ icon contient un emoji (non-ASCII).
+  bool get isEmoji => !_iconMap.containsKey(icon);
+
   IconData get flutterIcon => _iconMap[icon] ?? Symbols.category_rounded;
+
+  /// Widget à afficher partout pour l'icône : emoji ou Material icon.
+  Widget iconWidget({double size = 20, Color? color}) {
+    if (isEmoji) {
+      return Text(icon, style: TextStyle(fontSize: size * 1.1));
+    }
+    return Icon(flutterIcon, size: size, color: color);
+  }
 
   static const _iconMap = <String, IconData>{
     'home': Symbols.home_rounded,
@@ -46,7 +57,6 @@ class Category extends Equatable {
     'subscriptions': Symbols.subscriptions_rounded,
     'local_hospital': Symbols.local_hospital_rounded,
     'category': Symbols.category_rounded,
-    // catégories custom futures
     'pets': Symbols.pets_rounded,
     'school': Symbols.school_rounded,
     'flight': Symbols.flight_rounded,

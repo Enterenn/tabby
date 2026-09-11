@@ -117,6 +117,14 @@ class _LoadedBody extends StatelessWidget {
               ),
             ),
           ),
+          // Total des dépenses
+          if (expenses.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: _TotalCard(expenses: expenses),
+              ),
+            ),
           // ── 1. Dépenses ──────────────────────────────────────────────────
           _SectionHeader(
             title: expenses.isEmpty
@@ -647,18 +655,19 @@ class _ExpenseTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              // Icône catégorie
+              // Icône / emoji catégorie
               Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: cs.surfaceContainer,
+                  color: expense.category.flutterColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  _iconData(expense.category.icon),
-                  color: cs.primary,
-                  size: 22,
+                child: Center(
+                  child: expense.category.iconWidget(
+                    size: 22,
+                    color: expense.category.flutterColor,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -751,19 +760,43 @@ class _ExpenseTile extends StatelessWidget {
     );
   }
 
-  IconData _iconData(String? iconName) {
-    return switch (iconName) {
-      'restaurant' => Symbols.restaurant_rounded,
-      'home' => Symbols.home_rounded,
-      'directions_car' => Symbols.directions_car_rounded,
-      'local_grocery_store' => Symbols.local_grocery_store_rounded,
-      'sports_esports' => Symbols.sports_esports_rounded,
-      'flight' => Symbols.flight_rounded,
-      'local_hospital' => Symbols.local_hospital_rounded,
-      'shopping_bag' => Symbols.shopping_bag_rounded,
-      'payments' => Symbols.payments_rounded,
-      _ => Symbols.receipt_long_rounded,
-    };
+}
+
+// ─── Total card ───────────────────────────────────────────────────────────────
+
+class _TotalCard extends StatelessWidget {
+  const _TotalCard({required this.expenses});
+  final List<Expense> expenses;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+
+    return Card(
+      color: cs.primaryContainer.withValues(alpha: 0.4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(Symbols.receipt_long_rounded,
+                size: 20, color: cs.primary),
+            const SizedBox(width: 10),
+            Text('Total des dépenses',
+                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            const Spacer(),
+            Text(
+              '${total.toStringAsFixed(2)} €',
+              style: tt.titleMedium?.copyWith(
+                color: cs.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -787,6 +820,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _amountCtrl;
   late String _paidBy;
+  late DateTime _date;
   bool _loading = false;
 
   @override
@@ -796,6 +830,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     _amountCtrl = TextEditingController(
         text: widget.expense.amount.toStringAsFixed(2));
     _paidBy = widget.expense.paidBy;
+    _date = widget.expense.expenseDate;
   }
 
   @override
@@ -805,9 +840,22 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     super.dispose();
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _date = picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+    final dateLabel =
+        '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
 
     return AlertDialog(
       title: const Text('Modifier la dépense'),
@@ -844,6 +892,28 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
                   .toList(),
               onChanged: (v) => setState(() => _paidBy = v ?? _paidBy),
             ),
+            const SizedBox(height: 12),
+            Text('Date', style: tt.labelMedium),
+            const SizedBox(height: 6),
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Symbols.calendar_month_rounded,
+                        size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Text(dateLabel, style: tt.bodyMedium),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -877,6 +947,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
       name: name,
       amount: amount,
       paidBy: _paidBy,
+      expenseDate: _date,
     );
     if (!mounted) return;
     setState(() => _loading = false);

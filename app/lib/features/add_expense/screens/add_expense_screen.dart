@@ -335,18 +335,18 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                                 color: cs.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(Symbols.calendar_month_rounded,
-                                      size: 18,
-                                      color: cs.onSurfaceVariant),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}',
-                                    style: tt.bodyMedium,
-                                  ),
-                                ],
+                          child: Row(
+                            children: [
+                              Icon(Symbols.calendar_month_rounded,
+                                  size: 18,
+                                  color: cs.onSurfaceVariant),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
+                                style: tt.bodyMedium,
                               ),
+                            ],
+                          ),
                             ),
                           ),
                         ],
@@ -615,11 +615,9 @@ class _CategoryGrid extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  c.flutterIcon,
+                c.iconWidget(
                   size: 18,
                   color: isSelected ? c.flutterColor : cs.onSurfaceVariant,
-                  fill: isSelected ? 1 : 0,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -744,20 +742,44 @@ class _CreateCategorySheet extends StatefulWidget {
 
 class _CreateCategorySheetState extends State<_CreateCategorySheet> {
   final _nameCtrl = TextEditingController();
-  String _selectedIcon = 'category';
+  final _emojiCtrl = TextEditingController();
+  String _selectedEmoji = '📦';
   Color _selectedColor = AppColors.categoryPalette[0];
   bool _loading = false;
 
-  static const _icons = [
-    'pets', 'school', 'flight', 'hotel', 'fitness_center', 'phone',
-    'shopping_bag', 'local_gas_station', 'home', 'shopping_cart',
-    'restaurant', 'directions_car', 'sports_esports', 'subscriptions',
-    'local_hospital', 'category',
+  // Palette d'emojis proposés, groupés par thème
+  static const _emojis = [
+    // Nourriture & boissons
+    '🍕', '🍔', '🍜', '🍣', '🍱', '🥗', '🌮', '🍳',
+    '☕', '🧃', '🍺', '🍷', '🧁', '🍰', '🍫', '🧇',
+    // Transport
+    '🚗', '✈️', '🚂', '🛵', '🚲', '🚕', '⛽', '🛳️',
+    // Maison & vie
+    '🏠', '🛒', '💡', '🛋️', '🔑', '🪴', '🧹', '🚿',
+    // Shopping
+    '👗', '👟', '💄', '🎁', '👜', '🕶️', '⌚', '💍',
+    // Santé & sport
+    '💊', '🏥', '🧘', '🏋️', '⚽', '🎾', '🏊', '🚴',
+    // Divertissement
+    '🎮', '🎬', '🎵', '🎧', '📚', '🎨', '🎤', '🎭',
+    // Tech & travail
+    '💻', '📱', '💼', '📞', '🖥️', '🖨️', '⌨️', '🖱️',
+    // Animaux
+    '🐾', '🐶', '🐱', '🐠', '🐇', '🦜', '🐾', '🌿',
+    // Divers
+    '🎓', '🏨', '📺', '💰', '🌍', '🎪', '🏖️', '📦',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _emojiCtrl.text = _selectedEmoji;
+  }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _emojiCtrl.dispose();
     super.dispose();
   }
 
@@ -773,7 +795,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
     final cat = await context.read<AddExpenseCubit>().createCategory(
           groupId: widget.groupId,
           name: name,
-          icon: _selectedIcon,
+          icon: _selectedEmoji,
           color: _colorToHex(_selectedColor),
         );
     if (mounted) {
@@ -825,20 +847,16 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(14),
+                  color: _selectedColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: _selectedColor, width: 2),
                 ),
-                child: Icon(
-                  Category(
-                    id: '', name: '', icon: _selectedIcon,
-                    color: '', isDefault: false, sortOrder: 0,
-                  ).flutterIcon,
-                  color: _selectedColor,
-                  size: 24,
+                child: Center(
+                  child: Text(_selectedEmoji,
+                      style: const TextStyle(fontSize: 26)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -855,36 +873,70 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
 
           const SizedBox(height: 20),
 
-          // Icône
-          Text('Icône', style: tt.titleSmall),
-          const SizedBox(height: 8),
+          // Champ emoji libre + grille de suggestions
+          Row(
+            children: [
+              Text('Emoji', style: tt.titleSmall),
+              const Spacer(),
+              SizedBox(
+                width: 80,
+                child: TextField(
+                  controller: _emojiCtrl,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 22),
+                  maxLength: 2,
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '📦',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 8),
+                    filled: true,
+                    fillColor: cs.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onChanged: (v) {
+                    if (v.isNotEmpty) setState(() => _selectedEmoji = v.trim());
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _icons.map((icon) {
-              final isSelected = icon == _selectedIcon;
+            spacing: 6,
+            runSpacing: 6,
+            children: _emojis.map((e) {
+              final isSelected = e == _selectedEmoji;
               return GestureDetector(
-                onTap: () => setState(() => _selectedIcon = icon),
-                child: Container(
-                  width: 44,
-                  height: 44,
+                onTap: () {
+                  setState(() => _selectedEmoji = e);
+                  _emojiCtrl.text = e;
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? _selectedColor.withValues(alpha: 0.15)
+                        ? _selectedColor.withValues(alpha: 0.18)
                         : cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isSelected ? _selectedColor : Colors.transparent,
+                      color:
+                          isSelected ? _selectedColor : Colors.transparent,
                       width: 2,
                     ),
                   ),
-                  child: Icon(
-                    Category(
-                      id: '', name: '', icon: icon,
-                      color: '', isDefault: false, sortOrder: 0,
-                    ).flutterIcon,
-                    size: 22,
-                    color: isSelected ? _selectedColor : cs.onSurfaceVariant,
+                  child: Center(
+                    child: Text(e, style: const TextStyle(fontSize: 20)),
                   ),
                 ),
               );
@@ -928,7 +980,8 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
             onPressed: _loading ? null : _submit,
             child: _loading
                 ? const SizedBox(
-                    height: 18, width: 18,
+                    height: 18,
+                    width: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text('Créer la catégorie'),

@@ -64,6 +64,7 @@ class ExpenseUpdate(BaseModel):
     amount: float | None = None
     category_id: uuid.UUID | None = None
     paid_by: uuid.UUID | None = None
+    expense_date: date | None = None
 
 
 class ExpenseResponse(BaseModel):
