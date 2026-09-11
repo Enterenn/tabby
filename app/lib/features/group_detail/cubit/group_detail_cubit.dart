@@ -122,6 +122,40 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     }
   }
 
+  Future<String?> updateExpense({
+    required String expenseId,
+    String? name,
+    double? amount,
+    String? categoryId,
+    String? paidBy,
+  }) async {
+    final prev = state as GroupDetailLoaded?;
+    if (prev == null) return null;
+    try {
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (amount != null) data['amount'] = amount;
+      if (categoryId != null) data['category_id'] = categoryId;
+      if (paidBy != null) data['paid_by'] = paidBy;
+
+      final res = await _dio.patch(
+        '/groups/$_groupId/expenses/$expenseId',
+        data: data,
+      );
+      final updated = Expense.fromJson(res.data as Map<String, dynamic>);
+      final expenses = prev.expenses.map((e) => e.id == expenseId ? updated : e).toList();
+      // Recalcule les balances
+      final balRes = await _dio.get('/groups/$_groupId/balances');
+      final balances = (balRes.data as List)
+          .map((e) => BalanceEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+      emit(prev.copyWith(expenses: expenses, balances: balances));
+      return null;
+    } catch (e) {
+      return _errorMessage(e);
+    }
+  }
+
   Future<String?> deleteExpense(String expenseId) async {
     final prev = state as GroupDetailLoaded?;
     if (prev == null) return null;

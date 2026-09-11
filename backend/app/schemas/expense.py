@@ -59,6 +59,13 @@ class ExpenseCreate(BaseModel):
         return self
 
 
+class ExpenseUpdate(BaseModel):
+    name: str | None = None
+    amount: float | None = None
+    category_id: uuid.UUID | None = None
+    paid_by: uuid.UUID | None = None
+
+
 class ExpenseResponse(BaseModel):
     id: str
     name: str

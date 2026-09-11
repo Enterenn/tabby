@@ -97,9 +97,26 @@ class _LoadedBody extends StatelessWidget {
     final me = tokenStorage.userId ?? '';
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await context.push('/add-expense?groupId=${group.id}');
+          if (context.mounted) context.read<GroupDetailCubit>().load();
+        },
+        child: const Icon(Symbols.add_rounded),
+      ),
       body: CustomScrollView(
         slivers: [
           _GroupSliverAppBar(group: group),
+          // Avatars chevauchants sous l'AppBar
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: _AvatarStack(
+                names: group.members.map((m) => m.user.name).toList(),
+                containerColor: Theme.of(context).colorScheme.surfaceContainerLow,
+              ),
+            ),
+          ),
           // ── 1. Dépenses ──────────────────────────────────────────────────
           _SectionHeader(
             title: expenses.isEmpty
@@ -213,9 +230,14 @@ class _GroupSliverAppBar extends StatelessWidget {
 
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 120,
       backgroundColor: cs.surfaceContainerLow,
       foregroundColor: cs.onSurface,
+      title: Text(
+        group.name,
+        style: tt.headlineSmall?.copyWith(color: cs.onSurface),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       actions: [
         IconButton(
           icon: const Icon(Symbols.more_vert_rounded),
@@ -223,25 +245,6 @@ class _GroupSliverAppBar extends StatelessWidget {
           onPressed: () => _showGroupActions(context),
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.fromLTRB(16, 0, 56, 16),
-        title: Text(
-          group.name,
-          style: tt.headlineSmall?.copyWith(color: cs.onSurface),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        background: Align(
-          alignment: Alignment.bottomLeft,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 52),
-            child: _AvatarStack(
-              names: group.members.map((m) => m.user.name).toList(),
-              containerColor: cs.surfaceContainerLow,
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -691,29 +694,36 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   void _showExpenseActions(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final cubit = context.read<GroupDetailCubit>();
+    final state = cubit.state as GroupDetailLoaded;
+
     showModalBottomSheet(
       context: context,
       builder: (_) => BlocProvider.value(
-        value: context.read<GroupDetailCubit>(),
+        value: cubit,
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 16),
               ListTile(
-                leading: Icon(Symbols.delete_rounded,
-                    color: Theme.of(context).colorScheme.error),
-                title: Text(
-                  'Supprimer la dépense',
-                  style: TextStyle(
-                      color: Theme.of(context).colorScheme.error),
-                ),
+                leading: const Icon(Symbols.edit_rounded),
+                title: const Text('Modifier la dépense'),
+                subtitle: Text(expense.name),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showEditDialog(context, state, cubit);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(Symbols.delete_rounded, color: cs.error),
+                title: Text('Supprimer', style: TextStyle(color: cs.error)),
                 subtitle: Text(expense.name),
                 onTap: () async {
                   Navigator.pop(context);
-                  final err = await context
-                      .read<GroupDetailCubit>()
-                      .deleteExpense(expense.id);
+                  final err = await cubit.deleteExpense(expense.id);
                   if (!context.mounted) return;
                   if (err != null) {
                     ScaffoldMessenger.of(context)
@@ -725,6 +735,18 @@ class _ExpenseTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showEditDialog(
+      BuildContext context, GroupDetailLoaded state, GroupDetailCubit cubit) {
+    showDialog(
+      context: context,
+      builder: (ctx) => _EditExpenseDialog(
+        expense: expense,
+        members: state.group.members,
+        cubit: cubit,
       ),
     );
   }
@@ -742,6 +764,127 @@ class _ExpenseTile extends StatelessWidget {
       'payments' => Symbols.payments_rounded,
       _ => Symbols.receipt_long_rounded,
     };
+  }
+}
+
+// ─── Edit expense dialog ──────────────────────────────────────────────────────
+
+class _EditExpenseDialog extends StatefulWidget {
+  const _EditExpenseDialog({
+    required this.expense,
+    required this.members,
+    required this.cubit,
+  });
+  final Expense expense;
+  final List<GroupMember> members;
+  final GroupDetailCubit cubit;
+
+  @override
+  State<_EditExpenseDialog> createState() => _EditExpenseDialogState();
+}
+
+class _EditExpenseDialogState extends State<_EditExpenseDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _amountCtrl;
+  late String _paidBy;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.expense.name);
+    _amountCtrl = TextEditingController(
+        text: widget.expense.amount.toStringAsFixed(2));
+    _paidBy = widget.expense.paidBy;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+
+    return AlertDialog(
+      title: const Text('Modifier la dépense'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: 'Description'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _amountCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Montant',
+                suffixText: '€',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text('Payé par', style: tt.labelMedium),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<String>(
+              value: _paidBy,
+              decoration: const InputDecoration(),
+              items: widget.members
+                  .map((m) => DropdownMenuItem(
+                        value: m.user.id,
+                        child: Text(m.user.name),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _paidBy = v ?? _paidBy),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: const Text('Annuler'),
+        ),
+        FilledButton(
+          onPressed: _loading ? null : _submit,
+          child: _loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Enregistrer'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
+    if (name.isEmpty || amount == null || amount <= 0) return;
+
+    setState(() => _loading = true);
+    final err = await widget.cubit.updateExpense(
+      expenseId: widget.expense.id,
+      name: name,
+      amount: amount,
+      paidBy: _paidBy,
+    );
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    } else {
+      Navigator.pop(context);
+    }
   }
 }
 

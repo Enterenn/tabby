@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_group_member
 from app.models.models import Category, Expense, ExpenseSplit, GroupMember, User
-from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, CategoryResponse, SplitItem
+from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, ExpenseUpdate, CategoryResponse, SplitItem
 
 router = APIRouter(prefix="/groups", tags=["expenses"])
 
@@ -135,6 +135,68 @@ async def create_expense(
     )
     expense = result.scalar_one()
     return _to_response(expense)
+
+
+@router.patch(
+    "/{group_id}/expenses/{expense_id}",
+    response_model=ExpenseResponse,
+)
+async def update_expense(
+    group_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    body: ExpenseUpdate,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+):
+    expense = await db.execute(
+        select(Expense)
+        .where(Expense.id == expense_id, Expense.group_id == group_id)
+        .options(
+            selectinload(Expense.category),
+            selectinload(Expense.paid_by_user),
+            selectinload(Expense.splits),
+        )
+    )
+    expense = expense.scalar_one_or_none()
+    if expense is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
+
+    if body.name is not None:
+        expense.name = body.name.strip()
+    if body.category_id is not None:
+        category = await db.get(Category, body.category_id)
+        if category is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+        expense.category_id = body.category_id
+    if body.paid_by is not None:
+        payer_member = await db.get(GroupMember, (group_id, body.paid_by))
+        if payer_member is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payer is not a member")
+        expense.paid_by = body.paid_by
+    if body.amount is not None:
+        from decimal import Decimal, ROUND_HALF_UP
+        new_amount = Decimal(str(body.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        expense.amount = new_amount
+        # Recalcule la répartition égale avec le nouveau montant
+        n = len(expense.splits)
+        if n > 0:
+            per_person = (new_amount / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            remainder = new_amount - per_person * n
+            for i, split in enumerate(expense.splits):
+                split.amount = per_person + (remainder if i == 0 else Decimal("0"))
+
+    await db.flush()
+
+    result = await db.execute(
+        select(Expense)
+        .where(Expense.id == expense_id)
+        .options(
+            selectinload(Expense.category),
+            selectinload(Expense.paid_by_user),
+            selectinload(Expense.splits),
+        )
+    )
+    return _to_response(result.scalar_one())
 
 
 @router.delete(
