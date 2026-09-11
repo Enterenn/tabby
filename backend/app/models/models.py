@@ -49,12 +49,12 @@ class Group(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
-    members: Mapped[list["GroupMember"]] = relationship(back_populates="group")
-    categories: Mapped[list["Category"]] = relationship(back_populates="group")
-    expenses: Mapped[list["Expense"]] = relationship(back_populates="group")
-    recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="group")
-    budgets: Mapped[list["Budget"]] = relationship(back_populates="group")
-    invites: Mapped[list["GroupInvite"]] = relationship(back_populates="group")
+    members: Mapped[list["GroupMember"]] = relationship(back_populates="group", passive_deletes=True)
+    categories: Mapped[list["Category"]] = relationship(back_populates="group", passive_deletes=True)
+    expenses: Mapped[list["Expense"]] = relationship(back_populates="group", passive_deletes=True)
+    recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="group", passive_deletes=True)
+    budgets: Mapped[list["Budget"]] = relationship(back_populates="group", passive_deletes=True)
+    invites: Mapped[list["GroupInvite"]] = relationship(back_populates="group", passive_deletes=True)
 
 
 class GroupMember(Base):

@@ -148,6 +148,7 @@ async def delete_group(
     if group is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
     await db.delete(group)
+    await db.flush()  # Remonte les erreurs FK avant l'envoi du 204
 
 
 @router.post("/{group_id}/invite", response_model=InviteResponse)
@@ -331,6 +332,7 @@ async def leave_group(
     membership = await db.get(GroupMember, (group_id, current_user.id))
     if membership:
         await db.delete(membership)
+        await db.flush()
 
 
 @router.delete("/{group_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
