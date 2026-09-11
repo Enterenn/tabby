@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/theme/app_colors.dart';
 
@@ -10,12 +11,14 @@ class MainScaffold extends StatelessWidget {
 
   static const _paths = ['/home', '/budget', '/add-expense', '/cards', '/profile'];
   static const _labels = ['Home', 'Budget', 'Add', 'Cards', 'Profil'];
+
+  // Material Symbols — rounded style, fill géré par le thème
   static const _icons = [
-    Icons.home_rounded,
-    Icons.savings_rounded,
-    Icons.add_rounded,
-    Icons.credit_card_rounded,
-    Icons.person_rounded,
+    Symbols.home_rounded,
+    Symbols.savings_rounded,
+    Symbols.add_rounded,
+    Symbols.credit_card_rounded,
+    Symbols.person_rounded,
   ];
 
   int _currentIndex(BuildContext context) {
@@ -36,7 +39,7 @@ class MainScaffold extends StatelessWidget {
         destinations: List.generate(_paths.length, (i) {
           final isAdd = _paths[i] == '/add-expense';
           if (isAdd) {
-            // Bouton central M3 — FloatingActionButton-like dans la nav bar
+            // Bouton central : pill M3 avec couleur primaire de marque
             return NavigationDestination(
               icon: Container(
                 width: 56,
@@ -49,6 +52,7 @@ class MainScaffold extends StatelessWidget {
                   _icons[i],
                   color: const Color(0xFF2E2A22),
                   size: 20,
+                  fill: 1,
                 ),
               ),
               label: _labels[i],

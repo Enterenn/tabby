@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
 
@@ -112,7 +113,7 @@ class _InviteScreenState extends State<InviteScreen> {
               const SizedBox(height: 40),
               OutlinedButton.icon(
                 onPressed: _generateCode,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(Symbols.refresh_rounded),
                 label: const Text('Générer un nouveau code'),
               ),
             ],

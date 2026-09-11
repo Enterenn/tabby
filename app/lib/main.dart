@@ -10,6 +10,7 @@ import 'features/auth/cubit/auth_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  AppTheme.configureSymbols();
   await initTokenStorage();
   runApp(const TabbyApp());
 }

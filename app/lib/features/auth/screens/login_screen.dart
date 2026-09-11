@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../cubit/auth_cubit.dart';
 
@@ -79,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Mot de passe',
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscure ? Icons.visibility_off : Icons.visibility,
+                          _obscure ? Symbols.visibility_off_rounded : Symbols.visibility_rounded,
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),

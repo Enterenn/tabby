@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:material_symbols_icons/symbols.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../cubit/home_cubit.dart';
@@ -72,9 +74,10 @@ class _HomeView extends StatelessWidget {
                       child: Column(
                         children: [
                           Icon(
-                            Icons.group_outlined,
+                            Symbols.group_rounded,
                             size: 64,
                             color: cs.outlineVariant,
+                            fill: 0,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -101,7 +104,7 @@ class _HomeView extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => context.push('/groups/create'),
-                          icon: const Icon(Icons.add_rounded, size: 18),
+                          icon: const Icon(Symbols.add_rounded, size: 18),
                           label: const Text('Créer'),
                         ),
                       ),
@@ -109,7 +112,7 @@ class _HomeView extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => context.push('/groups/join'),
-                          icon: const Icon(Icons.person_add_rounded, size: 18),
+                          icon: const Icon(Symbols.person_add_rounded, size: 18),
                           label: const Text('Rejoindre'),
                         ),
                       ),

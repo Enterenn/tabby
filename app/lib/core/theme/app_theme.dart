@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import 'app_colors.dart';
 
 abstract final class AppTheme {
   static ThemeData get light => _build(Brightness.light);
   static ThemeData get dark => _build(Brightness.dark);
+
+  /// À appeler une seule fois dans main() avant runApp().
+  static void configureSymbols() {
+    // Rounded — fill=0 par défaut, weight=400, opsz=24
+    MaterialSymbolsBase.setRoundedVariationDefaults(
+      fill: 0,
+      weight: 400,
+      grade: 0,
+      opticalSize: 24,
+    );
+  }
 
   static ThemeData _build(Brightness brightness) {
     // M3 génère toute la palette tonale depuis la couleur de marque.
@@ -107,15 +119,23 @@ abstract final class AppTheme {
         floatingLabelStyle: GoogleFonts.figtree(color: scheme.primary),
       ),
 
-      // NavigationBar M3
+      // NavigationBar M3 — Symbols filled quand sélectionné, outlined sinon
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surfaceContainer,
         indicatorColor: scheme.primaryContainer,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return IconThemeData(color: scheme.onPrimaryContainer);
+            return IconThemeData(
+              color: scheme.onPrimaryContainer,
+              fill: 1,  // icône remplie = état actif (M3 Symbols)
+              weight: 600,
+            );
           }
-          return IconThemeData(color: scheme.onSurfaceVariant);
+          return IconThemeData(
+            color: scheme.onSurfaceVariant,
+            fill: 0,  // icône outline = état inactif
+            weight: 400,
+          );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final base = GoogleFonts.figtree(fontSize: 11);
