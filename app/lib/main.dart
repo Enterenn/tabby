@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api/token_storage.dart';
+import 'shared/models/loyalty_prefix_store.dart';
 import 'core/router/app_router.dart';
 import 'core/services/fcm_service.dart';
 import 'core/theme/app_theme.dart';
@@ -20,6 +21,7 @@ void main() async {
   AppTheme.configureSymbols();
   await initializeDateFormatting('fr_FR');
   await initTokenStorage();
+  await LoyaltyPrefixStore.load();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   Animate.restartOnHotReload = true;

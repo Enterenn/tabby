@@ -226,14 +226,9 @@ class _HomeHeroBanner extends StatelessWidget {
 
     return ExpressiveHeroBanner(
       label: 'Solde global',
-      value: netBalance.abs().toStringAsFixed(2),
+      amount: netBalance,
       suffix: ' €',
-      subtitle: netBalance.abs() < 0.01
-          ? '$subtitle · tout est réglé'
-          : netBalance > 0
-              ? '$subtitle · on te doit'
-              : '$subtitle · tu dois',
-      variant: ExpressiveTonalVariant.violet,
+      subtitle: subtitle,
       accentIcon: Symbols.account_balance_wallet_rounded,
       margin: const EdgeInsets.fromLTRB(0, 8, 0, 12),
     )

@@ -55,7 +55,19 @@ class GroupDetailLeft extends GroupDetailState {}
 // ─── Cubit ───────────────────────────────────────────────────────────────────
 
 class GroupDetailCubit extends Cubit<GroupDetailState> {
-  GroupDetailCubit(this._groupId) : super(GroupDetailInitial());
+  static GroupDetailCubit? _active;
+
+  GroupDetailCubit(this._groupId) : super(GroupDetailInitial()) {
+    _active = this;
+  }
+
+  static void refreshIfActive() => _active?.load();
+
+  @override
+  Future<void> close() {
+    if (_active == this) _active = null;
+    return super.close();
+  }
 
   final String _groupId;
   final _dio = apiClient.dio;

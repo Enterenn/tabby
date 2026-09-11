@@ -8,9 +8,11 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/loyalty_brand.dart';
 import '../../../shared/models/loyalty_card.dart';
+import '../../../shared/models/loyalty_prefix_store.dart';
 import '../../../shared/models/loyalty_scan.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/widgets/loyalty/loyalty_card_face.dart';
+import '../../../shared/widgets/loyalty/loyalty_wallet_stack.dart';
 import '../../../shared/widgets/tabby_sheet.dart';
 import '../cubit/cards_cubit.dart';
 
@@ -87,7 +89,7 @@ class _CardsView extends StatelessWidget {
             CardsLoaded(:final cards) => Column(
                 children: [
                   Expanded(
-                    child: cards.length <= 4
+                    child: cards.length <= 8
                         ? SingleChildScrollView(
                             padding: EdgeInsets.fromLTRB(
                               LoyaltyCardLayout.screenHorizontalInset,
@@ -100,6 +102,8 @@ class _CardsView extends StatelessWidget {
                               onTapCard: (c) => _openFullScreen(context, c),
                               onLongPressCard: (c) =>
                                   _showActions(context, c, cards),
+                              onReorder: (list) =>
+                                  context.read<CardsCubit>().reorder(list),
                             ),
                           )
                         : ReorderableListView.builder(
@@ -535,6 +539,7 @@ class _AddCardSheet extends StatefulWidget {
 
 class _AddCardSheetState extends State<_AddCardSheet> {
   final _nameCtrl = TextEditingController();
+  final _brandSearchCtrl = TextEditingController();
   String _codeValue = '';
   String _codeType = 'barcode'; // 'barcode' | 'qrcode'
   late Color _selectedColor;
@@ -556,9 +561,29 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    LoyaltyPrefixStore.load();
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
+    _brandSearchCtrl.dispose();
     super.dispose();
+  }
+
+  List<LoyaltyBrand> get _filteredBrands {
+    final q = _brandSearchCtrl.text.trim().toLowerCase();
+    if (q.isEmpty) return LoyaltyBrand.catalog;
+    return LoyaltyBrand.catalog.where((b) {
+      if (b.name.toLowerCase().contains(q)) return true;
+      if (b.id.contains(q)) return true;
+      for (final h in b.qrHints) {
+        if (h.toLowerCase().contains(q)) return true;
+      }
+      return false;
+    }).toList();
   }
 
   String _colorToHex(Color c) =>
@@ -566,14 +591,19 @@ class _AddCardSheetState extends State<_AddCardSheet> {
       '${c.g.round().toRadixString(16).padLeft(2, '0')}'
       '${c.b.round().toRadixString(16).padLeft(2, '0')}';
 
-  void _selectBrand(LoyaltyBrand brand) {
+  Future<void> _selectBrand(LoyaltyBrand brand) async {
+    if (_codeValue.isNotEmpty && _codeType == 'barcode') {
+      await LoyaltyPrefixStore.learn(_codeValue, brand.id);
+    }
+    if (!mounted) return;
     setState(() {
       _customBrand = false;
       _brandId = brand.id;
       _nameCtrl.text = brand.name;
       _selectedColor = brand.primary;
-      _brandAutoDetected = false;
+      _brandAutoDetected = _codeValue.isNotEmpty;
       _showBrandPicker = false;
+      _brandSearchCtrl.clear();
     });
   }
 
@@ -601,10 +631,11 @@ class _AddCardSheetState extends State<_AddCardSheet> {
         _brandAutoDetected = true;
         _showBrandPicker = false;
       } else {
-        _customBrand = true;
+        _customBrand = false;
         _brandId = null;
         _brandAutoDetected = false;
         _nameCtrl.clear();
+        _brandSearchCtrl.clear();
         _showBrandPicker = true;
       }
     });
@@ -766,19 +797,41 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                       ExpressiveSheetSection(
                         label: _brandAutoDetected
                             ? 'Enseigne'
-                            : 'Enseigne non reconnue — choisis-la',
+                            : 'Enseigne non reconnue',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            Text(
+                              'Le code-barres ne contient pas le nom du magasin. '
+                              'Cherche l\'enseigne ci-dessous — on retiendra ce code '
+                              'pour les prochains scans.',
+                              style: tt.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _brandSearchCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: InputDecoration(
+                                hintText: 'Ex. Animalis, Picard…',
+                                prefixIcon: Icon(
+                                  Symbols.search_rounded,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                            const SizedBox(height: 12),
                             SizedBox(
-                              height: 88,
+                              height: 96,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
-                                itemCount: LoyaltyBrand.catalog.length + 1,
+                                itemCount: _filteredBrands.length + 1,
                                 separatorBuilder: (_, _) =>
                                     const SizedBox(width: 10),
                                 itemBuilder: (context, i) {
-                                  if (i == LoyaltyBrand.catalog.length) {
+                                  if (i == _filteredBrands.length) {
                                     return _BrandPickerTile(
                                       label: 'Autre',
                                       monogram: '+',
@@ -787,7 +840,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                                       onTap: _selectCustomBrand,
                                     );
                                   }
-                                  final brand = LoyaltyBrand.catalog[i];
+                                  final brand = _filteredBrands[i];
                                   return _BrandPickerTile(
                                     label: brand.name,
                                     monogram: brand.monogram.isEmpty

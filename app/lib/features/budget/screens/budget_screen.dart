@@ -99,7 +99,7 @@ class _BudgetContent extends StatelessWidget {
               value: state.stats.total.toStringAsFixed(2),
               suffix: ' €',
               subtitle: state.stats.monthLabel,
-              variant: ExpressiveTonalVariant.lime,
+              variant: ExpressiveTonalVariant.neutral,
               accentIcon: Symbols.payments_rounded,
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             ),

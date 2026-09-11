@@ -52,7 +52,7 @@ class _GroupCardState extends State<GroupCard> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: cs.secondaryContainer.withValues(alpha: 0.55),
+                  color: cs.secondaryContainer,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(shapes.cornerExtraLarge),
                   ),
@@ -60,13 +60,6 @@ class _GroupCardState extends State<GroupCard> {
                 padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
                 child: Row(
                   children: [
-                    ExpressiveAvatar(
-                      label: group.name,
-                      size: 42,
-                      color: cs.secondary,
-                      textColor: cs.onSecondary,
-                    ),
-                    const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         group.name,
@@ -133,8 +126,8 @@ class _AddExpenseButton extends StatelessWidget {
     final shapes = context.tabbyShapes;
     return FilledButton.tonal(
       style: FilledButton.styleFrom(
-        backgroundColor: cs.secondaryContainer,
-        foregroundColor: cs.onSecondaryContainer,
+        backgroundColor: cs.primaryContainer,
+        foregroundColor: cs.onPrimaryContainer,
         minimumSize: const Size(0, 40),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         shape: shapes.buttonShape,

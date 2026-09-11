@@ -2,6 +2,7 @@
 library;
 
 export 'expressive_action_button.dart';
+export 'expressive_fab_menu.dart';
 export 'expressive_avatar.dart';
 export 'expressive_badge.dart';
 export 'expressive_button_group.dart';

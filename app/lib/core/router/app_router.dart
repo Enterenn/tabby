@@ -54,7 +54,8 @@ GoRouter buildRouter(AuthCubit authCubit) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: GroupDetailScreen(
-              groupId: state.pathParameters['groupId']!),
+            groupId: state.pathParameters['groupId']!,
+          ),
           transitionDuration: const Duration(milliseconds: 400),
           reverseTransitionDuration: const Duration(milliseconds: 300),
           transitionsBuilder: (ctx, animation, secondaryAnimation, child) =>

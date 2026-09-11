@@ -56,7 +56,7 @@ class LoyaltyCardFace extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         child: Ink(
-          height: compact ? 72 : height,
+          height: height,
           decoration: BoxDecoration(gradient: brand.gradient),
           child: Stack(
             children: [
@@ -174,7 +174,7 @@ class LoyaltyCardFace extends StatelessWidget {
 
     final heroSize = SizedBox(
       width: LoyaltyCardLayout.cardWidth(context),
-      height: compact ? 72 : height,
+      height: height,
       child: face,
     );
 
@@ -251,49 +251,3 @@ class _BrandLogo extends StatelessWidget {
   }
 }
 
-/// Pile wallet — cartes empilées avec en-têtes visibles.
-class LoyaltyWalletStack extends StatelessWidget {
-  const LoyaltyWalletStack({
-    super.key,
-    required this.cards,
-    required this.onTapCard,
-    required this.onLongPressCard,
-  });
-
-  final List<LoyaltyCard> cards;
-  final void Function(LoyaltyCard card) onTapCard;
-  final void Function(LoyaltyCard card) onLongPressCard;
-
-  static const _peek = 52.0;
-  static const _fullHeight = LoyaltyCardLayout.cardHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    if (cards.isEmpty) return const SizedBox.shrink();
-
-    final stackHeight = _fullHeight + (cards.length - 1) * _peek;
-
-    return SizedBox(
-      height: stackHeight,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          for (var i = 0; i < cards.length; i++)
-            Positioned(
-              top: i * _peek,
-              left: 0,
-              right: 0,
-              child: LoyaltyCardFace(
-                card: cards[i],
-                height: i == cards.length - 1 ? _fullHeight : _peek + 28,
-                compact: i != cards.length - 1,
-                enableHero: true,
-                onTap: () => onTapCard(cards[i]),
-                onLongPress: () => onLongPressCard(cards[i]),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}

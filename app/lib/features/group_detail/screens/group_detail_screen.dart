@@ -9,6 +9,7 @@ import '../../../core/api/token_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
+import '../group_invite.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/group_detail_cubit.dart';
@@ -101,17 +102,11 @@ class _LoadedBody extends StatelessWidget {
     final me = tokenStorage.userId ?? '';
 
     return Scaffold(
-      floatingActionButton: ExpressiveActionButton(
-        icon: Symbols.add_rounded,
-        tooltip: 'Ajouter une dépense',
-        onPressed: () async {
-          await showAddExpenseSheet(context, groupId: group.id);
-          if (context.mounted) context.read<GroupDetailCubit>().load();
-        },
-      ),
-      body: CustomScrollView(
-        slivers: [
-          _GroupSliverAppBar(group: group),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              _GroupSliverAppBar(group: group),
           // Total des dépenses — hero display
           if (expenses.isNotEmpty)
             SliverToBoxAdapter(
@@ -160,16 +155,6 @@ class _LoadedBody extends StatelessWidget {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: OutlinedButton.icon(
-                onPressed: () => _showInviteDialog(context),
-                icon: const Icon(Symbols.person_add_rounded),
-                label: const Text('Inviter quelqu\'un'),
-              ),
-            ),
-          ),
           // ── 3. À régler ──────────────────────────────────────────────────
           if (balances.isNotEmpty) ...[
             _SectionHeader(title: 'À régler', icon: Symbols.payments_rounded),
@@ -184,35 +169,30 @@ class _LoadedBody extends StatelessWidget {
             ),
           ],
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            ],
+          ),
+          ExpressiveScreenFabMenu(
+            actions: [
+              ExpressiveFabMenuAction(
+                icon: Symbols.receipt_long_rounded,
+                label: 'Ajouter une dépense',
+                onSelected: () async {
+                  await showAddExpenseSheet(context, groupId: group.id);
+                  if (context.mounted) {
+                    context.read<GroupDetailCubit>().load();
+                  }
+                },
+              ),
+              ExpressiveFabMenuAction(
+                icon: Symbols.person_add_rounded,
+                label: 'Inviter quelqu\'un',
+                onSelected: () =>
+                    showGroupInviteDialog(context, groupId: group.id),
+              ),
+            ],
+          ),
         ],
       ),
-    );
-  }
-
-  Future<void> _showInviteDialog(BuildContext context) async {
-    final cubit = context.read<GroupDetailCubit>();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: SizedBox(
-          height: 60,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ),
-    );
-    final code = await cubit.generateInviteCode();
-    if (!context.mounted) return;
-    Navigator.of(context).pop(); // ferme le loading
-    if (code == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible de générer un code.')),
-      );
-      return;
-    }
-    showDialog(
-      context: context,
-      builder: (_) => _InviteDialog(code: code),
     );
   }
 }
@@ -926,73 +906,6 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     } else {
       Navigator.pop(context);
     }
-  }
-}
-
-// ─── Invite dialog ────────────────────────────────────────────────────────────
-
-class _InviteDialog extends StatelessWidget {
-  const _InviteDialog({required this.code});
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return AlertDialog(
-      title: const Text('Code d\'invitation'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Partagez ce code avec la personne à inviter.'),
-          const SizedBox(height: 20),
-          InkWell(
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: code));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Code copié !')),
-              );
-            },
-            borderRadius: context.tabbyShapes.radiusLarge,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                borderRadius: context.tabbyShapes.radiusLarge,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    code,
-                    style: tt.displaySmall?.copyWith(
-                      color: cs.onPrimaryContainer,
-                      letterSpacing: 8,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(Symbols.content_copy_rounded,
-                      color: cs.onPrimaryContainer),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Valable 24h',
-            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-          ),
-        ],
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Fermer'),
-        ),
-      ],
-    );
   }
 }
 

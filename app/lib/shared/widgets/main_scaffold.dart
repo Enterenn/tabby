@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../features/add_expense/screens/add_expense_screen.dart';
 import 'connectivity_banner.dart';
 import 'expressive/expressive.dart';
+
 class MainScaffold extends StatelessWidget {
   const MainScaffold({super.key, required this.child});
 
@@ -143,4 +144,3 @@ class _TabbyNavBar extends StatelessWidget {
     );
   }
 }
-

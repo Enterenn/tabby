@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../features/group_detail/cubit/group_detail_cubit.dart';
 import '../../../features/home/cubit/home_cubit.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/widgets/tabby_sheet.dart';
@@ -165,6 +166,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
     if (ok && mounted) {
       HomeCubit.refreshIfActive();
+      GroupDetailCubit.refreshIfActive();
       Navigator.of(context).pop(true);
     }
   }

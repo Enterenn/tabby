@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'loyalty_brand.dart';
+import 'loyalty_prefix_store.dart';
 
 /// Résultat d'un scan — valeur brute + type déduit.
 class LoyaltyScanPayload {
@@ -25,10 +26,7 @@ abstract final class LoyaltyBrandDetector {
       if (fromQr != null) return fromQr;
     }
 
-    final fromPrefix = _fromBarcodePrefix(value);
-    if (fromPrefix != null) return fromPrefix;
-
-    return null;
+    return LoyaltyPrefixStore.matchBarcode(value);
   }
 
   static LoyaltyBrand? _fromQrContent(String value) {
@@ -58,16 +56,4 @@ abstract final class LoyaltyBrandDetector {
     return null;
   }
 
-  static LoyaltyBrand? _fromBarcodePrefix(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return null;
-
-    for (final brand in LoyaltyBrand.catalog) {
-      for (final prefix in brand.codePrefixes) {
-        if (digits.startsWith(prefix)) return brand;
-      }
-    }
-
-    return null;
-  }
 }

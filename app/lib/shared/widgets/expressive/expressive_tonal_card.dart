@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/expressive_shapes.dart';
 
-/// Variantes tonales saturées M3 Expressive.
-enum ExpressiveTonalVariant { violet, coral, lime, neutral }
+/// Variantes tonales M3 Expressive — sémantiques pour soldes, neutres pour KPI.
+enum ExpressiveTonalVariant {
+  violet,
+  coral,
+  lime,
+  neutral,
+  success,
+  danger,
+}
 
 /// Grand bloc coloré — hero surfaces, cartes mises en avant.
 class ExpressiveTonalCard extends StatelessWidget {
@@ -42,6 +49,14 @@ class ExpressiveTonalCard extends StatelessWidget {
       ExpressiveTonalVariant.neutral => (
           cs.surfaceContainerHighest,
           cs.onSurface,
+        ),
+      ExpressiveTonalVariant.success => (
+          s.successContainer,
+          s.onSuccessContainer,
+        ),
+      ExpressiveTonalVariant.danger => (
+          s.dangerContainer,
+          s.onDangerContainer,
         ),
     };
   }
