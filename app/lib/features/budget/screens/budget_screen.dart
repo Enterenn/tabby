@@ -170,7 +170,7 @@ class _BudgetCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => _showEditSheet(context),
+        onLongPress: () => _showActions(context),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -272,6 +272,74 @@ class _BudgetCard extends StatelessWidget {
     );
   }
 
+  void _showActions(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => BlocProvider.value(
+        value: context.read<BudgetCubit>(),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 32, height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: cs.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // En-tête catégorie
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(budget.category.flutterIcon,
+                        color: budget.category.flutterColor, size: 20),
+                    const SizedBox(width: 10),
+                    Text(budget.category.name, style: tt.titleMedium),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Symbols.edit_rounded),
+                title: const Text('Modifier le plafond'),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _showEditSheet(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Symbols.delete_rounded, color: cs.error),
+                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _confirmDelete(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showEditSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -285,6 +353,33 @@ class _BudgetCard extends StatelessWidget {
         child: _EditBudgetSheet(budget: budget),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer ce budget ?'),
+        content: Text('Le budget "${budget.category.name}" sera supprimé.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Supprimer',
+                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      context.read<BudgetCubit>().deleteBudget(
+            groupId: budget.groupId,
+            budgetId: budget.id,
+          );
+    }
   }
 }
 
@@ -328,35 +423,6 @@ class _EditBudgetSheetState extends State<_EditBudgetSheet> {
       setState(() => _loading = false);
       if (ok) Navigator.of(context).pop();
     }
-  }
-
-  Future<void> _delete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer ce budget ?'),
-        content: Text(
-            'Le budget "${widget.budget.category.name}" sera supprimé.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Annuler')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Supprimer',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    final ok = await context.read<BudgetCubit>().deleteBudget(
-          groupId: widget.budget.groupId,
-          budgetId: widget.budget.id,
-        );
-    if (ok && mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -414,14 +480,13 @@ class _EditBudgetSheetState extends State<_EditBudgetSheet> {
           ),
           const SizedBox(height: 24),
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton.icon(
-                onPressed: _loading ? null : _delete,
-                icon: Icon(Symbols.delete_rounded, size: 18, color: cs.error),
-                label: Text('Supprimer',
-                    style: TextStyle(color: cs.error)),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Annuler'),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               FilledButton(
                 onPressed: _loading ? null : _save,
                 child: _loading
