@@ -2,14 +2,14 @@ import 'package:dio/dio.dart';
 
 /// Configuration du base URL — pointe sur l'IP Tailscale du LXC backend.
 /// Modifie [baseUrl] selon ton adresse Tailscale (ex. http://100.x.x.x:8000).
-const String _defaultBaseUrl = 'http://localhost:8000';
+const String _defaultBaseUrl = '192.168.1.31:8000';
 
 class ApiClient {
   ApiClient({String? baseUrl}) {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl ?? _defaultBaseUrl,
-        connectTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 5),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
       ),

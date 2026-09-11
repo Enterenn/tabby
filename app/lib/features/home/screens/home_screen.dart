@@ -49,7 +49,7 @@ class _HealthIndicatorState extends State<_HealthIndicator> {
     try {
       await apiClient.dio.get('/health');
       if (mounted) setState(() => _status = _Status.ok);
-    } on DioException catch (_) {
+    } catch (_) {
       if (mounted) setState(() => _status = _Status.error);
     }
   }
