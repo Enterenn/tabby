@@ -1,4 +1,5 @@
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -239,7 +240,7 @@ class _GroupFilter extends StatelessWidget {
   }
 }
 
-// ─── Stats section (pie chart + legend) ──────────────────────────────────────
+// ─── Stats section (donut chart + legend cards) ───────────────────────────────
 
 class _StatsSection extends StatefulWidget {
   const _StatsSection({required this.stats});
@@ -260,7 +261,7 @@ class _StatsSectionState extends State<_StatsSection> {
 
     if (stats.total == 0) {
       return Container(
-        height: 180,
+        height: 200,
         alignment: Alignment.center,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -277,99 +278,116 @@ class _StatsSectionState extends State<_StatsSection> {
       );
     }
 
-    final sections = stats.categories.asMap().entries.map((entry) {
-      final i = entry.key;
-      final cat = entry.value;
-      final isTouched = _touchedIndex == i;
-      return PieChartSectionData(
-        value: cat.percent,
-        color: cat.category.flutterColor,
-        radius: isTouched ? 72 : 60,
-        showTitle: false,
-        borderSide: isTouched
-            ? BorderSide(color: cs.surface, width: 3)
-            : const BorderSide(color: Colors.transparent),
-      );
-    }).toList();
-
-    final touched =
-        _touchedIndex != null && _touchedIndex! < stats.categories.length
-            ? stats.categories[_touchedIndex!]
-            : null;
+    final touched = (_touchedIndex != null &&
+            _touchedIndex! < stats.categories.length)
+        ? stats.categories[_touchedIndex!]
+        : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         children: [
-          // Camembert + total central
-          SizedBox(
-            height: 200,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                PieChart(
-                  PieChartData(
-                    sections: sections,
-                    centerSpaceRadius: 56,
-                    sectionsSpace: 2,
-                    pieTouchData: PieTouchData(
-                      touchCallback: (event, response) {
-                        if (!event.isInterestedForInteractions ||
-                            response == null ||
-                            response.touchedSection == null) {
-                          setState(() => _touchedIndex = null);
-                          return;
-                        }
-                        setState(() => _touchedIndex =
-                            response.touchedSection!.touchedSectionIndex);
-                      },
+          // ── Donut chart ────────────────────────────────────────────────
+          GestureDetector(
+            onTapDown: (details) {
+              final box = context.findRenderObject() as RenderBox?;
+              if (box == null) return;
+              final local = details.localPosition;
+              final center = Offset(box.size.width / 2, 140);
+              final dx = local.dx - center.dx;
+              final dy = local.dy - center.dy;
+              final dist = math.sqrt(dx * dx + dy * dy);
+              // Anneau entre r=64 et r=108
+              if (dist < 64 || dist > 108) {
+                setState(() => _touchedIndex = null);
+                return;
+              }
+              double angle = math.atan2(dy, dx) + math.pi / 2;
+              if (angle < 0) angle += 2 * math.pi;
+              double cumulative = 0;
+              for (int i = 0; i < stats.categories.length; i++) {
+                final sweep =
+                    stats.categories[i].percent / 100 * 2 * math.pi;
+                if (angle >= cumulative && angle < cumulative + sweep) {
+                  setState(() =>
+                      _touchedIndex = _touchedIndex == i ? null : i);
+                  return;
+                }
+                cumulative += sweep;
+              }
+              setState(() => _touchedIndex = null);
+            },
+            child: SizedBox(
+              height: 280,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size(double.infinity, 280),
+                    painter: _DonutPainter(
+                      sections: stats.categories,
+                      touchedIndex: _touchedIndex,
                     ),
                   ),
-                ),
-                // Label central
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      touched != null
-                          ? '${touched.percent.toStringAsFixed(1)}%'
-                          : '${stats.total.toStringAsFixed(0)} €',
-                      style: tt.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: touched?.category.flutterColor,
+                  // Label central
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        touched != null
+                            ? '${touched.percent.toStringAsFixed(1)}%'
+                            : '${stats.total.toStringAsFixed(2)} €',
+                        style: tt.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: touched?.category.flutterColor ??
+                              cs.onSurface,
+                        ),
                       ),
-                    ),
-                    Text(
-                      touched?.category.name ?? 'Total',
-                      style: tt.bodySmall
-                          ?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        touched?.category.name ?? 'Total dépenses',
+                        style: tt.bodySmall
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Légende ────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Toutes les dépenses', style: tt.bodySmall),
+                Text(
+                  'Total ${stats.total.toStringAsFixed(2)} €',
+                  style: tt.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 8),
 
-          const SizedBox(height: 12),
-
-          // Légende ordonnée par %
           ...stats.categories.asMap().entries.map((entry) {
             final i = entry.key;
             final cat = entry.value;
             final isSelected = _touchedIndex == i;
+
             return GestureDetector(
-              onTap: () => setState(
-                  () => _touchedIndex = isSelected ? null : i),
+              onTap: () =>
+                  setState(() => _touchedIndex = isSelected ? null : i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? cat.category.flutterColor.withValues(alpha: 0.1)
-                      : cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(14),
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
                         ? cat.category.flutterColor
@@ -377,38 +395,58 @@ class _StatsSectionState extends State<_StatsSection> {
                     width: 1.5,
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: cat.category.flutterColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Icon(cat.category.flutterIcon,
-                        size: 16, color: cat.category.flutterColor),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(cat.category.name,
-                          style: tt.bodyMedium),
-                    ),
-                    Text(
-                      '${cat.amount.toStringAsFixed(2)} €',
-                      style: tt.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        '${cat.percent.toStringAsFixed(1)}%',
-                        textAlign: TextAlign.right,
-                        style: tt.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
+                    Row(
+                      children: [
+                        // Icône catégorie
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: cat.category.flutterColor
+                                .withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(cat.category.flutterIcon,
+                              size: 18,
+                              color: cat.category.flutterColor),
                         ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(cat.category.name,
+                                  style: tt.titleSmall),
+                              Text(
+                                '${cat.percent.toStringAsFixed(1)}% du total',
+                                style: tt.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${cat.amount.toStringAsFixed(2)} €',
+                          style: tt.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Mini barre de progression colorée
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: cat.percent / 100,
+                        minHeight: 5,
+                        backgroundColor:
+                            cat.category.flutterColor.withValues(alpha: 0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            cat.category.flutterColor),
                       ),
                     ),
                   ],
@@ -420,6 +458,64 @@ class _StatsSectionState extends State<_StatsSection> {
       ),
     );
   }
+}
+
+// ─── Custom donut painter ─────────────────────────────────────────────────────
+
+class _DonutPainter extends CustomPainter {
+  const _DonutPainter({
+    required this.sections,
+    required this.touchedIndex,
+  });
+
+  final List<CategoryStat> sections;
+  final int? touchedIndex;
+
+  static const double _strokeWidth = 28.0;
+  static const double _touchedExtra = 8.0;
+  static const double _gapDeg = 2.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final baseRadius = size.shortestSide / 2 - _strokeWidth / 2 - _touchedExtra - 4;
+
+    final gapRad = _gapDeg * math.pi / 180;
+    // Each section loses one gap on each side
+    final totalGapRad = gapRad * 2 * sections.length;
+    final availableRad = 2 * math.pi - totalGapRad;
+
+    double startAngle = -math.pi / 2;
+
+    for (int i = 0; i < sections.length; i++) {
+      final cat = sections[i];
+      final isTouched = touchedIndex == i;
+      final sw = isTouched ? _strokeWidth + _touchedExtra : _strokeWidth;
+      final radius = isTouched ? baseRadius + _touchedExtra / 2 : baseRadius;
+
+      final sweepAngle = (cat.percent / 100) * availableRad;
+
+      final paint = Paint()
+        ..color = cat.category.flutterColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = sw
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle + gapRad,
+        sweepAngle,
+        false,
+        paint,
+      );
+
+      startAngle += sweepAngle + gapRad * 2;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutPainter old) =>
+      old.touchedIndex != touchedIndex || old.sections != sections;
 }
 
 // ─── Budget card ──────────────────────────────────────────────────────────────
