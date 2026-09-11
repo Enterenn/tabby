@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,7 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/stats.dart';
 import '../cubit/budget_cubit.dart';
+
+// ─── Entry point ──────────────────────────────────────────────────────────────
 
 class BudgetScreen extends StatelessWidget {
   const BudgetScreen({super.key});
@@ -21,31 +25,20 @@ class BudgetScreen extends StatelessWidget {
   }
 }
 
+// ─── Main view ────────────────────────────────────────────────────────────────
+
 class _BudgetView extends StatelessWidget {
   const _BudgetView();
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
     return BlocBuilder<BudgetCubit, BudgetState>(
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Budgets'),
-            actions: [
-              if (state is BudgetLoaded)
-                IconButton(
-                  icon: const Icon(Symbols.refresh_rounded),
-                  onPressed: () => context.read<BudgetCubit>().load(),
-                ),
-            ],
-          ),
+          appBar: AppBar(title: const Text('Budget')),
           floatingActionButton: state is BudgetLoaded
               ? FloatingActionButton.extended(
-                  onPressed: () =>
-                      _showCreateDialog(context, state),
+                  onPressed: () => _showCreateDialog(context, state),
                   icon: const Icon(Symbols.add_rounded, fill: 1),
                   label: const Text('Nouveau budget'),
                 )
@@ -60,34 +53,13 @@ class _BudgetView extends StatelessWidget {
                     Text(message, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     FilledButton.tonal(
-                      onPressed: () =>
-                          context.read<BudgetCubit>().load(),
+                      onPressed: () => context.read<BudgetCubit>().load(),
                       child: const Text('Réessayer'),
                     ),
                   ],
                 ),
               ),
-            BudgetLoaded(:final budgets, :final groups) => budgets.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Symbols.savings_rounded,
-                            size: 56, color: cs.outlineVariant),
-                        const SizedBox(height: 16),
-                        Text('Aucun budget défini',
-                            style: tt.headlineSmall),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Appuie sur + pour créer ton premier budget',
-                          style: tt.bodyMedium
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  )
-                : _BudgetList(budgets: budgets, groups: groups),
+            BudgetLoaded() => _BudgetContent(state: state),
             _ => const SizedBox.shrink(),
           },
         );
@@ -106,48 +78,346 @@ class _BudgetView extends StatelessWidget {
   }
 }
 
-// ─── Budget list ──────────────────────────────────────────────────────────────
+// ─── Full content (scrollable) ────────────────────────────────────────────────
 
-class _BudgetList extends StatelessWidget {
-  const _BudgetList({required this.budgets, required this.groups});
-
-  final List<Budget> budgets;
-  final List<Group> groups;
+class _BudgetContent extends StatelessWidget {
+  const _BudgetContent({required this.state});
+  final BudgetLoaded state;
 
   @override
   Widget build(BuildContext context) {
-    // Grouper par group_id
-    final Map<String, List<Budget>> byGroup = {};
-    for (final b in budgets) {
-      byGroup.putIfAbsent(b.groupId, () => []).add(b);
-    }
+    final now = DateTime.now();
+    final isCurrentMonth = state.selectedYear == now.year &&
+        state.selectedMonth == now.month;
 
-    final groupMap = {for (final g in groups) g.id: g};
+    return CustomScrollView(
+      slivers: [
+        // ── Navigation mois ────────────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: _MonthNav(
+            year: state.selectedYear,
+            month: state.selectedMonth,
+            monthLabel: state.stats.monthLabel,
+            isCurrentMonth: isCurrentMonth,
+          ),
+        ),
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-      children: byGroup.entries.map((entry) {
-        final group = groupMap[entry.key];
-        final groupBudgets = entry.value;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (byGroup.length > 1) ...[
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 8),
-                child: Text(
-                  group?.name ?? entry.key,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+        // ── Filtre groupe ──────────────────────────────────────────────────
+        if (state.groups.length > 1)
+          SliverToBoxAdapter(
+            child: _GroupFilter(
+              groups: state.groups,
+              selectedGroupId: state.selectedGroupId,
+            ),
+          ),
+
+        // ── Section statistiques ───────────────────────────────────────────
+        SliverToBoxAdapter(
+          child: _StatsSection(stats: state.stats),
+        ),
+
+        // ── Section budgets ────────────────────────────────────────────────
+        if (state.budgets.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
+                'Budgets du mois',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) => _BudgetCard(budget: state.budgets[i]),
+                childCount: state.budgets.length,
+              ),
+            ),
+          ),
+        ] else
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+      ],
+    );
+  }
+}
+
+// ─── Month navigation ─────────────────────────────────────────────────────────
+
+class _MonthNav extends StatelessWidget {
+  const _MonthNav({
+    required this.year,
+    required this.month,
+    required this.monthLabel,
+    required this.isCurrentMonth,
+  });
+
+  final int year, month;
+  final String monthLabel;
+  final bool isCurrentMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Symbols.chevron_left_rounded),
+            onPressed: () => context.read<BudgetCubit>().prevMonth(),
+          ),
+          const SizedBox(width: 4),
+          Column(
+            children: [
+              Text(
+                monthLabel,
+                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              Text(
+                '$year',
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
-            ...groupBudgets.map(
-              (b) => _BudgetCard(budget: b),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(
+              Symbols.chevron_right_rounded,
+              color: isCurrentMonth ? cs.outlineVariant : null,
+            ),
+            onPressed:
+                isCurrentMonth ? null : () => context.read<BudgetCubit>().nextMonth(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Group filter chips ───────────────────────────────────────────────────────
+
+class _GroupFilter extends StatelessWidget {
+  const _GroupFilter({required this.groups, required this.selectedGroupId});
+
+  final List<Group> groups;
+  final String? selectedGroupId;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          // Chip "Tous"
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: const Text('Tous'),
+              selected: selectedGroupId == null,
+              onSelected: (_) =>
+                  context.read<BudgetCubit>().selectGroup(null),
+            ),
+          ),
+          ...groups.map((g) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(g.name),
+                  selected: selectedGroupId == g.id,
+                  onSelected: (_) =>
+                      context.read<BudgetCubit>().selectGroup(g.id),
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Stats section (pie chart + legend) ──────────────────────────────────────
+
+class _StatsSection extends StatefulWidget {
+  const _StatsSection({required this.stats});
+  final MonthStats stats;
+
+  @override
+  State<_StatsSection> createState() => _StatsSectionState();
+}
+
+class _StatsSectionState extends State<_StatsSection> {
+  int? _touchedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final stats = widget.stats;
+
+    if (stats.total == 0) {
+      return Container(
+        height: 180,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Symbols.bar_chart_rounded,
+                size: 48, color: cs.outlineVariant),
+            const SizedBox(height: 8),
+            Text(
+              'Aucune dépense ce mois',
+              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ],
-        );
-      }).toList(),
+        ),
+      );
+    }
+
+    final sections = stats.categories.asMap().entries.map((entry) {
+      final i = entry.key;
+      final cat = entry.value;
+      final isTouched = _touchedIndex == i;
+      return PieChartSectionData(
+        value: cat.percent,
+        color: cat.category.flutterColor,
+        radius: isTouched ? 72 : 60,
+        showTitle: false,
+        borderSide: isTouched
+            ? BorderSide(color: cs.surface, width: 3)
+            : const BorderSide(color: Colors.transparent),
+      );
+    }).toList();
+
+    final touched =
+        _touchedIndex != null && _touchedIndex! < stats.categories.length
+            ? stats.categories[_touchedIndex!]
+            : null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          // Camembert + total central
+          SizedBox(
+            height: 200,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                PieChart(
+                  PieChartData(
+                    sections: sections,
+                    centerSpaceRadius: 56,
+                    sectionsSpace: 2,
+                    pieTouchData: PieTouchData(
+                      touchCallback: (event, response) {
+                        if (!event.isInterestedForInteractions ||
+                            response == null ||
+                            response.touchedSection == null) {
+                          setState(() => _touchedIndex = null);
+                          return;
+                        }
+                        setState(() => _touchedIndex =
+                            response.touchedSection!.touchedSectionIndex);
+                      },
+                    ),
+                  ),
+                ),
+                // Label central
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      touched != null
+                          ? '${touched.percent.toStringAsFixed(1)}%'
+                          : '${stats.total.toStringAsFixed(0)} €',
+                      style: tt.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: touched?.category.flutterColor,
+                      ),
+                    ),
+                    Text(
+                      touched?.category.name ?? 'Total',
+                      style: tt.bodySmall
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Légende ordonnée par %
+          ...stats.categories.asMap().entries.map((entry) {
+            final i = entry.key;
+            final cat = entry.value;
+            final isSelected = _touchedIndex == i;
+            return GestureDetector(
+              onTap: () => setState(
+                  () => _touchedIndex = isSelected ? null : i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? cat.category.flutterColor.withValues(alpha: 0.1)
+                      : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected
+                        ? cat.category.flutterColor
+                        : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: cat.category.flutterColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(cat.category.flutterIcon,
+                        size: 16, color: cat.category.flutterColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(cat.category.name,
+                          style: tt.bodyMedium),
+                    ),
+                    Text(
+                      '${cat.amount.toStringAsFixed(2)} €',
+                      style: tt.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        '${cat.percent.toStringAsFixed(1)}%',
+                        textAlign: TextAlign.right,
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }
@@ -156,7 +426,6 @@ class _BudgetList extends StatelessWidget {
 
 class _BudgetCard extends StatelessWidget {
   const _BudgetCard({required this.budget});
-
   final Budget budget;
 
   @override
@@ -176,12 +445,10 @@ class _BudgetCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête : icône catégorie + nom + actions
               Row(
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 40, height: 40,
                     decoration: BoxDecoration(
                       color: b.category.flutterColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
@@ -203,7 +470,6 @@ class _BudgetCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Status pill
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 4),
@@ -225,31 +491,22 @@ class _BudgetCard extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 14),
-
-              // Barre de progression
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: clampedPercent,
                   minHeight: 8,
                   backgroundColor: cs.surfaceContainerHighest,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(b.statusColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(b.statusColor),
                 ),
               ),
-
               const SizedBox(height: 8),
-
-              // Montants
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${b.spentAmount.toStringAsFixed(2)} € dépensés',
-                    style: tt.bodySmall,
-                  ),
+                  Text('${b.spentAmount.toStringAsFixed(2)} € dépensés',
+                      style: tt.bodySmall),
                   Text(
                     b.remaining >= 0
                         ? '${b.remaining.toStringAsFixed(2)} € restants'
@@ -289,7 +546,6 @@ class _BudgetCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Center(
                 child: Container(
                   width: 32, height: 4,
@@ -300,9 +556,9 @@ class _BudgetCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // En-tête catégorie
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
                   children: [
                     Icon(budget.category.flutterIcon,
@@ -320,12 +576,13 @@ class _BudgetCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14)),
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  _showEditSheet(context);
+                  _showEditDialog(context);
                 },
               ),
               ListTile(
                 leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                title: Text('Supprimer',
+                    style: TextStyle(color: cs.error)),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
                 onTap: () {
@@ -340,7 +597,7 @@ class _BudgetCard extends StatelessWidget {
     );
   }
 
-  void _showEditSheet(BuildContext context) {
+  void _showEditDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => BlocProvider.value(
@@ -355,16 +612,17 @@ class _BudgetCard extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Supprimer ce budget ?'),
-        content: Text('Le budget "${budget.category.name}" sera supprimé.'),
+        content: Text(
+            'Le budget "${budget.category.name}" sera supprimé.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
-          ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annuler')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text('Supprimer',
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -431,7 +689,6 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Catégorie (lecture seule)
           Row(
             children: [
               Container(
@@ -522,8 +779,10 @@ class _BudgetDialogState extends State<_BudgetDialog> {
   Future<void> _submit() async {
     final amount =
         double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
-    if (_selectedGroup == null || _selectedCategory == null ||
-        amount == null || amount <= 0) {
+    if (_selectedGroup == null ||
+        _selectedCategory == null ||
+        amount == null ||
+        amount <= 0) {
       return;
     }
     setState(() => _loading = true);
@@ -549,7 +808,6 @@ class _BudgetDialogState extends State<_BudgetDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Sélecteur de groupe (si plusieurs)
             if (widget.state.groups.length > 1) ...[
               Text('Groupe', style: tt.labelLarge),
               const SizedBox(height: 6),
@@ -569,8 +827,6 @@ class _BudgetDialogState extends State<_BudgetDialog> {
               ),
               const SizedBox(height: 16),
             ],
-
-            // Sélecteur de catégorie
             Text('Catégorie', style: tt.labelLarge),
             const SizedBox(height: 6),
             DropdownButtonFormField<Category>(
@@ -594,8 +850,6 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                   : (c) => setState(() => _selectedCategory = c),
             ),
             const SizedBox(height: 16),
-
-            // Montant
             Text('Plafond mensuel', style: tt.labelLarge),
             const SizedBox(height: 6),
             TextField(

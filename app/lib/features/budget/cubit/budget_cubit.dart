@@ -5,6 +5,7 @@ import '../../../core/api/api_client.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/stats.dart';
 
 // ─── States ───────────────────────────────────────────────────────────────────
 
@@ -27,14 +28,45 @@ class BudgetLoaded extends BudgetState {
     required this.budgets,
     required this.groups,
     required this.allCategories,
+    required this.stats,
+    required this.selectedYear,
+    required this.selectedMonth,
+    this.selectedGroupId,
   });
 
   final List<Budget> budgets;
   final List<Group> groups;
   final List<Category> allCategories;
+  final MonthStats stats;
+  final int selectedYear;
+  final int selectedMonth;
+  final String? selectedGroupId; // null = tous les groupes
+
+  BudgetLoaded copyWith({
+    List<Budget>? budgets,
+    List<Group>? groups,
+    List<Category>? allCategories,
+    MonthStats? stats,
+    int? selectedYear,
+    int? selectedMonth,
+    String? selectedGroupId,
+    bool clearGroup = false,
+  }) =>
+      BudgetLoaded(
+        budgets: budgets ?? this.budgets,
+        groups: groups ?? this.groups,
+        allCategories: allCategories ?? this.allCategories,
+        stats: stats ?? this.stats,
+        selectedYear: selectedYear ?? this.selectedYear,
+        selectedMonth: selectedMonth ?? this.selectedMonth,
+        selectedGroupId:
+            clearGroup ? null : (selectedGroupId ?? this.selectedGroupId),
+      );
 
   @override
-  List<Object?> get props => [budgets, groups, allCategories];
+  List<Object?> get props => [
+        budgets, groups, stats, selectedYear, selectedMonth, selectedGroupId,
+      ];
 }
 
 class BudgetError extends BudgetState {
@@ -49,35 +81,82 @@ class BudgetError extends BudgetState {
 class BudgetCubit extends Cubit<BudgetState> {
   BudgetCubit() : super(const BudgetInitial());
 
-  Future<void> load() async {
+  Future<void> load({
+    int? year,
+    int? month,
+    String? groupId,
+  }) async {
+    final now = DateTime.now();
+    final y = year ?? now.year;
+    final m = month ?? now.month;
+
+    // Conserver les sélections si déjà chargé
+    final prev = state is BudgetLoaded ? state as BudgetLoaded : null;
+    final targetYear = year ?? prev?.selectedYear ?? y;
+    final targetMonth = month ?? prev?.selectedMonth ?? m;
+    final targetGroup = groupId ?? prev?.selectedGroupId;
+
     emit(const BudgetLoading());
     try {
+      final queryParams = <String, dynamic>{
+        'year': targetYear,
+        'month': targetMonth,
+        if (targetGroup != null) 'group_id': targetGroup,
+      };
+
       final results = await Future.wait([
         apiClient.dio.get('/budgets'),
         apiClient.dio.get('/groups'),
         apiClient.dio.get('/categories'),
+        apiClient.dio.get('/stats', queryParameters: queryParams),
       ]);
 
       final budgets = (results[0].data as List)
           .map((b) => Budget.fromJson(b as Map<String, dynamic>))
           .toList();
-
       final groups = (results[1].data as List)
           .map((g) => Group.fromJson(g as Map<String, dynamic>))
           .toList();
-
       final categories = (results[2].data as List)
           .map((c) => Category.fromJson(c as Map<String, dynamic>))
           .toList();
+      final stats =
+          MonthStats.fromJson(results[3].data as Map<String, dynamic>);
 
       emit(BudgetLoaded(
         budgets: budgets,
         groups: groups,
         allCategories: categories,
+        stats: stats,
+        selectedYear: targetYear,
+        selectedMonth: targetMonth,
+        selectedGroupId: targetGroup,
       ));
     } catch (e) {
       emit(BudgetError(e.toString()));
     }
+  }
+
+  void prevMonth() {
+    if (state is! BudgetLoaded) return;
+    final s = state as BudgetLoaded;
+    final dt = DateTime(s.selectedYear, s.selectedMonth - 1);
+    load(year: dt.year, month: dt.month, groupId: s.selectedGroupId);
+  }
+
+  void nextMonth() {
+    if (state is! BudgetLoaded) return;
+    final s = state as BudgetLoaded;
+    final now = DateTime.now();
+    if (s.selectedYear >= now.year && s.selectedMonth >= now.month) return;
+    final dt = DateTime(s.selectedYear, s.selectedMonth + 1);
+    load(year: dt.year, month: dt.month, groupId: s.selectedGroupId);
+  }
+
+  void selectGroup(String? groupId) {
+    if (state is! BudgetLoaded) return;
+    final s = state as BudgetLoaded;
+    load(year: s.selectedYear, month: s.selectedMonth, groupId: groupId);
   }
 
   Future<bool> createBudget({
@@ -90,7 +169,12 @@ class BudgetCubit extends Cubit<BudgetState> {
         'category_id': categoryId,
         'limit_amount': limitAmount,
       });
-      await load();
+      final s = state is BudgetLoaded ? state as BudgetLoaded : null;
+      await load(
+        year: s?.selectedYear,
+        month: s?.selectedMonth,
+        groupId: s?.selectedGroupId,
+      );
       return true;
     } catch (_) {
       return false;
@@ -103,11 +187,14 @@ class BudgetCubit extends Cubit<BudgetState> {
     required double limitAmount,
   }) async {
     try {
-      await apiClient.dio
-          .put('/groups/$groupId/budgets/$budgetId', data: {
-        'limit_amount': limitAmount,
-      });
-      await load();
+      await apiClient.dio.put('/groups/$groupId/budgets/$budgetId',
+          data: {'limit_amount': limitAmount});
+      final s = state is BudgetLoaded ? state as BudgetLoaded : null;
+      await load(
+        year: s?.selectedYear,
+        month: s?.selectedMonth,
+        groupId: s?.selectedGroupId,
+      );
       return true;
     } catch (_) {
       return false;
@@ -119,17 +206,19 @@ class BudgetCubit extends Cubit<BudgetState> {
     required String budgetId,
   }) async {
     try {
-      await apiClient.dio
-          .delete('/groups/$groupId/budgets/$budgetId');
-      await load();
+      await apiClient.dio.delete('/groups/$groupId/budgets/$budgetId');
+      final s = state is BudgetLoaded ? state as BudgetLoaded : null;
+      await load(
+        year: s?.selectedYear,
+        month: s?.selectedMonth,
+        groupId: s?.selectedGroupId,
+      );
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  /// Catégories disponibles pour créer un budget dans un groupe donné
-  /// (exclut celles qui ont déjà un budget).
   List<Category> availableCategories({
     required String groupId,
     required List<Budget> budgets,
@@ -139,8 +228,6 @@ class BudgetCubit extends Cubit<BudgetState> {
         .where((b) => b.groupId == groupId)
         .map((b) => b.category.id)
         .toSet();
-    return allCategories
-        .where((c) => !alreadyUsed.contains(c.id))
-        .toList();
+    return allCategories.where((c) => !alreadyUsed.contains(c.id)).toList();
   }
 }
