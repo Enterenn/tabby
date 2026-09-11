@@ -69,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   Text(
                     'Bonjour 👋',
-                    style: Theme.of(context).textTheme.headlineLarge,
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                   const SizedBox(height: 6),
                   Text(

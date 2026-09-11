@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 import 'app_colors.dart';
@@ -27,7 +26,7 @@ abstract final class AppTheme {
     );
 
     final scheme = base.copyWith(
-      // Secondary — corail-orange
+      // Secondary — indigo-violet (froid)
       secondary: isDark ? AppColors.secondaryDark : AppColors.secondary,
       onSecondary: isDark ? AppColors.onSecondaryDark : Colors.white,
       secondaryContainer: isDark
@@ -36,7 +35,7 @@ abstract final class AppTheme {
       onSecondaryContainer: isDark
           ? AppColors.onSecondaryContainerDark
           : AppColors.onSecondaryContainerLight,
-      // Tertiary — rose-magenta
+      // Tertiary — teal-menthe (froid)
       tertiary: isDark ? AppColors.tertiaryDark : AppColors.tertiary,
       onTertiary: isDark ? AppColors.onTertiaryDark : Colors.white,
       tertiaryContainer: isDark
@@ -53,6 +52,7 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      fontFamily: 'GoogleSansFlex',
       textTheme: _buildTextTheme(grad, scheme),
       scaffoldBackgroundColor: scheme.surfaceContainerLow,
 
@@ -74,9 +74,9 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 2,
         surfaceTintColor: scheme.primary,
-        titleTextStyle: _gsf(
-          fontSize: 24, wght: 800, rond: 80, grad: grad,
-          color: scheme.onSurface,
+        titleTextStyle: flex(
+          fontSize: 24, wght: 500, rond: 70, grad: grad,
+          color: scheme.onSurface, height: 32 / 24,
         ),
       ),
 
@@ -96,7 +96,7 @@ abstract final class AppTheme {
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28)),
-          textStyle: _gsf(fontSize: 16, wght: 700, rond: 40, grad: grad),
+          textStyle: flex(fontSize: 16, wght: 600, rond: 0, grad: grad, letterSpacing: 0.1),
         ),
       ),
 
@@ -106,13 +106,13 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28)),
           side: BorderSide(color: scheme.outlineVariant, width: 1.5),
-          textStyle: _gsf(fontSize: 15, wght: 600, rond: 20, grad: grad),
+          textStyle: flex(fontSize: 15, wght: 600, rond: 0, grad: grad),
         ),
       ),
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          textStyle: _gsf(fontSize: 14, wght: 600, rond: 0, grad: grad),
+          textStyle: flex(fontSize: 14, wght: 600, rond: 0, grad: grad),
         ),
       ),
 
@@ -138,13 +138,13 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: scheme.error),
         ),
-        labelStyle: _gsf(
+        labelStyle: flex(
           fontSize: 14, wght: 400, rond: 0, grad: grad,
           color: scheme.onSurfaceVariant,
         ),
-        floatingLabelStyle: _gsf(
-          fontSize: 12, wght: 600, rond: 0, grad: grad,
-          color: scheme.primary,
+        floatingLabelStyle: flex(
+          fontSize: 12, wght: 600, rond: 20, grad: grad,
+          color: scheme.secondary,
         ),
       ),
 
@@ -153,7 +153,7 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(50)),
         side: BorderSide.none,
-        labelStyle: _gsf(fontSize: 13, wght: 600, rond: 0, grad: grad),
+        labelStyle: flex(fontSize: 13, wght: 600, rond: 30, grad: grad),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
 
@@ -180,7 +180,7 @@ abstract final class AppTheme {
       // ── NavigationBar ─────────────────────────────────────────────────────
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surfaceContainer,
-        indicatorColor: scheme.primaryContainer,
+        indicatorColor: scheme.secondaryContainer,
         indicatorShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16)),
         iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -193,12 +193,12 @@ abstract final class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return _gsf(
+          return flex(
             fontSize: 11,
             wght: selected ? 700 : 400,
-            rond: 0,
+            rond: selected ? 40 : 0,
             grad: grad,
-            color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
+            color: selected ? scheme.secondary : scheme.onSurfaceVariant,
           );
         }),
         elevation: 4,
@@ -210,7 +210,7 @@ abstract final class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: scheme.inverseSurface,
-        contentTextStyle: _gsf(
+        contentTextStyle: flex(
           fontSize: 14, wght: 400, rond: 0, grad: grad,
           color: scheme.onInverseSurface,
         ),
@@ -222,8 +222,8 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28)),
-        titleTextStyle: _gsf(
-          fontSize: 20, wght: 700, rond: 60, grad: grad,
+        titleTextStyle: flex(
+          fontSize: 22, wght: 800, rond: 80, grad: grad,
           color: scheme.onSurface,
         ),
         backgroundColor: scheme.surfaceContainerHigh,
@@ -240,48 +240,81 @@ abstract final class AppTheme {
     );
   }
 
-  // ── Type scale M3 Expressive ────────────────────────────────────────────────
-  // Display → ROND élevé (80-100) : impact maximal
-  // Headline → ROND moyen (50-70) : assertif
-  // Title → ROND faible (10-30)
-  // Body/Label → ROND=0 : lisibilité pure
+  // Type scale M3 Expressive (emphasized) :
+  // https://m3.material.io/styles/typography/type-scale-tokens
+  // https://m3.material.io/blog/building-with-m3-expressive
+  // Display / Headline → ROND max (voix expressive)
+  // Body / Label → ROND 0 (lisibilité)
   static TextTheme _buildTextTheme(double grad, ColorScheme scheme) {
+    TextStyle role({
+      required double size,
+      required double line,
+      required double wght,
+      required double rond,
+      double tracking = 0,
+    }) {
+      return flex(
+        fontSize: size,
+        wght: wght,
+        rond: rond,
+        grad: grad,
+        height: line / size,
+        letterSpacing: tracking,
+        color: scheme.onSurface,
+      );
+    }
+
     return TextTheme(
-      displayLarge:  _gsf(fontSize: 57, wght: 900, rond: 100, grad: grad),
-      displayMedium: _gsf(fontSize: 45, wght: 900, rond: 100, grad: grad),
-      displaySmall:  _gsf(fontSize: 36, wght: 800, rond: 90,  grad: grad),
+      // Display — 57 / 45 / 36 — emphasized medium + round terminals
+      displayLarge:  role(size: 57, line: 64, wght: 500, rond: 100, tracking: -0.25),
+      displayMedium: role(size: 45, line: 52, wght: 500, rond: 100),
+      displaySmall:  role(size: 36, line: 44, wght: 500, rond: 100),
 
-      headlineLarge:  _gsf(fontSize: 32, wght: 800, rond: 70, grad: grad),
-      headlineMedium: _gsf(fontSize: 28, wght: 800, rond: 60, grad: grad),
-      headlineSmall:  _gsf(fontSize: 24, wght: 800, rond: 50, grad: grad),
+      // Headline — 32 / 28 / 24
+      headlineLarge:  role(size: 32, line: 40, wght: 500, rond: 80),
+      headlineMedium: role(size: 28, line: 36, wght: 500, rond: 80),
+      headlineSmall:  role(size: 24, line: 32, wght: 500, rond: 70),
 
-      titleLarge:  _gsf(fontSize: 22, wght: 700, rond: 30, grad: grad),
-      titleMedium: _gsf(fontSize: 16, wght: 600, rond: 20, grad: grad),
-      titleSmall:  _gsf(fontSize: 14, wght: 600, rond: 10, grad: grad),
+      // Title — 22 / 16 / 14 — plus dense
+      titleLarge:  role(size: 22, line: 28, wght: 500, rond: 40),
+      titleMedium: role(size: 16, line: 24, wght: 600, rond: 20, tracking: 0.15),
+      titleSmall:  role(size: 14, line: 20, wght: 600, rond: 15, tracking: 0.1),
 
-      bodyLarge:  _gsf(fontSize: 16, wght: 400, rond: 0, grad: grad),
-      bodyMedium: _gsf(fontSize: 14, wght: 400, rond: 0, grad: grad),
-      bodySmall:  _gsf(fontSize: 12, wght: 400, rond: 0, grad: grad),
+      // Body — géométrique, ROND 0
+      bodyLarge:  role(size: 16, line: 24, wght: 400, rond: 0, tracking: 0.5),
+      bodyMedium: role(size: 14, line: 20, wght: 400, rond: 0, tracking: 0.25),
+      bodySmall:  role(size: 12, line: 16, wght: 400, rond: 0, tracking: 0.4),
 
-      labelLarge:  _gsf(fontSize: 14, wght: 700, rond: 0, grad: grad),
-      labelMedium: _gsf(fontSize: 12, wght: 600, rond: 0, grad: grad),
-      labelSmall:  _gsf(fontSize: 11, wght: 500, rond: 0, grad: grad),
+      // Label
+      labelLarge:  role(size: 14, line: 20, wght: 600, rond: 0, tracking: 0.1),
+      labelMedium: role(size: 12, line: 16, wght: 600, rond: 0, tracking: 0.5),
+      labelSmall:  role(size: 11, line: 16, wght: 600, rond: 0, tracking: 0.5),
     );
   }
 
-  static TextStyle _gsf({
+  /// Google Sans Flex (fichier variable bundlé).
+  /// Axes : wght 1–1000, ROND 0–100, GRAD -200–150, opsz 8–144.
+  static TextStyle flex({
     required double fontSize,
     required double wght,
     required double rond,
-    required double grad,
+    double grad = 0,
     Color? color,
+    double? height,
+    double? letterSpacing,
   }) {
-    return GoogleFonts.googleSansFlex(fontSize: fontSize, color: color)
-        .copyWith(fontVariations: [
-      FontVariation('wght', wght),
-      FontVariation('ROND', rond),
-      FontVariation('GRAD', grad),
-      FontVariation('opsz', fontSize.clamp(20, 48)),
-    ]);
+    return TextStyle(
+      fontFamily: 'GoogleSansFlex',
+      fontSize: fontSize,
+      color: color,
+      height: height,
+      letterSpacing: letterSpacing,
+      fontVariations: [
+        FontVariation('wght', wght),
+        FontVariation('ROND', rond),
+        FontVariation('GRAD', grad),
+        FontVariation('opsz', fontSize.clamp(8, 144)),
+      ],
+    );
   }
 }

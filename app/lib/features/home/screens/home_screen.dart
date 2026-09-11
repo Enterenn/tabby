@@ -228,7 +228,7 @@ class _HomeHeader extends StatelessWidget {
         children: [
           Text(
             isEmpty ? 'Bienvenue 👋' : 'Tes groupes',
-            style: tt.headlineLarge?.copyWith(color: cs.onSurface),
+            style: tt.displaySmall,
           ),
           const SizedBox(height: 4),
           Text(
