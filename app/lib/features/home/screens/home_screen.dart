@@ -54,7 +54,7 @@ class _HomeView extends StatelessWidget {
                 children: [
                   Text(state.message, textAlign: TextAlign.center),
                   const SizedBox(height: 16),
-                  FilledButton(
+                  FilledButton.tonal(
                     onPressed: () => context.read<HomeCubit>().loadGroups(),
                     child: const Text('Réessayer'),
                   ),
@@ -102,18 +102,30 @@ class _HomeView extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: FilledButton.tonal(
                           onPressed: () => context.push('/groups/create'),
-                          icon: const Icon(Symbols.add_rounded, size: 18),
-                          label: const Text('Créer'),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Symbols.add_rounded, size: 18),
+                              SizedBox(width: 8),
+                              Text('Créer'),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: FilledButton.tonal(
                           onPressed: () => context.push('/groups/join'),
-                          icon: const Icon(Symbols.person_add_rounded, size: 18),
-                          label: const Text('Rejoindre'),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Symbols.person_add_rounded, size: 18),
+                              SizedBox(width: 8),
+                              Text('Rejoindre'),
+                            ],
+                          ),
                         ),
                       ),
                     ],

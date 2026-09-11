@@ -111,10 +111,12 @@ class _InviteScreenState extends State<InviteScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              OutlinedButton.icon(
-                onPressed: _generateCode,
-                icon: const Icon(Symbols.refresh_rounded),
-                label: const Text('Générer un nouveau code'),
+              Center(
+                child: TextButton.icon(
+                  onPressed: _generateCode,
+                  icon: const Icon(Symbols.refresh_rounded, size: 18),
+                  label: const Text('Générer un nouveau code'),
+                ),
               ),
             ],
             const Spacer(),

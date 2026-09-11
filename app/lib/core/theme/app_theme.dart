@@ -54,11 +54,13 @@ abstract final class AppTheme {
         ),
       ),
 
+      // Card filled M3 : fond surfaceContainerHighest, pas d'ombre
       cardTheme: CardThemeData(
-        elevation: 1,
-        surfaceTintColor: scheme.primary,
+        elevation: 0,
+        color: scheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
       ),
 
       filledButtonTheme: FilledButtonThemeData(
