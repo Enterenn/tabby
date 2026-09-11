@@ -47,6 +47,8 @@ dependencies:
   barcode_widget: ^2.0.4
   intl: ^0.20.2
   connectivity_plus: ^7.3.1
+  firebase_core: ^3.14.0
+  firebase_messaging: ^15.2.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -19,6 +19,11 @@ import '../../shared/widgets/main_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Navigue vers le groupe depuis une notification (appelé par TabbyApp).
+void navigateToGroup(String groupId) {
+  _rootNavigatorKey.currentContext?.push('/groups/$groupId');
+}
+
 GoRouter buildRouter(AuthCubit authCubit) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,

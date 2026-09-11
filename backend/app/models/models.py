@@ -38,6 +38,21 @@ class User(Base):
     group_memberships: Mapped[list["GroupMember"]] = relationship(back_populates="user")
     paid_expenses: Mapped[list["Expense"]] = relationship(back_populates="paid_by_user")
     expense_splits: Mapped[list["ExpenseSplit"]] = relationship(back_populates="user")
+    device_tokens: Mapped[list["DeviceToken"]] = relationship(back_populates="user", passive_deletes=True)
+
+
+class DeviceToken(Base):
+    __tablename__ = "device_token"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    token: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    platform: Mapped[str] = mapped_column(Text, nullable=False, default="android")
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="device_tokens")
     loyalty_cards: Mapped[list["LoyaltyCard"]] = relationship(back_populates="user")
     recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="paid_by_user")
 

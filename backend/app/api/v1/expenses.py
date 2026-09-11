@@ -8,7 +8,8 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_group_member
-from app.models.models import Category, Expense, ExpenseSplit, GroupMember, User
+from app.core.fcm import send_expense_notification
+from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember, User
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, ExpenseUpdate, CategoryResponse, SplitItem
 
 router = APIRouter(prefix="/groups", tags=["expenses"])
@@ -134,7 +135,36 @@ async def create_expense(
         )
     )
     expense = result.scalar_one()
-    return _to_response(expense)
+    response = _to_response(expense)
+
+    # Notifier les autres membres du groupe (fire-and-forget)
+    try:
+        group = await db.get(Group, group_id)
+        members_result = await db.execute(
+            select(GroupMember).where(GroupMember.group_id == group_id)
+        )
+        other_user_ids = [
+            m.user_id for m in members_result.scalars().all()
+            if m.user_id != current_user.id
+        ]
+        if other_user_ids and group:
+            tokens_result = await db.execute(
+                select(DeviceToken.token).where(DeviceToken.user_id.in_(other_user_ids))
+            )
+            tokens = [t for (t,) in tokens_result.all()]
+            send_expense_notification(
+                tokens=tokens,
+                group_name=group.name,
+                expense_name=response.name,
+                amount=response.amount,
+                group_id=str(group_id),
+                payer_name=current_user.name,
+            )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("[FCM] notification error: %s", exc)
+
+    return response
 
 
 @router.patch(

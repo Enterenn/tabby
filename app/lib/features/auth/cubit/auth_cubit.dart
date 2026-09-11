@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/token_storage.dart';
+import '../../../core/services/fcm_service.dart';
 import '../../../shared/models/user.dart';
 
 part 'auth_state.dart';
@@ -29,6 +30,7 @@ class AuthCubit extends Cubit<AuthState> {
         );
       }
       emit(AuthAuthenticated(user));
+      FcmService.instance.init();
     } catch (_) {
       await tokenStorage.clear();
       emit(AuthUnauthenticated());
@@ -72,6 +74,7 @@ class AuthCubit extends Cubit<AuthState> {
       final user = User.fromJson(profileResponse.data as Map<String, dynamic>);
       await tokenStorage.save(access: access, refresh: refresh, userId: user.id);
       emit(AuthAuthenticated(user));
+      FcmService.instance.init();
     } on DioException catch (e) {
       emit(AuthError(_extractDetail(e, 'Email ou mot de passe incorrect')));
     } catch (e) {
@@ -93,6 +96,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
+    await FcmService.instance.deleteToken();
     await tokenStorage.clear();
     apiClient.clearToken();
     emit(AuthUnauthenticated());

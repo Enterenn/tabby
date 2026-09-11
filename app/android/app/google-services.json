@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "362881288941",
+    "project_id": "tabby-744a6",
+    "storage_bucket": "tabby-744a6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362881288941:android:330b9b4bfc7184f4041ae4",
+        "android_client_info": {
+          "package_name": "com.tabby.tabby"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoXfUkhZt6yj2cFfFvROJKlQnobYHdZYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

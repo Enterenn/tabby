@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api/token_storage.dart';
 import 'core/router/app_router.dart';
+import 'core/services/fcm_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/cubit/auth_cubit.dart';
 
@@ -14,6 +17,8 @@ void main() async {
   AppTheme.configureSymbols();
   await initializeDateFormatting('fr_FR');
   await initTokenStorage();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   runApp(const TabbyApp());
 }
 
@@ -31,6 +36,27 @@ class _TabbyAppState extends State<TabbyApp> {
   void initState() {
     super.initState();
     _authCubit = AuthCubit()..checkAuth();
+    _setupNotificationHandlers();
+  }
+
+  void _setupNotificationHandlers() {
+    // App en background : tap sur la notification
+    FirebaseMessaging.onMessageOpenedApp.listen((msg) {
+      final groupId = msg.data['group_id'] as String?;
+      if (groupId != null) navigateToGroup(groupId);
+    });
+
+    // App terminée : tap pour ouvrir
+    FirebaseMessaging.instance.getInitialMessage().then((msg) {
+      if (msg == null) return;
+      final groupId = msg.data['group_id'] as String?;
+      if (groupId != null) {
+        // Petit délai pour que le router soit prêt
+        Future.delayed(const Duration(milliseconds: 500), () {
+          navigateToGroup(groupId);
+        });
+      }
+    });
   }
 
   @override
