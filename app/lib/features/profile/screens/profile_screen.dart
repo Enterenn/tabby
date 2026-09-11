@@ -66,6 +66,12 @@ class ProfileScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               _ActionTile(
+                icon: Symbols.repeat_rounded,
+                label: 'Dépenses récurrentes',
+                onTap: () => context.push('/profile/recurring'),
+              ),
+              const SizedBox(height: 8),
+              _ActionTile(
                 icon: Symbols.category_rounded,
                 label: 'Mes catégories',
                 onTap: () => context.push('/profile/categories'),

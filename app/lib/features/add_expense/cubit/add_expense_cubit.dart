@@ -120,37 +120,51 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required DateTime expenseDate,
     // null = répartition égale, non-null = personnalisée
     List<Map<String, dynamic>>? customSplits,
+    // true = crée une récurrence mensuelle au lieu d'une dépense ponctuelle
+    bool recurring = false,
   }) async {
     final current = state;
     if (current is! AddExpenseReady) return false;
     emit(const AddExpenseSubmitting());
 
-    final dateStr =
-        '${expenseDate.year.toString().padLeft(4, '0')}-'
-        '${expenseDate.month.toString().padLeft(2, '0')}-'
-        '${expenseDate.day.toString().padLeft(2, '0')}';
-
-    final body = <String, dynamic>{
-      'name': name,
-      'amount': amount,
-      'category_id': categoryId,
-      'paid_by': paidBy,
-      'expense_date': dateStr,
-    };
-
-    if (customSplits != null) {
-      body['split_type'] = 'custom';
-      body['splits'] = customSplits;
-    } else {
-      body['split_type'] = 'equal';
-    }
-
     try {
-      await apiClient.dio.post('/groups/$groupId/expenses', data: body);
+      if (recurring) {
+        await apiClient.dio.post('/groups/$groupId/recurring-expenses', data: {
+          'name': name,
+          'amount': amount,
+          'category_id': categoryId,
+          'paid_by': paidBy,
+          'day_of_period': expenseDate.day,
+          'frequency': 'monthly',
+        });
+      } else {
+        final dateStr =
+            '${expenseDate.year.toString().padLeft(4, '0')}-'
+            '${expenseDate.month.toString().padLeft(2, '0')}-'
+            '${expenseDate.day.toString().padLeft(2, '0')}';
+
+        final body = <String, dynamic>{
+          'name': name,
+          'amount': amount,
+          'category_id': categoryId,
+          'paid_by': paidBy,
+          'expense_date': dateStr,
+        };
+
+        if (customSplits != null) {
+          body['split_type'] = 'custom';
+          body['splits'] = customSplits;
+        } else {
+          body['split_type'] = 'equal';
+        }
+
+        await apiClient.dio.post('/groups/$groupId/expenses', data: body);
+      }
+
       emit(const AddExpenseSuccess());
       return true;
     } catch (_) {
-      emit(current); // restaure Ready pour corriger sans recharger
+      emit(current);
       return false;
     }
   }

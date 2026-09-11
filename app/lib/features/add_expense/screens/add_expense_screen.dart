@@ -45,6 +45,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   String? _selectedPayerId;
   DateTime _expenseDate = DateTime.now();
   bool _customSplit = false;
+  bool _recurring = false;
 
   // memberId → TextEditingController pour la répartition personnalisée
   final Map<String, TextEditingController> _splitCtrls = {};
@@ -112,7 +113,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       );
       return;
     }
-    if (_customSplit && !_splitsValid) {
+    if (_customSplit && !_recurring && !_splitsValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('La somme des parts doit égaler le montant total')),
@@ -142,7 +143,8 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
           categoryId: _selectedCategory!.id,
           paidBy: payerId,
           expenseDate: _expenseDate,
-          customSplits: splits,
+          customSplits: _recurring ? null : splits,
+          recurring: _recurring,
         );
 
     if (ok && mounted) context.pop(true);
@@ -359,14 +361,16 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                         ButtonSegment(value: true, label: Text('Perso')),
                       ],
                       selected: {_customSplit},
-                      onSelectionChanged: (set) {
-                        setState(() {
-                          _customSplit = set.first;
-                          if (_customSplit) {
-                            _initSplitCtrls(ready.group.members);
-                          }
-                        });
-                      },
+                      onSelectionChanged: _recurring
+                          ? null
+                          : (set) {
+                              setState(() {
+                                _customSplit = set.first;
+                                if (_customSplit) {
+                                  _initSplitCtrls(ready.group.members);
+                                }
+                              });
+                            },
                       style: SegmentedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                       ),
@@ -385,8 +389,19 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                   ),
                 ],
 
+                // ── Récurrence ────────────────────────────────────────────
+                const SizedBox(height: 8),
+                _RecurringTile(
+                  value: _recurring,
+                  expenseDate: _expenseDate,
+                  onChanged: (v) => setState(() {
+                    _recurring = v;
+                    if (v) _customSplit = false; // incompatible avec custom split
+                  }),
+                ),
+
                 // ── Submit ─────────────────────────────────────────────────
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 FilledButton(
                   onPressed: submitting ? null : _submit,
                   child: submitting
@@ -395,7 +410,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Enregistrer'),
+                      : Text(_recurring ? 'Programmer la récurrence' : 'Enregistrer'),
                 ),
               ],
             ),
@@ -655,6 +670,53 @@ class _PayerDropdown extends StatelessWidget {
           .map((m) => DropdownMenuItem(value: m.user.id, child: Text(m.user.name)))
           .toList(),
       onChanged: onChanged,
+    );
+  }
+}
+
+// ─── Recurring tile ───────────────────────────────────────────────────────────
+
+class _RecurringTile extends StatelessWidget {
+  const _RecurringTile({
+    required this.value,
+    required this.expenseDate,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final DateTime expenseDate;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: value
+            ? cs.primaryContainer.withValues(alpha: 0.5)
+            : cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SwitchListTile(
+        value: value,
+        onChanged: onChanged,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        secondary: Icon(
+          Symbols.repeat_rounded,
+          color: value ? cs.primary : cs.onSurfaceVariant,
+          fill: value ? 1 : 0,
+        ),
+        title: const Text('Répéter chaque mois'),
+        subtitle: value
+            ? Text(
+                'Le ${expenseDate.day} de chaque mois',
+                style: tt.bodySmall?.copyWith(color: cs.primary),
+              )
+            : null,
+      ),
     );
   }
 }

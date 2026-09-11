@@ -13,6 +13,7 @@ import '../../features/group_detail/screens/create_group_screen.dart';
 import '../../features/group_detail/screens/invite_screen.dart';
 import '../../features/group_detail/screens/join_group_screen.dart';
 import '../../features/profile/screens/category_management_screen.dart';
+import '../../features/recurring/screens/recurring_expenses_screen.dart';
 import '../../shared/widgets/main_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -41,6 +42,10 @@ GoRouter buildRouter(AuthCubit authCubit) {
         path: '/groups/:groupId/invite',
         builder: (context, state) =>
             InviteScreen(groupId: state.pathParameters['groupId']!),
+      ),
+      GoRoute(
+        path: '/profile/recurring',
+        builder: (context, _) => const RecurringExpensesScreen(),
       ),
       GoRoute(
         path: '/profile/categories',
