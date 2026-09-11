@@ -38,6 +38,8 @@ class User(Base):
     group_memberships: Mapped[list["GroupMember"]] = relationship(back_populates="user")
     paid_expenses: Mapped[list["Expense"]] = relationship(back_populates="paid_by_user")
     expense_splits: Mapped[list["ExpenseSplit"]] = relationship(back_populates="user")
+    loyalty_cards: Mapped[list["LoyaltyCard"]] = relationship(back_populates="user", passive_deletes=True)
+    recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="paid_by_user")
     device_tokens: Mapped[list["DeviceToken"]] = relationship(back_populates="user", passive_deletes=True)
 
 
@@ -53,8 +55,6 @@ class DeviceToken(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="device_tokens")
-    loyalty_cards: Mapped[list["LoyaltyCard"]] = relationship(back_populates="user")
-    recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="paid_by_user")
 
 
 class Group(Base):
