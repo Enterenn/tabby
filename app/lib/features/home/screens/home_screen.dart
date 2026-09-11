@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -31,10 +30,7 @@ class _HomeView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Tabby',
-          style: GoogleFonts.figtree(fontWeight: FontWeight.w800, fontSize: 22),
-        ),
+        title: Text('Tabby'),
         actions: [
           const Padding(
             padding: EdgeInsets.only(right: 16),

@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 /// `Theme.of(context).colorScheme` qui est géré par le thème M3.
 abstract final class AppColors {
   /// Couleur primaire de marque — seed du thème M3.
-  static const Color primary = Color(0xFFF2C230);
+  /// Jaune pastel — #FFDB5A, aligné avec le logo.
+  static const Color primary = Color(0xFFFFDB5A);
 
   /// Sémantique métier (non couverte par M3)
   static const Color success = Color(0xFF4C9A6A); // "on te doit"
