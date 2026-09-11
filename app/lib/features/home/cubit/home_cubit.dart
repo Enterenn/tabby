@@ -7,7 +7,19 @@ import '../../../shared/models/group.dart';
 part 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit() : super(HomeInitial());
+  static HomeCubit? _active;
+
+  HomeCubit() : super(HomeInitial()) {
+    _active = this;
+  }
+
+  static void refreshIfActive() => _active?.loadGroups();
+
+  @override
+  Future<void> close() {
+    if (_active == this) _active = null;
+    return super.close();
+  }
 
   Future<void> loadGroups() async {
     emit(HomeLoading());

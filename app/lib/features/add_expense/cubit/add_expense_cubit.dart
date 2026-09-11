@@ -23,24 +23,33 @@ class AddExpenseLoading extends AddExpenseState {
 
 class AddExpenseReady extends AddExpenseState {
   const AddExpenseReady({
+    required this.groups,
     required this.categories,
-    required this.group,
+    this.group,
+    this.groupLocked = false,
   });
 
+  final List<Group> groups;
   final List<Category> categories;
-  final Group group;
+  final Group? group;
+  final bool groupLocked;
 
   AddExpenseReady copyWith({
+    List<Group>? groups,
     List<Category>? categories,
     Group? group,
+    bool? groupLocked,
+    bool clearGroup = false,
   }) =>
       AddExpenseReady(
+        groups: groups ?? this.groups,
         categories: categories ?? this.categories,
-        group: group ?? this.group,
+        group: clearGroup ? null : (group ?? this.group),
+        groupLocked: groupLocked ?? this.groupLocked,
       );
 
   @override
-  List<Object?> get props => [categories, group];
+  List<Object?> get props => [groups, categories, group, groupLocked];
 }
 
 class AddExpenseSubmitting extends AddExpenseState {
@@ -63,31 +72,65 @@ class AddExpenseError extends AddExpenseState {
 class AddExpenseCubit extends Cubit<AddExpenseState> {
   AddExpenseCubit() : super(const AddExpenseInitial());
 
-  Future<void> load(String groupId) async {
-    if (groupId.isEmpty) {
-      emit(const AddExpenseError('Aucun groupe sélectionné'));
-      return;
-    }
+  Future<void> load({String? groupId, bool lockGroup = false}) async {
     emit(const AddExpenseLoading());
     try {
-      final results = await Future.wait([
-        apiClient.dio.get('/categories', queryParameters: {'group_id': groupId}),
-        apiClient.dio.get('/groups/$groupId'),
-      ]);
-
-      final categories = (results[0].data as List)
-          .map((c) => Category.fromJson(c as Map<String, dynamic>))
+      final groupsResp = await apiClient.dio.get('/groups');
+      final groups = (groupsResp.data as List)
+          .map((g) => Group.fromJson(g as Map<String, dynamic>))
           .toList();
 
-      final group = Group.fromJson(results[1].data as Map<String, dynamic>);
+      if (groups.isEmpty) {
+        emit(AddExpenseReady(
+          groups: const [],
+          categories: const [],
+          groupLocked: lockGroup,
+        ));
+        return;
+      }
 
-      emit(AddExpenseReady(categories: categories, group: group));
+      final selectedId = groupId ?? (groups.length == 1 ? groups.first.id : null);
+      if (selectedId == null) {
+        emit(AddExpenseReady(groups: groups, categories: const []));
+        return;
+      }
+
+      final data = await _fetchGroupData(selectedId);
+      emit(AddExpenseReady(
+        groups: groups,
+        group: data.group,
+        categories: data.categories,
+        groupLocked: lockGroup && groupId != null,
+      ));
     } catch (e) {
       emit(AddExpenseError(e.toString()));
     }
   }
 
-  /// Ajoute une catégorie custom et rafraîchit la liste.
+  Future<void> selectGroup(String groupId) async {
+    final current = state;
+    if (current is! AddExpenseReady || current.groupLocked) return;
+    try {
+      final data = await _fetchGroupData(groupId);
+      emit(current.copyWith(group: data.group, categories: data.categories));
+    } catch (e) {
+      emit(AddExpenseError(e.toString()));
+    }
+  }
+
+  Future<({Group group, List<Category> categories})> _fetchGroupData(
+      String groupId) async {
+    final results = await Future.wait([
+      apiClient.dio.get('/categories', queryParameters: {'group_id': groupId}),
+      apiClient.dio.get('/groups/$groupId'),
+    ]);
+    final categories = (results[0].data as List)
+        .map((c) => Category.fromJson(c as Map<String, dynamic>))
+        .toList();
+    final group = Group.fromJson(results[1].data as Map<String, dynamic>);
+    return (group: group, categories: categories);
+  }
+
   Future<Category?> createCategory({
     required String groupId,
     required String name,
@@ -118,9 +161,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required String categoryId,
     required String paidBy,
     required DateTime expenseDate,
-    // null = répartition égale, non-null = personnalisée
     List<Map<String, dynamic>>? customSplits,
-    // true = crée une récurrence mensuelle au lieu d'une dépense ponctuelle
     bool recurring = false,
   }) async {
     final current = state;

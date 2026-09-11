@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/home_cubit.dart';
 
@@ -66,7 +68,7 @@ class _GroupCardState extends State<GroupCard> {
               // ── Header coloré ──────────────────────────────────────────────
               Container(
                 decoration: BoxDecoration(
-                  color: cs.primaryContainer.withValues(alpha: 0.55),
+                  color: cs.secondaryContainer.withValues(alpha: 0.55),
                   borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(28)),
                 ),
@@ -78,7 +80,7 @@ class _GroupCardState extends State<GroupCard> {
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.25),
+                        color: cs.secondary,
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -86,9 +88,11 @@ class _GroupCardState extends State<GroupCard> {
                         group.name.isNotEmpty
                             ? group.name[0].toUpperCase()
                             : '?',
-                        style: tt.titleLarge?.copyWith(
-                          color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.w900,
+                        style: AppTheme.flex(
+                          fontSize: 18,
+                          wght: 800,
+                          rond: 80,
+                          color: cs.onSecondary,
                         ),
                       ),
                     ),
@@ -97,9 +101,7 @@ class _GroupCardState extends State<GroupCard> {
                     Expanded(
                       child: Text(
                         group.name,
-                        style: tt.headlineSmall?.copyWith(
-                          color: cs.onSurface,
-                        ),
+                        style: tt.headlineSmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -208,8 +210,10 @@ class _AddExpenseButton extends StatelessWidget {
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
       ),
       onPressed: () async {
-        final added = await context
-            .push<bool>('/add-expense?groupId=${group.id}');
+        final added = await showAddExpenseSheet(
+          context,
+          groupId: group.id,
+        );
         if ((added ?? false) && context.mounted) {
           context.read<HomeCubit>().loadGroups();
         }

@@ -7,7 +7,6 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/budget/screens/budget_screen.dart';
-import '../../features/add_expense/screens/add_expense_screen.dart';
 import '../../features/cards/screens/cards_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/group_detail/screens/create_group_screen.dart';
@@ -74,13 +73,6 @@ GoRouter buildRouter(AuthCubit authCubit) {
       GoRoute(
         path: '/profile/categories',
         builder: (context, _) => const CategoryManagementScreen(),
-      ),
-      // Add expense — hors ShellRoute pour un écran plein sans nav bar
-      GoRoute(
-        path: '/add-expense',
-        builder: (context, state) => AddExpenseScreen(
-          groupId: state.uri.queryParameters['groupId'],
-        ),
       ),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),

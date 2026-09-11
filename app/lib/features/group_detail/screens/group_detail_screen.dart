@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/token_storage.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/group_detail_cubit.dart';
@@ -99,7 +101,7 @@ class _LoadedBody extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await context.push('/add-expense?groupId=${group.id}');
+          await showAddExpenseSheet(context, groupId: group.id);
           if (context.mounted) context.read<GroupDetailCubit>().load();
         },
         child: const Icon(Symbols.add_rounded),
@@ -107,23 +109,10 @@ class _LoadedBody extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           _GroupSliverAppBar(group: group),
-          // Avatars chevauchants sous l'AppBar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: _AvatarStack(
-                names: group.members.map((m) => m.user.name).toList(),
-                containerColor: Theme.of(context).colorScheme.surfaceContainerLow,
-              ),
-            ),
-          ),
-          // Total des dépenses
+          // Total des dépenses — hero display
           if (expenses.isNotEmpty)
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: _TotalCard(expenses: expenses),
-              ),
+              child: _TotalHero(expenses: expenses),
             ),
           // ── 1. Dépenses ──────────────────────────────────────────────────
           _SectionHeader(
@@ -428,18 +417,12 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: cs.primary),
-            const SizedBox(width: 8),
-            Text(title,
-                style: tt.titleMedium?.copyWith(color: cs.onSurface)),
-          ],
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
     );
@@ -625,8 +608,9 @@ class _MemberTile extends StatelessWidget {
         ),
         trailing: Text(
           balLabel,
-          style: tt.labelLarge?.copyWith(
-              color: balColor, fontWeight: FontWeight.w700),
+          style: tt.titleMedium?.copyWith(
+            color: balColor,
+          ),
         ),
       ),
     );
@@ -690,9 +674,11 @@ class _ExpenseTile extends StatelessWidget {
               ),
               Text(
                 '${expense.amount.toStringAsFixed(2)} €',
-                style: tt.titleSmall?.copyWith(
+                style: AppTheme.flex(
+                  fontSize: 18,
+                  wght: 800,
+                  rond: 60,
                   color: isPaidByMe ? const Color(0xFF4C9A6A) : cs.onSurface,
-                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -764,8 +750,9 @@ class _ExpenseTile extends StatelessWidget {
 
 // ─── Total card ───────────────────────────────────────────────────────────────
 
-class _TotalCard extends StatelessWidget {
-  const _TotalCard({required this.expenses});
+// Remplace l'ancienne mini card par un hero stat expressif
+class _TotalHero extends StatelessWidget {
+  const _TotalHero({required this.expenses});
   final List<Expense> expenses;
 
   @override
@@ -773,28 +760,40 @@ class _TotalCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+    final formatted = NumberFormat.currency(
+      locale: 'fr_FR',
+      symbol: '€',
+      decimalDigits: 2,
+    ).format(total);
+    final count = expenses.length;
 
-    return Card(
-      color: cs.primaryContainer.withValues(alpha: 0.4),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Icon(Symbols.receipt_long_rounded,
-                size: 20, color: cs.primary),
-            const SizedBox(width: 10),
-            Text('Total des dépenses',
-                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-            const Spacer(),
-            Text(
-              '${total.toStringAsFixed(2)} €',
-              style: tt.titleMedium?.copyWith(
-                color: cs.primary,
-                fontWeight: FontWeight.w800,
-              ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TOTAL',
+            style: tt.labelMedium?.copyWith(
+              color: cs.secondary,
+              letterSpacing: 2.4,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              formatted,
+              style: tt.displayLarge,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$count dépense${count > 1 ? 's' : ''}',
+            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }
@@ -1022,94 +1021,6 @@ class _InviteDialog extends StatelessWidget {
           child: const Text('Fermer'),
         ),
       ],
-    );
-  }
-}
-
-// ─── Avatar stack (chevauchant) ───────────────────────────────────────────────
-
-class _AvatarStack extends StatelessWidget {
-  const _AvatarStack({required this.names, required this.containerColor});
-  final List<String> names;
-  final Color containerColor;
-
-  static const _size = 36.0;
-  static const _overlap = 12.0;
-
-  static const _colors = [
-    Color(0xFFE67E22),
-    Color(0xFF27AE60),
-    Color(0xFF2980B9),
-    Color(0xFF8E44AD),
-    Color(0xFF16A085),
-    Color(0xFFE74C3C),
-    Color(0xFF7F8C8D),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final displayed = names.take(5).toList();
-    final extra = names.length - displayed.length;
-    final totalItems = displayed.length + (extra > 0 ? 1 : 0);
-    final width = _size + (totalItems - 1) * (_size - _overlap);
-
-    return SizedBox(
-      width: width,
-      height: _size,
-      child: Stack(
-        children: [
-          ...displayed.asMap().entries.map((e) {
-            final i = e.key;
-            final name = e.value;
-            final color = _colors[i % _colors.length];
-            final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-            return Positioned(
-              left: i * (_size - _overlap),
-              child: Container(
-                width: _size,
-                height: _size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color,
-                  border: Border.all(color: containerColor, width: 2),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            );
-          }),
-          if (extra > 0)
-            Positioned(
-              left: displayed.length * (_size - _overlap),
-              child: Container(
-                width: _size,
-                height: _size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: cs.surfaceContainerHighest,
-                  border: Border.all(color: containerColor, width: 2),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '+$extra',
-                  style: tt.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

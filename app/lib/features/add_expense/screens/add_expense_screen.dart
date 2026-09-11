@@ -1,42 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../features/home/cubit/home_cubit.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/add_expense_cubit.dart';
 
-// ─── Screen entry point ───────────────────────────────────────────────────────
-
-class AddExpenseScreen extends StatelessWidget {
-  const AddExpenseScreen({super.key, this.groupId});
-
-  final String? groupId;
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => AddExpenseCubit()..load(groupId ?? ''),
-      child: _AddExpenseView(groupId: groupId ?? ''),
-    );
-  }
+/// Ouvre la feuille de création de dépense.
+/// [groupId] renseigné → groupe prérempli et verrouillé.
+Future<bool?> showAddExpenseSheet(
+  BuildContext context, {
+  String? groupId,
+}) {
+  final lock = groupId != null && groupId.isNotEmpty;
+  return showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (_) => BlocProvider(
+      create: (_) => AddExpenseCubit()
+        ..load(groupId: groupId, lockGroup: lock),
+      child: const _AddExpenseSheet(),
+    ),
+  );
 }
 
-// ─── Main view (stateful: owns all form state) ────────────────────────────────
+// ─── Sheet (stateful: owns all form state) ────────────────────────────────────
 
-class _AddExpenseView extends StatefulWidget {
-  const _AddExpenseView({required this.groupId});
-
-  final String groupId;
+class _AddExpenseSheet extends StatefulWidget {
+  const _AddExpenseSheet();
 
   @override
-  State<_AddExpenseView> createState() => _AddExpenseViewState();
+  State<_AddExpenseSheet> createState() => _AddExpenseSheetState();
 }
 
-class _AddExpenseViewState extends State<_AddExpenseView> {
+class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
@@ -47,7 +49,6 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   bool _customSplit = false;
   bool _recurring = false;
 
-  // memberId → TextEditingController pour la répartition personnalisée
   final Map<String, TextEditingController> _splitCtrls = {};
 
   AddExpenseReady? _lastReady;
@@ -62,7 +63,6 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
     super.dispose();
   }
 
-  // Initialise les contrôleurs de split avec répartition égale
   void _initSplitCtrls(List<GroupMember> members) {
     final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0;
     final n = members.length;
@@ -72,12 +72,10 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       if (!_splitCtrls.containsKey(m.user.id)) {
         _splitCtrls[m.user.id] = TextEditingController();
       }
-      _splitCtrls[m.user.id]!.text =
-          perPerson.toStringAsFixed(2);
+      _splitCtrls[m.user.id]!.text = perPerson.toStringAsFixed(2);
     }
   }
 
-  // Somme des montants saisis dans la répartition custom
   double get _splitsTotal => _splitCtrls.values.fold(0.0, (acc, ctrl) {
         return acc + (double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0.0);
       });
@@ -85,8 +83,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
   double get _expenseAmount =>
       double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
 
-  bool get _splitsValid =>
-      (_expenseAmount - _splitsTotal).abs() < 0.02;
+  bool get _splitsValid => (_expenseAmount - _splitsTotal).abs() < 0.02;
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -98,8 +95,25 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
     if (picked != null) setState(() => _expenseDate = picked);
   }
 
+  Future<void> _onGroupChanged(String? id) async {
+    if (id == null) return;
+    setState(() {
+      _selectedCategory = null;
+      _selectedPayerId = null;
+      _customSplit = false;
+    });
+    await context.read<AddExpenseCubit>().selectGroup(id);
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final ready = _lastReady;
+    if (ready?.group == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Choisis un groupe')),
+      );
+      return;
+    }
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Choisis une catégorie')),
@@ -121,28 +135,25 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       return;
     }
 
-    final ready = _lastReady!;
     final payerId =
-        _selectedPayerId ?? ready.group.members.first.user.id;
+        _selectedPayerId ?? ready!.group!.members.first.user.id;
 
     List<Map<String, dynamic>>? splits;
     if (_customSplit) {
       splits = _splitCtrls.entries.map((e) {
         return {
           'user_id': e.key,
-          'amount':
-              double.tryParse(e.value.text.replaceAll(',', '.')) ?? 0.0,
+          'amount': double.tryParse(e.value.text.replaceAll(',', '.')) ?? 0.0,
         };
       }).toList();
     }
 
-    // Description facultative : repli sur le nom de la catégorie
     final name = _nameCtrl.text.trim().isEmpty
         ? _selectedCategory!.name
         : _nameCtrl.text.trim();
 
     final ok = await context.read<AddExpenseCubit>().submit(
-          groupId: widget.groupId,
+          groupId: ready!.group!.id,
           name: name,
           amount: amount,
           categoryId: _selectedCategory!.id,
@@ -152,286 +163,331 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
           recurring: _recurring,
         );
 
-    if (ok && mounted) context.pop(true);
+    if (ok && mounted) {
+      HomeCubit.refreshIfActive();
+      Navigator.of(context).pop(true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return BlocConsumer<AddExpenseCubit, AddExpenseState>(
-      listener: (context, state) {
-        if (state is AddExpenseError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-        }
-      },
-      builder: (context, state) {
-        if (state is AddExpenseInitial || state is AddExpenseLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (state is AddExpenseError) {
-          return Scaffold(
-            appBar: AppBar(leading: IconButton(
-              icon: const Icon(Symbols.close_rounded),
-              onPressed: () => context.pop(),
-            )),
-            body: Center(
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.92,
+        child: BlocConsumer<AddExpenseCubit, AddExpenseState>(
+          listener: (context, state) {
+            if (state is AddExpenseError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is AddExpenseInitial || state is AddExpenseLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (state is AddExpenseError && _lastReady == null) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(state.message, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton.tonal(
+                        onPressed: () =>
+                            context.read<AddExpenseCubit>().load(),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final AddExpenseReady ready;
+            final bool submitting;
+            if (state is AddExpenseReady) {
+              ready = state;
+              _lastReady = state;
+              submitting = false;
+            } else {
+              ready = _lastReady!;
+              submitting = true;
+            }
+
+            if (_selectedPayerId == null &&
+                ready.group != null &&
+                ready.group!.members.isNotEmpty) {
+              _selectedPayerId = ready.group!.members.first.user.id;
+            }
+
+            return Form(
+              key: _formKey,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.message, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton.tonal(
-                    onPressed: () =>
-                        context.read<AddExpenseCubit>().load(widget.groupId),
-                    child: const Text('Réessayer'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final AddExpenseReady ready;
-        final bool submitting;
-        if (state is AddExpenseReady) {
-          ready = state;
-          _lastReady = state;
-          submitting = false;
-        } else {
-          ready = _lastReady!;
-          submitting = true;
-        }
-
-        if (_selectedPayerId == null && ready.group.members.isNotEmpty) {
-          _selectedPayerId = ready.group.members.first.user.id;
-        }
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Nouvelle dépense'),
-            leading: IconButton(
-              icon: const Icon(Symbols.close_rounded),
-              onPressed: () => context.pop(),
-            ),
-          ),
-          body: Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              children: [
-
-                // ── Montant ────────────────────────────────────────────────
-                const SizedBox(height: 24),
-                Center(
-                  child: IntrinsicWidth(
-                    child: TextFormField(
-                      controller: _amountCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      textAlign: TextAlign.center,
-                      style: tt.displayMedium?.copyWith(color: cs.onSurface),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text('Nouvelle dépense',
+                              style: tt.headlineSmall),
+                        ),
+                        IconButton(
+                          icon: const Icon(Symbols.close_rounded),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
                       ],
-                      onChanged: (_) {
-                        if (_customSplit) setState(() {});
-                      },
-                      decoration: InputDecoration(
-                        filled: false,
-                        border: InputBorder.none,
-                        hintText: '0,00',
-                        hintStyle: tt.displayMedium
-                            ?.copyWith(color: cs.outlineVariant),
-                        suffixText: '€',
-                        suffixStyle: tt.headlineLarge
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Requis';
-                        if (double.tryParse(v.replaceAll(',', '.')) == null) {
-                          return 'Invalide';
-                        }
-                        return null;
-                      },
-                      autofocus: true,
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      children: [
+                        // 1. Montant
+                        Center(
+                          child: IntrinsicWidth(
+                            child: TextFormField(
+                              controller: _amountCtrl,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              textAlign: TextAlign.center,
+                              style: tt.displayLarge
+                                  ?.copyWith(color: cs.onSurface),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[\d,.]')),
+                              ],
+                              onChanged: (_) {
+                                if (_customSplit) setState(() {});
+                              },
+                              decoration: InputDecoration(
+                                filled: false,
+                                border: InputBorder.none,
+                                hintText: '0,00',
+                                hintStyle: tt.displayMedium
+                                    ?.copyWith(color: cs.outlineVariant),
+                                suffixText: '€',
+                                suffixStyle: tt.headlineLarge
+                                    ?.copyWith(color: cs.onSurfaceVariant),
+                              ),
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return 'Requis';
+                                if (double.tryParse(
+                                        v.replaceAll(',', '.')) ==
+                                    null) {
+                                  return 'Invalide';
+                                }
+                                return null;
+                              },
+                              autofocus: true,
+                            ),
+                          ),
+                        ),
 
-                // ── Description ────────────────────────────────────────────
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nameCtrl,
-                  textCapitalization: TextCapitalization.sentences,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    hintText: 'Facultatif',
-                  ),
-                ),
+                        // 2. Groupe
+                        const SizedBox(height: 8),
+                        Text('Groupe', style: tt.titleSmall),
+                        const SizedBox(height: 8),
+                        if (ready.groups.isEmpty)
+                          Text(
+                            'Crée d\'abord un groupe pour ajouter une dépense.',
+                            style: tt.bodyMedium
+                                ?.copyWith(color: cs.onSurfaceVariant),
+                          )
+                        else if (ready.groupLocked && ready.group != null)
+                          InputDecorator(
+                            decoration: const InputDecoration(
+                              prefixIcon:
+                                  Icon(Symbols.lock_rounded, size: 18),
+                            ),
+                            child: Text(ready.group!.name,
+                                style: tt.bodyLarge),
+                          )
+                        else
+                          DropdownButtonFormField<String>(
+                            key: ValueKey(ready.group?.id),
+                            initialValue: ready.group?.id,
+                            isExpanded: true,
+                            hint: const Text('Choisir un groupe'),
+                            items: ready.groups
+                                .map((g) => DropdownMenuItem(
+                                      value: g.id,
+                                      child: Text(g.name),
+                                    ))
+                                .toList(),
+                            onChanged: _onGroupChanged,
+                          ),
 
-                // ── Catégorie ──────────────────────────────────────────────
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Text('Catégorie', style: tt.titleSmall),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () => _showCreateCategorySheet(
-                          context, ready, cs, tt),
-                      icon: const Icon(Symbols.add_rounded, size: 16),
-                      label: const Text('Nouvelle'),
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _CategoryGrid(
-                  categories: ready.categories,
-                  selected: _selectedCategory,
-                  onSelect: (c) => setState(() => _selectedCategory = c),
-                ),
+                        if (ready.group != null) ...[
+                          // 3. Catégorie
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Text('Catégorie', style: tt.titleSmall),
+                              const Spacer(),
+                              TextButton.icon(
+                                onPressed: () =>
+                                    _showCreateCategorySheet(context, ready),
+                                icon: const Icon(Symbols.add_rounded,
+                                    size: 16),
+                                label: const Text('Nouvelle'),
+                                style: TextButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          _CategoryGrid(
+                            categories: ready.categories,
+                            selected: _selectedCategory,
+                            onSelect: (c) =>
+                                setState(() => _selectedCategory = c),
+                          ),
 
-                // ── Payeur + Date ──────────────────────────────────────────
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                          // 4. Description
+                          const SizedBox(height: 24),
+                          TextFormField(
+                            controller: _nameCtrl,
+                            textCapitalization:
+                                TextCapitalization.sentences,
+                            textInputAction: TextInputAction.done,
+                            decoration: const InputDecoration(
+                              labelText: 'Description',
+                              hintText: 'Facultatif',
+                            ),
+                          ),
+
+                          // 5. Payé par
+                          const SizedBox(height: 24),
                           Text('Payé par', style: tt.titleSmall),
                           const SizedBox(height: 8),
                           _PayerDropdown(
-                            members: ready.group.members,
+                            members: ready.group!.members,
                             selectedId: _selectedPayerId,
                             onChanged: (id) =>
                                 setState(() => _selectedPayerId = id),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+
+                          // 6. Date
+                          const SizedBox(height: 24),
                           Text('Date', style: tt.titleSmall),
                           const SizedBox(height: 8),
                           InkWell(
                             onTap: _pickDate,
                             borderRadius: BorderRadius.circular(14),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(14),
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                prefixIcon: Icon(
+                                    Symbols.calendar_month_rounded,
+                                    size: 18),
                               ),
-                          child: Row(
-                            children: [
-                              Icon(Symbols.calendar_month_rounded,
-                                  size: 18,
-                                  color: cs.onSurfaceVariant),
-                              const SizedBox(width: 8),
-                              Text(
+                              child: Text(
                                 '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
                                 style: tt.bodyMedium,
                               ),
-                            ],
-                          ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
 
-                // ── Répartition ────────────────────────────────────────────
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Text('Répartition', style: tt.titleSmall),
-                    const Spacer(),
-                    SegmentedButton<bool>(
-                      segments: const [
-                        ButtonSegment(value: false, label: Text('Égale')),
-                        ButtonSegment(value: true, label: Text('Perso')),
+                          // 7. Répartition
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Text('Répartition', style: tt.titleSmall),
+                              const Spacer(),
+                              SegmentedButton<bool>(
+                                segments: const [
+                                  ButtonSegment(
+                                      value: false, label: Text('Égale')),
+                                  ButtonSegment(
+                                      value: true, label: Text('Perso')),
+                                ],
+                                selected: {_customSplit},
+                                onSelectionChanged: _recurring
+                                    ? null
+                                    : (set) {
+                                        setState(() {
+                                          _customSplit = set.first;
+                                          if (_customSplit) {
+                                            _initSplitCtrls(
+                                                ready.group!.members);
+                                          }
+                                        });
+                                      },
+                                style: SegmentedButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_customSplit) ...[
+                            const SizedBox(height: 12),
+                            _CustomSplitSection(
+                              members: ready.group!.members,
+                              splitCtrls: _splitCtrls,
+                              total: _expenseAmount,
+                              splitsTotal: _splitsTotal,
+                              isValid: _splitsValid,
+                              onChanged: () => setState(() {}),
+                            ),
+                          ],
+
+                          // 8. Récurrence
+                          const SizedBox(height: 16),
+                          _RecurringTile(
+                            value: _recurring,
+                            expenseDate: _expenseDate,
+                            onChanged: (v) => setState(() {
+                              _recurring = v;
+                              if (v) _customSplit = false;
+                            }),
+                          ),
+                        ],
+
+                        // 9. Enregistrer
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: submitting || ready.group == null
+                              ? null
+                              : _submit,
+                          child: submitting
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : Text(_recurring
+                                  ? 'Programmer la récurrence'
+                                  : 'Enregistrer'),
+                        ),
                       ],
-                      selected: {_customSplit},
-                      onSelectionChanged: _recurring
-                          ? null
-                          : (set) {
-                              setState(() {
-                                _customSplit = set.first;
-                                if (_customSplit) {
-                                  _initSplitCtrls(ready.group.members);
-                                }
-                              });
-                            },
-                      style: SegmentedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
                     ),
-                  ],
-                ),
-                if (_customSplit) ...[
-                  const SizedBox(height: 12),
-                  _CustomSplitSection(
-                    members: ready.group.members,
-                    splitCtrls: _splitCtrls,
-                    total: _expenseAmount,
-                    splitsTotal: _splitsTotal,
-                    isValid: _splitsValid,
-                    onChanged: () => setState(() {}),
                   ),
                 ],
-
-                // ── Récurrence ────────────────────────────────────────────
-                const SizedBox(height: 8),
-                _RecurringTile(
-                  value: _recurring,
-                  expenseDate: _expenseDate,
-                  onChanged: (v) => setState(() {
-                    _recurring = v;
-                    if (v) _customSplit = false; // incompatible avec custom split
-                  }),
-                ),
-
-                // ── Submit ─────────────────────────────────────────────────
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: submitting ? null : _submit,
-                  child: submitting
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(_recurring ? 'Programmer la récurrence' : 'Enregistrer'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
   void _showCreateCategorySheet(
     BuildContext context,
     AddExpenseReady ready,
-    ColorScheme cs,
-    TextTheme tt,
   ) {
+    final groupId = ready.group?.id;
+    if (groupId == null) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -442,7 +498,7 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       builder: (_) => BlocProvider.value(
         value: context.read<AddExpenseCubit>(),
         child: _CreateCategorySheet(
-          groupId: widget.groupId,
+          groupId: groupId,
           onCreated: (cat) => setState(() => _selectedCategory = cat),
         ),
       ),
