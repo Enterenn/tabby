@@ -264,7 +264,8 @@ class _GroupSliverAppBar extends StatelessWidget {
       context: context,
       builder: (_) => BlocProvider.value(
         value: cubit,
-        child: _GroupActionsSheet(group: state.group),
+        // pageContext = contexte de la page (toujours vivant après la fermeture du sheet)
+        child: _GroupActionsSheet(group: state.group, pageContext: context),
       ),
     );
   }
@@ -273,8 +274,10 @@ class _GroupSliverAppBar extends StatelessWidget {
 // ─── Actions bottom sheet ─────────────────────────────────────────────────────
 
 class _GroupActionsSheet extends StatelessWidget {
-  const _GroupActionsSheet({required this.group});
+  const _GroupActionsSheet({required this.group, required this.pageContext});
   final Group group;
+  /// Contexte de la page parente — reste valide après la fermeture du sheet.
+  final BuildContext pageContext;
 
   @override
   Widget build(BuildContext context) {
@@ -298,26 +301,24 @@ class _GroupActionsSheet extends StatelessWidget {
             title: const Text('Modifier le nom'),
             onTap: () {
               Navigator.pop(context);
-              _showEditNameDialog(context);
+              _showEditNameDialog();
             },
           ),
           const Divider(height: 1),
           ListTile(
             leading: Icon(Symbols.exit_to_app_rounded, color: cs.error),
-            title: Text('Quitter le groupe',
-                style: TextStyle(color: cs.error)),
+            title: Text('Quitter le groupe', style: TextStyle(color: cs.error)),
             onTap: () {
               Navigator.pop(context);
-              _confirmLeave(context);
+              _confirmLeave();
             },
           ),
           ListTile(
             leading: Icon(Symbols.delete_rounded, color: cs.error),
-            title: Text('Supprimer le groupe',
-                style: TextStyle(color: cs.error)),
+            title: Text('Supprimer le groupe', style: TextStyle(color: cs.error)),
             onTap: () {
               Navigator.pop(context);
-              _confirmDelete(context);
+              _confirmDelete();
             },
           ),
           const SizedBox(height: 8),
@@ -326,10 +327,10 @@ class _GroupActionsSheet extends StatelessWidget {
     );
   }
 
-  void _showEditNameDialog(BuildContext context) {
+  void _showEditNameDialog() {
     final ctrl = TextEditingController(text: group.name);
     showDialog(
-      context: context,
+      context: pageContext,
       builder: (ctx) => AlertDialog(
         title: const Text('Modifier le nom'),
         content: TextField(
@@ -346,7 +347,7 @@ class _GroupActionsSheet extends StatelessWidget {
               final name = ctrl.text.trim();
               if (name.isEmpty) return;
               Navigator.pop(ctx);
-              context.read<GroupDetailCubit>().updateName(name);
+              pageContext.read<GroupDetailCubit>().updateName(name);
             },
             child: const Text('Enregistrer'),
           ),
@@ -355,9 +356,9 @@ class _GroupActionsSheet extends StatelessWidget {
     );
   }
 
-  void _confirmLeave(BuildContext context) {
+  void _confirmLeave() {
     showDialog(
-      context: context,
+      context: pageContext,
       builder: (ctx) => AlertDialog(
         title: const Text('Quitter le groupe'),
         content: const Text(
@@ -372,13 +373,11 @@ class _GroupActionsSheet extends StatelessWidget {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              final err =
-                  await context.read<GroupDetailCubit>().leaveGroup();
-              if (!context.mounted) return;
+              final err = await pageContext.read<GroupDetailCubit>().leaveGroup();
+              if (!pageContext.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(err)),
-                );
+                ScaffoldMessenger.of(pageContext)
+                    .showSnackBar(SnackBar(content: Text(err)));
               }
             },
             child: const Text('Quitter'),
@@ -388,9 +387,9 @@ class _GroupActionsSheet extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context) {
+  void _confirmDelete() {
     showDialog(
-      context: context,
+      context: pageContext,
       builder: (ctx) => AlertDialog(
         title: const Text('Supprimer le groupe'),
         content: const Text(
@@ -405,13 +404,11 @@ class _GroupActionsSheet extends StatelessWidget {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              final err =
-                  await context.read<GroupDetailCubit>().deleteGroup();
-              if (!context.mounted) return;
+              final err = await pageContext.read<GroupDetailCubit>().deleteGroup();
+              if (!pageContext.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(err)),
-                );
+                ScaffoldMessenger.of(pageContext)
+                    .showSnackBar(SnackBar(content: Text(err)));
               }
             },
             child: const Text('Supprimer'),
