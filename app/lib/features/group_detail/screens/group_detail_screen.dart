@@ -100,21 +100,36 @@ class _LoadedBody extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           _GroupSliverAppBar(group: group),
-          // Balances (qui doit à qui)
-          if (balances.isNotEmpty) ...[
-            _SectionHeader(title: 'À régler', icon: Symbols.payments_rounded),
+          // ── 1. Dépenses ──────────────────────────────────────────────────
+          _SectionHeader(
+            title: expenses.isEmpty
+                ? 'Dépenses'
+                : 'Dépenses (${expenses.length})',
+            icon: Symbols.receipt_long_rounded,
+          ),
+          if (expenses.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                child: Center(
+                  child: Text(
+                    'Aucune dépense pour ce groupe.',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ),
+            )
+          else
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList.separated(
-                itemCount: balances.length,
+                itemCount: expenses.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (ctx, i) =>
-                    _BalanceTile(entry: balances[i], currentUserId: me),
+                    _ExpenseTile(expense: expenses[i], currentUserId: me),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-          ],
-          // Membres
+          // ── 2. Membres ───────────────────────────────────────────────────
           _SectionHeader(title: 'Membres', icon: Symbols.group_rounded),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -138,33 +153,16 @@ class _LoadedBody extends StatelessWidget {
               ),
             ),
           ),
-          // Dépenses
-          if (expenses.isNotEmpty) ...[
-            _SectionHeader(
-                title: 'Dépenses (${expenses.length})',
-                icon: Symbols.receipt_long_rounded),
+          // ── 3. À régler ──────────────────────────────────────────────────
+          if (balances.isNotEmpty) ...[
+            _SectionHeader(title: 'À régler', icon: Symbols.payments_rounded),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList.separated(
-                itemCount: expenses.length,
+                itemCount: balances.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (ctx, i) =>
-                    _ExpenseTile(expense: expenses[i], currentUserId: me),
-              ),
-            ),
-          ] else ...[
-            _SectionHeader(
-                title: 'Dépenses', icon: Symbols.receipt_long_rounded),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                child: Center(
-                  child: Text(
-                    'Aucune dépense pour ce groupe.',
-                    style: TextStyle(color: cs.onSurfaceVariant),
-                  ),
-                ),
+                    _BalanceTile(entry: balances[i], currentUserId: me),
               ),
             ),
           ],
@@ -215,7 +213,7 @@ class _GroupSliverAppBar extends StatelessWidget {
 
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 140,
+      expandedHeight: 120,
       backgroundColor: cs.surfaceContainerLow,
       foregroundColor: cs.onSurface,
       actions: [
@@ -233,24 +231,14 @@ class _GroupSliverAppBar extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        background: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 80, 16, 48),
-          child: Row(
-            children: [
-              ...group.members.take(5).map((m) => Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: _Avatar(name: m.user.name, radius: 16),
-                  )),
-              if (group.members.length > 5)
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: cs.surfaceContainerHighest,
-                  child: Text(
-                    '+${group.members.length - 5}',
-                    style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                ),
-            ],
+        background: Align(
+          alignment: Alignment.bottomLeft,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 52),
+            child: _AvatarStack(
+              names: group.members.map((m) => m.user.name).toList(),
+              containerColor: cs.surfaceContainerLow,
+            ),
           ),
         ),
       ),
@@ -820,6 +808,94 @@ class _InviteDialog extends StatelessWidget {
           child: const Text('Fermer'),
         ),
       ],
+    );
+  }
+}
+
+// ─── Avatar stack (chevauchant) ───────────────────────────────────────────────
+
+class _AvatarStack extends StatelessWidget {
+  const _AvatarStack({required this.names, required this.containerColor});
+  final List<String> names;
+  final Color containerColor;
+
+  static const _size = 36.0;
+  static const _overlap = 12.0;
+
+  static const _colors = [
+    Color(0xFFE67E22),
+    Color(0xFF27AE60),
+    Color(0xFF2980B9),
+    Color(0xFF8E44AD),
+    Color(0xFF16A085),
+    Color(0xFFE74C3C),
+    Color(0xFF7F8C8D),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final displayed = names.take(5).toList();
+    final extra = names.length - displayed.length;
+    final totalItems = displayed.length + (extra > 0 ? 1 : 0);
+    final width = _size + (totalItems - 1) * (_size - _overlap);
+
+    return SizedBox(
+      width: width,
+      height: _size,
+      child: Stack(
+        children: [
+          ...displayed.asMap().entries.map((e) {
+            final i = e.key;
+            final name = e.value;
+            final color = _colors[i % _colors.length];
+            final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+            return Positioned(
+              left: i * (_size - _overlap),
+              child: Container(
+                width: _size,
+                height: _size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  border: Border.all(color: containerColor, width: 2),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            );
+          }),
+          if (extra > 0)
+            Positioned(
+              left: displayed.length * (_size - _overlap),
+              child: Container(
+                width: _size,
+                height: _size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: cs.surfaceContainerHighest,
+                  border: Border.all(color: containerColor, width: 2),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$extra',
+                  style: tt.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
