@@ -13,12 +13,14 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, require_group_member
 from app.models.models import Expense, ExpenseSplit, Group, GroupInvite, GroupMember, User
 from app.schemas.group import (
+    BalanceEntry,
     GroupCreate,
     GroupResponse,
     GroupUpdate,
     InviteResponse,
     JoinRequest,
     MemberResponse,
+    SettleRequest,
 )
 from app.schemas.auth import UserResponse
 from decimal import Decimal
@@ -202,6 +204,133 @@ async def join_group(
 
     group = await db.get(Group, invite.group_id)
     return await _load_group_with_balance(group, current_user.id, db)
+
+
+@router.get("/{group_id}/balances", response_model=list[BalanceEntry])
+async def get_group_balances(
+    group_id: uuid.UUID,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retourne la liste minimale de transferts pour solder le groupe, avec les noms."""
+    exp_result = await db.execute(
+        select(Expense)
+        .where(Expense.group_id == group_id)
+        .options(selectinload(Expense.splits))
+    )
+    expenses = exp_result.scalars().all()
+
+    members_result = await db.execute(
+        select(GroupMember)
+        .where(GroupMember.group_id == group_id)
+        .options(selectinload(GroupMember.user))
+    )
+    members = members_result.scalars().all()
+    name_map = {str(m.user.id): m.user.name for m in members}
+
+    records = [
+        ExpenseRecord(
+            paid_by=str(e.paid_by),
+            splits=[(str(s.user_id), Decimal(str(s.amount))) for s in e.splits],
+        )
+        for e in expenses
+    ]
+    debts = compute_balances(records)
+
+    return [
+        BalanceEntry(
+            from_user_id=d.debtor,
+            from_user_name=name_map.get(d.debtor, "?"),
+            to_user_id=d.creditor,
+            to_user_name=name_map.get(d.creditor, "?"),
+            amount=d.amount,
+        )
+        for d in debts
+    ]
+
+
+@router.post("/{group_id}/settle", status_code=status.HTTP_201_CREATED)
+async def settle_debt(
+    group_id: uuid.UUID,
+    body: SettleRequest,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+):
+    """Enregistre un remboursement entre deux membres en créant une dépense spéciale."""
+    from app.models.models import Category
+
+    # Chercher/créer la catégorie "Remboursement"
+    cat_result = await db.execute(
+        select(Category).where(Category.name == "Remboursement")
+    )
+    category = cat_result.scalar_one_or_none()
+    if category is None:
+        category = Category(
+            id=uuid.uuid4(),
+            name="Remboursement",
+            icon="payments",
+            color="#7F8C8D",
+            is_default=True,
+            sort_order=99,
+        )
+        db.add(category)
+        await db.flush()
+
+    amount = Decimal(str(body.amount)).quantize(Decimal("0.01"))
+    expense = Expense(
+        id=uuid.uuid4(),
+        group_id=group_id,
+        category_id=category.id,
+        paid_by=body.from_user_id,
+        name=f"Remboursement",
+        amount=amount,
+        expense_date=datetime.now(timezone.utc).date(),
+    )
+    db.add(expense)
+    await db.flush()
+
+    # Split : 100% à to_user (celui qui est remboursé)
+    db.add(ExpenseSplit(
+        id=uuid.uuid4(),
+        expense_id=expense.id,
+        user_id=body.to_user_id,
+        amount=amount,
+    ))
+    await db.flush()
+    return {"ok": True}
+
+
+@router.post("/{group_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+async def leave_group(
+    group_id: uuid.UUID,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+):
+    """Quitte le groupe. Refusé si le solde n'est pas nul."""
+    exp_result = await db.execute(
+        select(Expense)
+        .where(Expense.group_id == group_id)
+        .options(selectinload(Expense.splits))
+    )
+    expenses = exp_result.scalars().all()
+    records = [
+        ExpenseRecord(
+            paid_by=str(e.paid_by),
+            splits=[(str(s.user_id), Decimal(str(s.amount))) for s in e.splits],
+        )
+        for e in expenses
+    ]
+    debts = compute_balances(records)
+    balance = user_balance(str(current_user.id), debts)
+    if abs(balance) > 0.01:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Solde non nul ({balance:+.2f}€). Réglez vos dettes avant de quitter.",
+        )
+
+    membership = await db.get(GroupMember, (group_id, current_user.id))
+    if membership:
+        await db.delete(membership)
 
 
 @router.delete("/{group_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

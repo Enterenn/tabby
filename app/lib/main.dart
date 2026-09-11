@@ -45,7 +45,7 @@ class _TabbyAppState extends State<TabbyApp> {
         title: 'Tabby',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.light,
+        themeMode: ThemeMode.system,
         routerConfig: buildRouter(_authCubit),
         debugShowCheckedModeBanner: false,
       ),

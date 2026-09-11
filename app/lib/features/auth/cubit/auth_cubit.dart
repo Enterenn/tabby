@@ -21,6 +21,13 @@ class AuthCubit extends Cubit<AuthState> {
       // Utilise le token stocké pour récupérer le profil
       final response = await apiClient.dio.get('/auth/me');
       final user = User.fromJson(response.data as Map<String, dynamic>);
+      if (tokenStorage.userId == null) {
+        await tokenStorage.save(
+          access: tokenStorage.accessToken!,
+          refresh: tokenStorage.refreshToken!,
+          userId: user.id,
+        );
+      }
       emit(AuthAuthenticated(user));
     } catch (_) {
       await tokenStorage.clear();
@@ -63,6 +70,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       final profileResponse = await apiClient.dio.get('/auth/me');
       final user = User.fromJson(profileResponse.data as Map<String, dynamic>);
+      await tokenStorage.save(access: access, refresh: refresh, userId: user.id);
       emit(AuthAuthenticated(user));
     } on DioException catch (e) {
       emit(AuthError(_extractDetail(e, 'Email ou mot de passe incorrect')));

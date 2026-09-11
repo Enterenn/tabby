@@ -1,6 +1,33 @@
 import 'package:equatable/equatable.dart';
 import 'user.dart';
 
+class BalanceEntry extends Equatable {
+  const BalanceEntry({
+    required this.fromUserId,
+    required this.fromUserName,
+    required this.toUserId,
+    required this.toUserName,
+    required this.amount,
+  });
+
+  final String fromUserId;
+  final String fromUserName;
+  final String toUserId;
+  final String toUserName;
+  final double amount;
+
+  factory BalanceEntry.fromJson(Map<String, dynamic> json) => BalanceEntry(
+        fromUserId: json['from_user_id'] as String,
+        fromUserName: json['from_user_name'] as String,
+        toUserId: json['to_user_id'] as String,
+        toUserName: json['to_user_name'] as String,
+        amount: (json['amount'] as num).toDouble(),
+      );
+
+  @override
+  List<Object?> get props => [fromUserId, toUserId, amount];
+}
+
 class GroupMember extends Equatable {
   const GroupMember({required this.user, required this.joinedAt});
 

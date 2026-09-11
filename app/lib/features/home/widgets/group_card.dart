@@ -65,7 +65,7 @@ class GroupCard extends StatelessWidget {
                         size: 20,
                         color: cs.onSurfaceVariant,
                       ),
-                      onPressed: () {/* Lot futur : renommer / quitter */},
+                      onPressed: () => context.push('/groups/${group.id}'),
                     ),
                   ),
                 ],

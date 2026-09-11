@@ -40,3 +40,17 @@ class InviteResponse(BaseModel):
 
 class JoinRequest(BaseModel):
     code: str
+
+
+class BalanceEntry(BaseModel):
+    from_user_id: str
+    from_user_name: str
+    to_user_id: str
+    to_user_name: str
+    amount: float
+
+
+class SettleRequest(BaseModel):
+    from_user_id: str
+    to_user_id: str
+    amount: float

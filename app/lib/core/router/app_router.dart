@@ -10,6 +10,7 @@ import '../../features/add_expense/screens/add_expense_screen.dart';
 import '../../features/cards/screens/cards_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/group_detail/screens/create_group_screen.dart';
+import '../../features/group_detail/screens/group_detail_screen.dart';
 import '../../features/group_detail/screens/invite_screen.dart';
 import '../../features/group_detail/screens/join_group_screen.dart';
 import '../../features/profile/screens/category_management_screen.dart';
@@ -42,6 +43,11 @@ GoRouter buildRouter(AuthCubit authCubit) {
         path: '/groups/:groupId/invite',
         builder: (context, state) =>
             InviteScreen(groupId: state.pathParameters['groupId']!),
+      ),
+      GoRoute(
+        path: '/groups/:groupId',
+        builder: (context, state) =>
+            GroupDetailScreen(groupId: state.pathParameters['groupId']!),
       ),
       GoRoute(
         path: '/profile/recurring',

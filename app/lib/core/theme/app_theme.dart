@@ -39,6 +39,16 @@ abstract final class AppTheme {
       textTheme: _buildTextTheme(grad, scheme),
       scaffoldBackgroundColor: scheme.surfaceContainerLow,
 
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+          TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+          TargetPlatform.macOS: ZoomPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+        },
+      ),
+
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surfaceContainerLow,
         foregroundColor: scheme.onSurface,
