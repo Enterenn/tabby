@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -51,8 +52,20 @@ GoRouter buildRouter(AuthCubit authCubit) {
       ),
       GoRoute(
         path: '/groups/:groupId',
-        builder: (context, state) =>
-            GroupDetailScreen(groupId: state.pathParameters['groupId']!),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: GroupDetailScreen(
+              groupId: state.pathParameters['groupId']!),
+          transitionDuration: const Duration(milliseconds: 400),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          transitionsBuilder: (ctx, animation, secondaryAnimation, child) =>
+              SharedAxisTransition(
+                animation: animation,
+                secondaryAnimation: secondaryAnimation,
+                transitionType: SharedAxisTransitionType.scaled,
+                child: child,
+              ),
+        ),
       ),
       GoRoute(
         path: '/profile/recurring',
@@ -74,24 +87,37 @@ GoRouter buildRouter(AuthCubit authCubit) {
         routes: [
           GoRoute(
             path: '/home',
-            pageBuilder: (context, _) => const NoTransitionPage(child: HomeScreen()),
+            pageBuilder: (context, state) => _fadePage(state, const HomeScreen()),
           ),
           GoRoute(
             path: '/budget',
-            pageBuilder: (context, _) => const NoTransitionPage(child: BudgetScreen()),
+            pageBuilder: (context, state) => _fadePage(state, const BudgetScreen()),
           ),
           GoRoute(
             path: '/cards',
-            pageBuilder: (context, _) => const NoTransitionPage(child: CardsScreen()),
+            pageBuilder: (context, state) => _fadePage(state, const CardsScreen()),
           ),
           GoRoute(
             path: '/profile',
-            pageBuilder: (context, _) =>
-                const NoTransitionPage(child: ProfileScreen()),
+            pageBuilder: (context, state) => _fadePage(state, const ProfileScreen()),
           ),
         ],
       ),
     ],
+  );
+}
+
+CustomTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
+  return CustomTransitionPage(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 250),
+    transitionsBuilder: (ctx, animation, secondaryAnimation, child) =>
+        FadeThroughTransition(
+          animation: animation,
+          secondaryAnimation: secondaryAnimation,
+          child: child,
+        ),
   );
 }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
@@ -71,8 +71,6 @@ class _HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: SvgPicture.asset(
@@ -112,68 +110,39 @@ class _HomeView extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  if (state.groups.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 64),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Symbols.group_rounded,
-                            size: 64,
-                            color: cs.outlineVariant,
-                            fill: 0,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Pas encore de groupe',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Crée un groupe pour commencer à partager tes dépenses',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    ...state.groups.map((g) => GroupCard(group: g)),
+                  // ── Header expressif ───────────────────────────────────────────────
+                  _HomeHeader(isEmpty: state.groups.isEmpty),
                   const SizedBox(height: 8),
+                  if (state.groups.isEmpty)
+                    _EmptyState().animate(delay: 100.ms)
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: 0.06, end: 0, duration: 500.ms, curve: Curves.easeOut)
+                  else
+                    ...state.groups.asMap().entries.map((e) =>
+                      GroupCard(group: e.value, index: e.key)),
+                  const SizedBox(height: 16),
+                  // ── Boutons Créer / Rejoindre ──────────────────────────────
                   Row(
                     children: [
                       Expanded(
-                        child: FilledButton.tonal(
+                        child: OutlinedButton.icon(
                           onPressed: () => context.push('/groups/create'),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Symbols.add_rounded, size: 18),
-                              SizedBox(width: 8),
-                              Text('Créer'),
-                            ],
-                          ),
+                          icon: const Icon(Symbols.add_rounded, size: 18),
+                          label: const Text('Créer'),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: FilledButton.tonal(
+                        child: OutlinedButton.icon(
                           onPressed: () => context.push('/groups/join'),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Symbols.person_add_rounded, size: 18),
-                              SizedBox(width: 8),
-                              Text('Rejoindre'),
-                            ],
-                          ),
+                          icon: const Icon(Symbols.person_add_rounded, size: 18),
+                          label: const Text('Rejoindre'),
                         ),
                       ),
                     ],
-                  ),
+                  ).animate(delay: 200.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.05, end: 0, duration: 400.ms),
                 ],
               ),
             );
@@ -240,3 +209,77 @@ class _HealthIndicatorState extends State<_HealthIndicator> {
 }
 
 enum _Status { checking, ok, error }
+
+// ─── Home header ──────────────────────────────────────────────────────────────
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.isEmpty});
+  final bool isEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isEmpty ? 'Bienvenue 👋' : 'Tes groupes',
+            style: tt.headlineLarge?.copyWith(color: cs.onSurface),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isEmpty
+                ? 'Crée ou rejoins un groupe pour commencer'
+                : 'Appuie sur un groupe pour voir les détails',
+            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 350.ms, curve: Curves.easeOut)
+        .slideY(begin: -0.05, end: 0, duration: 350.ms, curve: Curves.easeOut);
+  }
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Symbols.group_rounded,
+                size: 48, color: cs.primary, fill: 1),
+          ),
+          const SizedBox(height: 24),
+          Text('Aucun groupe pour l\'instant',
+              style: tt.headlineSmall, textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          Text(
+            'Crée ton premier groupe ci-dessous\net invite tes amis à rejoindre !',
+            style:
+                tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
