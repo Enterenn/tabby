@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/group_detail_cubit.dart';
@@ -96,15 +97,17 @@ class _LoadedBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final me = tokenStorage.userId ?? '';
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: ExpressiveActionButton(
+        icon: Symbols.add_rounded,
+        tooltip: 'Ajouter une dépense',
         onPressed: () async {
           await showAddExpenseSheet(context, groupId: group.id);
           if (context.mounted) context.read<GroupDetailCubit>().load();
         },
-        child: const Icon(Symbols.add_rounded),
       ),
       body: CustomScrollView(
         slivers: [
@@ -128,7 +131,7 @@ class _LoadedBody extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Aucune dépense pour ce groupe.',
-                    style: TextStyle(color: cs.onSurfaceVariant),
+                    style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ),
               ),
@@ -281,7 +284,7 @@ class _GroupActionsSheet extends StatelessWidget {
             height: 4,
             decoration: BoxDecoration(
               color: cs.outlineVariant,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: context.tabbyShapes.radiusExtraSmall,
             ),
           ),
           const SizedBox(height: 8),
@@ -451,7 +454,7 @@ class _BalanceTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            _Avatar(name: entry.fromUserName, radius: 18),
+            ExpressiveAvatar(label: entry.fromUserName, size: 36),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -474,12 +477,11 @@ class _BalanceTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${entry.amount.toStringAsFixed(2)} €',
-                    style: tt.titleMedium?.copyWith(
-                      color: cs.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  ExpressiveFigure(
+                    value: entry.amount.toStringAsFixed(2),
+                    suffix: ' €',
+                    size: ExpressiveFigureSize.small,
+                    color: cs.primary,
                   ),
                 ],
               ),
@@ -566,13 +568,14 @@ class _MemberTile extends StatelessWidget {
     final balance = _memberBalance;
     final isMe = member.user.id == currentUserId;
 
+    final semantic = context.tabbySemantic;
     Color balColor;
     String balLabel;
     if (balance > 0.01) {
-      balColor = const Color(0xFF4C9A6A);
+      balColor = semantic.success;
       balLabel = '+${balance.toStringAsFixed(2)} €';
     } else if (balance < -0.01) {
-      balColor = const Color(0xFFE4573D);
+      balColor = semantic.danger;
       balLabel = '${balance.toStringAsFixed(2)} €';
     } else {
       balColor = cs.onSurfaceVariant;
@@ -582,22 +585,17 @@ class _MemberTile extends StatelessWidget {
     return Card(
       color: cs.surfaceContainerHighest,
       child: ListTile(
-        leading: _Avatar(name: member.user.name, radius: 20),
+        leading: ExpressiveAvatar(label: member.user.name, size: 40),
         title: Row(
           children: [
             Text(member.user.name, style: tt.titleSmall),
             if (isMe) ...[
               const SizedBox(width: 6),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text('Moi',
-                    style: tt.labelSmall
-                        ?.copyWith(color: cs.onPrimaryContainer)),
+              ExpressiveBadge(
+                label: 'Moi',
+                color: cs.primaryContainer,
+                textColor: cs.onPrimaryContainer,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               ),
             ],
           ],
@@ -633,24 +631,25 @@ class _ExpenseTile extends StatelessWidget {
     return Card(
       color: cs.surfaceContainerHighest,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: context.tabbyShapes.radiusExtraLarge,
         onLongPress: () => _showExpenseActions(context),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
               // Icône / emoji catégorie
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: expense.category.flutterColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: expense.category.iconWidget(
-                    size: 22,
-                    color: expense.category.flutterColor,
+              Material(
+                color: expense.category.flutterColor.withValues(alpha: 0.12),
+                shape: context.tabbyShapes.circle(),
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Center(
+                    child: expense.category.iconWidget(
+                      size: 22,
+                      color: expense.category.flutterColor,
+                    ),
                   ),
                 ),
               ),
@@ -672,14 +671,13 @@ class _ExpenseTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '${expense.amount.toStringAsFixed(2)} €',
-                style: AppTheme.flex(
-                  fontSize: 18,
-                  wght: 800,
-                  rond: 60,
-                  color: isPaidByMe ? const Color(0xFF4C9A6A) : cs.onSurface,
-                ),
+              ExpressiveFigure(
+                value: expense.amount.toStringAsFixed(2),
+                suffix: ' €',
+                size: ExpressiveFigureSize.small,
+                color: isPaidByMe
+                    ? context.tabbySemantic.success
+                    : cs.onSurface,
               ),
             ],
           ),
@@ -757,44 +755,17 @@ class _TotalHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
-    final formatted = NumberFormat.currency(
-      locale: 'fr_FR',
-      symbol: '€',
-      decimalDigits: 2,
-    ).format(total);
     final count = expenses.length;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'TOTAL',
-            style: tt.labelMedium?.copyWith(
-              color: cs.secondary,
-              letterSpacing: 2.4,
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formatted,
-              style: tt.displayLarge,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '$count dépense${count > 1 ? 's' : ''}',
-            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-          ),
-        ],
-      ),
+    return ExpressiveHeroBanner(
+      label: 'Total dépenses',
+      value: total.toStringAsFixed(2),
+      suffix: ' €',
+      subtitle: '$count dépense${count > 1 ? 's' : ''}',
+      variant: ExpressiveTonalVariant.coral,
+      accentIcon: Symbols.receipt_long_rounded,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
     );
   }
 }
@@ -896,12 +867,12 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
             const SizedBox(height: 6),
             InkWell(
               onTap: _pickDate,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: context.tabbyShapes.radiusMedium,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: context.tabbyShapes.radiusMedium,
                 ),
                 child: Row(
                   children: [
@@ -983,13 +954,13 @@ class _InviteDialog extends StatelessWidget {
                 const SnackBar(content: Text('Code copié !')),
               );
             },
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: context.tabbyShapes.radiusLarge,
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: cs.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: context.tabbyShapes.radiusLarge,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1025,36 +996,3 @@ class _InviteDialog extends StatelessWidget {
   }
 }
 
-// ─── Avatar helper ────────────────────────────────────────────────────────────
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name, required this.radius});
-  final String name;
-  final double radius;
-
-  static const _colors = [
-    Color(0xFFE67E22),
-    Color(0xFF27AE60),
-    Color(0xFF2980B9),
-    Color(0xFF8E44AD),
-    Color(0xFF16A085),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final idx = name.isNotEmpty ? name.codeUnitAt(0) % _colors.length : 0;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: _colors[idx],
-      child: Text(
-        initial,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: radius * 0.85,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/recurring_expense.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 
 class RecurringExpensesScreen extends StatefulWidget {
   const RecurringExpensesScreen({super.key});
@@ -173,8 +174,10 @@ class _RecurringCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final shapes = context.tabbyShapes;
+    final semantic = context.tabbySemantic;
 
     return Card(
       child: Padding(
@@ -182,21 +185,22 @@ class _RecurringCard extends StatelessWidget {
         child: Row(
           children: [
             // Icône catégorie
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: item.active
-                    ? item.category.flutterColor.withValues(alpha: 0.15)
-                    : cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                item.category.flutterIcon,
-                color: item.active
-                    ? item.category.flutterColor
-                    : cs.onSurfaceVariant,
-                size: 22,
+            Material(
+              color: item.active
+                  ? item.category.flutterColor.withValues(alpha: 0.15)
+                  : cs.surfaceContainerHighest,
+              shape: shapes.circle(),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(
+                  item.category.flutterIcon,
+                  color: item.active
+                      ? item.category.flutterColor
+                      : cs.onSurfaceVariant,
+                  size: 22,
+                ),
               ),
             ),
             const SizedBox(width: 14),
@@ -217,14 +221,13 @@ class _RecurringCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Text(
-                        '${item.amount.toStringAsFixed(2)} €',
-                        style: tt.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: item.active
-                              ? AppColors.danger
-                              : cs.onSurfaceVariant,
-                        ),
+                      ExpressiveFigure(
+                        value: item.amount.toStringAsFixed(2),
+                        suffix: ' €',
+                        size: ExpressiveFigureSize.small,
+                        color: item.active
+                            ? semantic.expressivePink
+                            : cs.onSurfaceVariant,
                       ),
                       Text(
                         ' · ${item.dayLabel}',

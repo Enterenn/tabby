@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 
 class JoinGroupScreen extends StatefulWidget {
   const JoinGroupScreen({super.key});
@@ -85,7 +86,8 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                 maxLength: 6,
                 autofocus: true,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                style: context.tabbyType.clockDisplay.copyWith(
+                      fontSize: 36,
                       letterSpacing: 8,
                     ),
                 decoration: const InputDecoration(

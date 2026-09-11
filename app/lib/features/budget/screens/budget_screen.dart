@@ -1,12 +1,11 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/budget.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/models/stats.dart';
@@ -93,6 +92,19 @@ class _BudgetContent extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
+        if (state.stats.total > 0)
+          SliverToBoxAdapter(
+            child: ExpressiveHeroBanner(
+              label: 'Total du mois',
+              value: state.stats.total.toStringAsFixed(2),
+              suffix: ' €',
+              subtitle: state.stats.monthLabel,
+              variant: ExpressiveTonalVariant.lime,
+              accentIcon: Symbols.payments_rounded,
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            ),
+          ),
+
         // ── Navigation mois ────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: _MonthNav(
@@ -255,8 +267,9 @@ class _StatsSectionState extends State<_StatsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final shapes = context.tabbyShapes;
     final stats = widget.stats;
 
     if (stats.total == 0) {
@@ -278,110 +291,18 @@ class _StatsSectionState extends State<_StatsSection> {
       );
     }
 
-    final touched = (_touchedIndex != null &&
-            _touchedIndex! < stats.categories.length)
-        ? stats.categories[_touchedIndex!]
-        : null;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         children: [
-          // ── Donut chart ────────────────────────────────────────────────
-          GestureDetector(
-            onTapDown: (details) {
-              final box = context.findRenderObject() as RenderBox?;
-              if (box == null) return;
-              final local = details.localPosition;
-              final center = Offset(box.size.width / 2, 140);
-              final dx = local.dx - center.dx;
-              final dy = local.dy - center.dy;
-              final dist = math.sqrt(dx * dx + dy * dy);
-              // Anneau ~stroke 48 + marge de tap
-              if (dist < 72 || dist > 140) {
-                setState(() => _touchedIndex = null);
-                return;
-              }
-              double angle = math.atan2(dy, dx) + math.pi / 2;
-              if (angle < 0) angle += 2 * math.pi;
-              double cumulative = 0;
-              for (int i = 0; i < stats.categories.length; i++) {
-                final sweep =
-                    stats.categories[i].percent / 100 * 2 * math.pi;
-                if (angle >= cumulative && angle < cumulative + sweep) {
-                  setState(() =>
-                      _touchedIndex = _touchedIndex == i ? null : i);
-                  return;
-                }
-                cumulative += sweep;
-              }
-              setState(() => _touchedIndex = null);
-            },
-            child: SizedBox(
-              height: 280,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final donutSize = Size(constraints.maxWidth, 280);
-                  final emojiSlots = _DonutPainter.emojiSlots(
-                    donutSize,
-                    stats.categories,
-                    _touchedIndex,
-                  );
-                  return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CustomPaint(
-                        size: donutSize,
-                        painter: _DonutPainter(
-                          sections: stats.categories,
-                          touchedIndex: _touchedIndex,
-                        ),
-                      ),
-                      ...emojiSlots.map(
-                        (slot) => Positioned(
-                          left: slot.offset.dx - 13,
-                          top: slot.offset.dy - 13,
-                          width: 26,
-                          height: 26,
-                          child: IgnorePointer(
-                            child: Center(
-                              child: slot.stat.category.iconWidget(
-                                size: 18,
-                                color: Colors.white,
-                                fill: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Label central
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        touched != null
-                            ? '${touched.percent.toStringAsFixed(1)}%'
-                            : '${stats.total.toStringAsFixed(2)} €',
-                        style: tt.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: touched?.category.flutterColor ??
-                              cs.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        touched?.category.name ?? 'Total dépenses',
-                        style: tt.bodySmall
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                    ],
-                  );
-                },
-              ),
-            ),
+          ExpressiveDonutChart(
+            sections: stats.categories,
+            total: stats.total,
+            selectedIndex: _touchedIndex,
+            onSelectedIndexChanged: (i) => setState(() => _touchedIndex = i),
           ),
+
+          const SizedBox(height: 16),
 
           // ── Légende ────────────────────────────────────────────────────
           Padding(
@@ -414,7 +335,7 @@ class _StatsSectionState extends State<_StatsSection> {
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: shapes.radiusLarge,
                   border: Border.all(
                     color: isSelected
                         ? cat.category.flutterColor
@@ -428,14 +349,14 @@ class _StatsSectionState extends State<_StatsSection> {
                     Row(
                       children: [
                         // Icône catégorie
-                        Container(
+                        Material(
+                          color: cat.category.flutterColor
+                              .withValues(alpha: 0.15),
+                          shape: shapes.circle(),
+                          clipBehavior: Clip.antiAlias,
+                          child: SizedBox(
                           width: 36,
                           height: 36,
-                          decoration: BoxDecoration(
-                            color: cat.category.flutterColor
-                                .withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
-                          ),
                           child: Center(
                             child: cat.category.iconWidget(
                               size: 18,
@@ -443,6 +364,7 @@ class _StatsSectionState extends State<_StatsSection> {
                               fill: 1,
                             ),
                           ),
+                        ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -460,17 +382,17 @@ class _StatsSectionState extends State<_StatsSection> {
                             ],
                           ),
                         ),
-                        Text(
-                          '${cat.amount.toStringAsFixed(2)} €',
-                          style: tt.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800),
+                        ExpressiveFigure(
+                          value: cat.amount.toStringAsFixed(2),
+                          suffix: ' €',
+                          size: ExpressiveFigureSize.small,
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     // Mini barre de progression colorée
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: shapes.radiusExtraSmall,
                       child: LinearProgressIndicator(
                         value: cat.percent / 100,
                         minHeight: 5,
@@ -491,109 +413,6 @@ class _StatsSectionState extends State<_StatsSection> {
   }
 }
 
-// ─── Custom donut painter ─────────────────────────────────────────────────────
-
-class _DonutEmojiSlot {
-  const _DonutEmojiSlot({required this.offset, required this.stat});
-  final Offset offset;
-  final CategoryStat stat;
-}
-
-class _DonutPainter extends CustomPainter {
-  const _DonutPainter({
-    required this.sections,
-    required this.touchedIndex,
-  });
-
-  final List<CategoryStat> sections;
-  final int? touchedIndex;
-
-  static const double _strokeWidth = 48.0;
-  static const double _touchedExtra = 8.0;
-  static const double _gapDeg = 2.0;
-  /// Longueur d'arc minimale (px) pour coller un emoji dans la part.
-  static const double _minArcForEmoji = 40.0;
-
-  static List<_DonutEmojiSlot> emojiSlots(
-    Size size,
-    List<CategoryStat> sections,
-    int? touchedIndex,
-  ) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final baseRadius =
-        size.shortestSide / 2 - _strokeWidth / 2 - _touchedExtra - 4;
-    final gapRad = _gapDeg * math.pi / 180;
-    final availableRad = 2 * math.pi - gapRad * 2 * sections.length;
-
-    double startAngle = -math.pi / 2;
-    final slots = <_DonutEmojiSlot>[];
-
-    for (int i = 0; i < sections.length; i++) {
-      final cat = sections[i];
-      final isTouched = touchedIndex == i;
-      final radius = isTouched ? baseRadius + _touchedExtra / 2 : baseRadius;
-      final sweepAngle = (cat.percent / 100) * availableRad;
-      final arcLength = radius * sweepAngle;
-
-      if (arcLength >= _minArcForEmoji) {
-        final mid = startAngle + gapRad + sweepAngle / 2;
-        slots.add(_DonutEmojiSlot(
-          offset: Offset(
-            center.dx + radius * math.cos(mid),
-            center.dy + radius * math.sin(mid),
-          ),
-          stat: cat,
-        ));
-      }
-
-      startAngle += sweepAngle + gapRad * 2;
-    }
-    return slots;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final baseRadius = size.shortestSide / 2 - _strokeWidth / 2 - _touchedExtra - 4;
-
-    final gapRad = _gapDeg * math.pi / 180;
-    // Each section loses one gap on each side
-    final totalGapRad = gapRad * 2 * sections.length;
-    final availableRad = 2 * math.pi - totalGapRad;
-
-    double startAngle = -math.pi / 2;
-
-    for (int i = 0; i < sections.length; i++) {
-      final cat = sections[i];
-      final isTouched = touchedIndex == i;
-      final sw = isTouched ? _strokeWidth + _touchedExtra : _strokeWidth;
-      final radius = isTouched ? baseRadius + _touchedExtra / 2 : baseRadius;
-
-      final sweepAngle = (cat.percent / 100) * availableRad;
-
-      final paint = Paint()
-        ..color = cat.category.flutterColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = sw
-        ..strokeCap = StrokeCap.round;
-
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle + gapRad,
-        sweepAngle,
-        false,
-        paint,
-      );
-
-      startAngle += sweepAngle + gapRad * 2;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DonutPainter old) =>
-      old.touchedIndex != touchedIndex || old.sections != sections;
-}
-
 // ─── Budget card ──────────────────────────────────────────────────────────────
 
 class _BudgetCard extends StatelessWidget {
@@ -602,15 +421,18 @@ class _BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final semantic = context.tabbySemantic;
+    final shapes = context.tabbyShapes;
     final b = budget;
+    final statusColor = b.statusColor(semantic);
     final clampedPercent = (b.percent / 100).clamp(0.0, 1.0);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: shapes.radiusExtraLarge,
         onLongPress: () => _showActions(context),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -619,16 +441,18 @@ class _BudgetCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(
-                      color: b.category.flutterColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: b.category.iconWidget(
-                        size: 22,
-                        color: b.category.flutterColor,
+                  Material(
+                    color: b.category.flutterColor.withValues(alpha: 0.15),
+                    shape: shapes.circle(),
+                    clipBehavior: Clip.antiAlias,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Center(
+                        child: b.category.iconWidget(
+                          size: 22,
+                          color: b.category.flutterColor,
+                        ),
                       ),
                     ),
                   ),
@@ -646,35 +470,25 @@ class _BudgetCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: b.statusColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      b.status == BudgetStatus.danger
-                          ? 'Dépassé'
-                          : b.status == BudgetStatus.warning
-                              ? 'Attention'
-                              : 'OK',
-                      style: tt.labelSmall?.copyWith(
-                        color: b.statusColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  ExpressiveBadge(
+                    label: b.status == BudgetStatus.danger
+                        ? 'Dépassé'
+                        : b.status == BudgetStatus.warning
+                            ? 'Attention'
+                            : 'OK',
+                    color: statusColor.withValues(alpha: 0.15),
+                    textColor: statusColor,
                   ),
                 ],
               ),
               const SizedBox(height: 14),
               ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: shapes.radiusExtraSmall,
                 child: LinearProgressIndicator(
                   value: clampedPercent,
                   minHeight: 8,
                   backgroundColor: cs.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(b.statusColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                 ),
               ),
               const SizedBox(height: 8),
@@ -689,7 +503,7 @@ class _BudgetCard extends StatelessWidget {
                         : '${b.remaining.abs().toStringAsFixed(2)} € de dépassement',
                     style: tt.bodySmall?.copyWith(
                       color: b.status == BudgetStatus.danger
-                          ? AppColors.danger
+                          ? semantic.danger
                           : cs.onSurfaceVariant,
                       fontWeight: b.status == BudgetStatus.danger
                           ? FontWeight.w700
@@ -712,9 +526,7 @@ class _BudgetCard extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      shape: context.tabbyShapes.modalTopShape,
       builder: (ctx) => BlocProvider.value(
         value: context.read<BudgetCubit>(),
         child: Padding(
@@ -728,7 +540,7 @@ class _BudgetCard extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: context.tabbyShapes.radiusExtraSmall,
                   ),
                 ),
               ),
@@ -750,8 +562,7 @@ class _BudgetCard extends StatelessWidget {
               ListTile(
                 leading: const Icon(Symbols.edit_rounded),
                 title: const Text('Modifier le plafond'),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                shape: context.tabbyShapes.fieldShape,
                 onTap: () {
                   Navigator.of(ctx).pop();
                   _showEditDialog(context);
@@ -759,10 +570,8 @@ class _BudgetCard extends StatelessWidget {
               ),
               ListTile(
                 leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text('Supprimer',
-                    style: TextStyle(color: cs.error)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                shape: context.tabbyShapes.fieldShape,
                 onTap: () {
                   Navigator.of(ctx).pop();
                   _confirmDelete(context);
@@ -873,7 +682,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
                 width: 36, height: 36,
                 decoration: BoxDecoration(
                   color: b.category.flutterColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: context.tabbyShapes.radiusMedium,
                 ),
                 child: Center(
                   child: b.category.iconWidget(

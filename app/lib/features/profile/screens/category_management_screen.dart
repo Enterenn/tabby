@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 
@@ -178,16 +179,19 @@ class _CategoryManagementScreenState
                   return Column(
                     children: [
                       ListTile(
-                        leading: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: cat.flutterColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: cat.iconWidget(
-                                size: 20, color: cat.flutterColor),
+                        leading: Material(
+                          color: cat.flutterColor.withValues(alpha: 0.15),
+                          shape: context.tabbyShapes.circle(),
+                          clipBehavior: Clip.antiAlias,
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Center(
+                              child: cat.iconWidget(
+                                size: 20,
+                                color: cat.flutterColor,
+                              ),
+                            ),
                           ),
                         ),
                         title: Text(cat.name),

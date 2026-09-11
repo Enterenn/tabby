@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
+
 class LoyaltyCard extends Equatable {
   const LoyaltyCard({
     required this.id,
@@ -21,12 +23,12 @@ class LoyaltyCard extends Equatable {
   bool get isBarcode => codeType == 'barcode';
 
   Color get flutterColor {
-    if (color == null) return const Color(0xFF5C6BC0);
+    if (color == null) return AppColors.expressiveViolet;
     try {
       final hex = color!.replaceFirst('#', '');
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return const Color(0xFF5C6BC0);
+      return AppColors.expressiveViolet;
     }
   }
 

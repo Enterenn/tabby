@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/theme_cubit.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 import '../../auth/cubit/auth_cubit.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -13,40 +16,33 @@ class ProfileScreen extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         final user = state is AuthAuthenticated ? state.user : null;
-        final cs = Theme.of(context).colorScheme;
+        final cs = context.tabbyColors;
 
         return Scaffold(
           appBar: AppBar(title: const Text('Profil')),
           body: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
-              // Carte profil M3 — utilise Card du thème
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: cs.primaryContainer,
-                        child: Text(
-                          user?.name.isNotEmpty == true
-                              ? user!.name[0].toUpperCase()
-                              : '?',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(color: cs.onPrimaryContainer),
-                        ),
+                      ExpressiveAvatar(
+                        label: user?.name ?? '?',
+                        size: 56,
+                        color: cs.primaryContainer,
+                        textColor: cs.onPrimaryContainer,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user?.name ?? '',
-                                style:
-                                    Theme.of(context).textTheme.titleLarge),
+                            Text(
+                              user?.name ?? '',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
                             Text(
                               user?.email ?? '',
                               style: Theme.of(context)
@@ -56,6 +52,56 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text('Apparence',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Thème',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Par défaut, Tabby suit le réglage système.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 12),
+                      BlocBuilder<ThemeCubit, ThemeMode>(
+                        builder: (context, mode) {
+                          return ExpressiveButtonGroup<ThemeMode>(
+                            value: mode,
+                            onChanged: (next) =>
+                                context.read<ThemeCubit>().setThemeMode(next),
+                            segments: const [
+                              ExpressiveButtonGroupSegment(
+                                value: ThemeMode.system,
+                                label: 'Système',
+                              ),
+                              ExpressiveButtonGroupSegment(
+                                value: ThemeMode.light,
+                                label: 'Clair',
+                              ),
+                              ExpressiveButtonGroupSegment(
+                                value: ThemeMode.dark,
+                                label: 'Sombre',
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -131,20 +177,17 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Icon(icon, color: color ?? cs.onSurface, size: 20),
-        title: Text(
-          label,
-          style: TextStyle(color: color ?? cs.onSurface),
-        ),
+        title: Text(label, style: TextStyle(color: color ?? cs.onSurface)),
         trailing: Icon(Symbols.chevron_right_rounded,
             color: cs.onSurfaceVariant, size: 20),
         onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: context.tabbyShapes.fieldShape,
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/theme/app_theme.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.groupId});
@@ -83,19 +84,17 @@ class _InviteScreenState extends State<InviteScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 40, vertical: 28),
                     decoration: BoxDecoration(
-                      // M3 : primaryContainer pour le fond, primary pour la bordure
                       color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: context.tabbyShapes.radiusExtraLarge,
                       border: Border.all(color: cs.primary, width: 2),
                     ),
                     child: Text(
                       _code!,
-                      style:
-                          Theme.of(context).textTheme.displayMedium?.copyWith(
-                                letterSpacing: 12,
-                                color: cs.onPrimaryContainer,
-                                fontWeight: FontWeight.w800,
-                              ),
+                      style: context.tabbyType.clockDisplay.copyWith(
+                        fontSize: 40,
+                        letterSpacing: 12,
+                        color: cs.onPrimaryContainer,
+                      ),
                     ),
                   ),
                 ),

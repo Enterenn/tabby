@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../features/home/cubit/home_cubit.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/add_expense_cubit.dart';
@@ -171,8 +172,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final type = context.tabbyType;
+    final shapes = context.tabbyShapes;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -260,8 +263,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                   const TextInputType.numberWithOptions(
                                       decimal: true),
                               textAlign: TextAlign.center,
-                              style: tt.displayLarge
-                                  ?.copyWith(color: cs.onSurface),
+                              style: type.figureHero.copyWith(color: cs.onSurface),
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(
                                     RegExp(r'[\d,.]')),
@@ -273,11 +275,11 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                 filled: false,
                                 border: InputBorder.none,
                                 hintText: '0,00',
-                                hintStyle: tt.displayMedium
-                                    ?.copyWith(color: cs.outlineVariant),
+                                hintStyle: type.figureLarge
+                                    .copyWith(color: cs.outlineVariant),
                                 suffixText: '€',
-                                suffixStyle: tt.headlineLarge
-                                    ?.copyWith(color: cs.onSurfaceVariant),
+                                suffixStyle: type.figureMedium
+                                    .copyWith(color: cs.onSurfaceVariant),
                               ),
                               validator: (v) {
                                 if (v == null || v.isEmpty) return 'Requis';
@@ -384,7 +386,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                           const SizedBox(height: 8),
                           InkWell(
                             onTap: _pickDate,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: shapes.radiusLarge,
                             child: InputDecorator(
                               decoration: const InputDecoration(
                                 prefixIcon: Icon(
@@ -492,9 +494,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      shape: context.tabbyShapes.modalTopShape,
       builder: (_) => BlocProvider.value(
         value: context.read<AddExpenseCubit>(),
         child: _CreateCategorySheet(
@@ -542,16 +542,11 @@ class _CustomSplitSection extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: cs.primaryContainer,
-                      child: Text(
-                        m.user.name[0].toUpperCase(),
-                        style: tt.labelMedium?.copyWith(
-                          color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                    ExpressiveAvatar(
+                      label: m.user.name,
+                      size: 32,
+                      color: cs.primaryContainer,
+                      textColor: cs.onPrimaryContainer,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -576,15 +571,15 @@ class _CustomSplitSection extends StatelessWidget {
                           filled: true,
                           fillColor: cs.surfaceContainerHighest,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: context.tabbyShapes.radiusMedium,
                             borderSide: BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: context.tabbyShapes.radiusMedium,
                             borderSide: BorderSide.none,
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: context.tabbyShapes.radiusMedium,
                             borderSide:
                                 BorderSide(color: cs.primary, width: 2),
                           ),
@@ -609,7 +604,7 @@ class _CustomSplitSection extends StatelessWidget {
                             ? '≈ ok'
                             : '${diff > 0 ? '-' : '+'}${diff.toStringAsFixed(2)} €',
                         style: tt.bodySmall?.copyWith(
-                          color: AppColors.danger,
+                          color: context.tabbySemantic.danger,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -617,7 +612,9 @@ class _CustomSplitSection extends StatelessWidget {
                     Text(
                       '${splitsTotal.toStringAsFixed(2)} / ${total.toStringAsFixed(2)} €',
                       style: tt.bodyMedium?.copyWith(
-                        color: isValid ? AppColors.success : AppColors.danger,
+                        color: isValid
+                            ? context.tabbySemantic.success
+                            : context.tabbySemantic.danger,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -647,7 +644,8 @@ class _CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -662,7 +660,7 @@ class _CategoryGrid extends StatelessWidget {
               color: isSelected
                   ? c.flutterColor.withValues(alpha: 0.18)
                   : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: shapes.radiusLarge,
               border: Border.all(
                 color: isSelected ? c.flutterColor : Colors.transparent,
                 width: 2,
@@ -708,7 +706,8 @@ class _PayerDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
     return DropdownButtonFormField<String>(
       initialValue: selectedId,
       isExpanded: true,
@@ -718,11 +717,11 @@ class _PayerDropdown extends StatelessWidget {
         filled: true,
         fillColor: cs.surfaceContainerHighest,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: shapes.radiusLarge,
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: shapes.radiusLarge,
           borderSide: BorderSide.none,
         ),
       ),
@@ -749,8 +748,9 @@ class _RecurringTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final shapes = context.tabbyShapes;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -758,12 +758,12 @@ class _RecurringTile extends StatelessWidget {
         color: value
             ? cs.primaryContainer.withValues(alpha: 0.5)
             : cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: shapes.radiusLarge,
       ),
       child: SwitchListTile(
         value: value,
         onChanged: onChanged,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: shapes.radiusLarge),
         secondary: Icon(
           Symbols.repeat_rounded,
           color: value ? cs.primary : cs.onSurfaceVariant,
@@ -799,8 +799,18 @@ class _CreateCategorySheet extends StatefulWidget {
 class _CreateCategorySheetState extends State<_CreateCategorySheet> {
   final _nameCtrl = TextEditingController();
   String _selectedIcon = 'category';
-  Color _selectedColor = AppColors.categoryPalette[0];
+  late Color _selectedColor;
   bool _loading = false;
+  bool _colorInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_colorInitialized) {
+      _selectedColor = context.tabbySemantic.categoryPalette.first;
+      _colorInitialized = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -838,8 +848,10 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final shapes = context.tabbyShapes;
+    final palette = context.tabbySemantic.categoryPalette;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -853,7 +865,6 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drag handle
           Center(
             child: Container(
               width: 32,
@@ -861,7 +872,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: cs.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: shapes.radiusExtraSmall,
               ),
             ),
           ),
@@ -877,7 +888,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                 height: 52,
                 decoration: BoxDecoration(
                   color: _selectedColor.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: shapes.radiusLarge,
                   border: Border.all(color: _selectedColor, width: 2),
                 ),
                 child: Center(
@@ -923,7 +934,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                     color: isSelected
                         ? _selectedColor.withValues(alpha: 0.18)
                         : cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: shapes.radiusMedium,
                     border: Border.all(
                       color:
                           isSelected ? _selectedColor : Colors.transparent,
@@ -950,7 +961,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
           const SizedBox(height: 8),
           Wrap(
             spacing: 10,
-            children: AppColors.categoryPalette.map((color) {
+            children: palette.map((color) {
               final isSelected = _selectedColor == color;
               return GestureDetector(
                 onTap: () => setState(() => _selectedColor = color),
@@ -966,8 +977,8 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                     ),
                   ),
                   child: isSelected
-                      ? const Icon(Symbols.check_rounded,
-                          color: Colors.white, size: 18)
+                      ? Icon(Symbols.check_rounded,
+                          color: cs.onPrimary, size: 18)
                       : null,
                 ),
               );

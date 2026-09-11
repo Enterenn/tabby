@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import 'category.dart';
 
 enum BudgetStatus { ok, warning, danger }
@@ -24,12 +22,6 @@ class Budget extends Equatable {
   final double spentAmount;
   final double percent;
   final BudgetStatus status;
-
-  Color get statusColor => switch (status) {
-        BudgetStatus.ok => AppColors.success,
-        BudgetStatus.warning => AppColors.warning,
-        BudgetStatus.danger => AppColors.danger,
-      };
 
   factory Budget.fromJson(Map<String, dynamic> json) => Budget(
         id: json['id'] as String,

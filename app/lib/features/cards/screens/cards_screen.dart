@@ -4,8 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/loyalty_card.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 import '../cubit/cards_cubit.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
@@ -101,9 +102,7 @@ class _CardsView extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      shape: context.tabbyShapes.modalTopShape,
       builder: (_) => BlocProvider.value(
         value: context.read<CardsCubit>(),
         child: const _AddCardSheet(),
@@ -120,7 +119,7 @@ class _LoyaltyCardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
     final cardColor = card.flutterColor;
 
@@ -143,23 +142,11 @@ class _LoyaltyCardTile extends StatelessWidget {
               child: Row(
                 children: [
                   // Avatar lettrine
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: cardColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      card.brandName.isNotEmpty
-                          ? card.brandName[0].toUpperCase()
-                          : '?',
-                      style: tt.titleLarge?.copyWith(
-                        color: cardColor,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                  ExpressiveAvatar(
+                    label: card.brandName,
+                    size: 44,
+                    color: cardColor.withValues(alpha: 0.15),
+                    textColor: cardColor,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -212,9 +199,7 @@ class _LoyaltyCardTile extends StatelessWidget {
   void _showActions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      shape: context.tabbyShapes.modalTopShape,
       builder: (ctx) => BlocProvider.value(
         value: context.read<CardsCubit>(),
         child: Padding(
@@ -230,15 +215,14 @@ class _LoyaltyCardTile extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: context.tabbyShapes.radiusExtraSmall,
                   ),
                 ),
               ),
               ListTile(
                 leading: const Icon(Symbols.fullscreen_rounded),
                 title: const Text('Afficher la carte'),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                shape: context.tabbyShapes.fieldShape,
                 onTap: () {
                   Navigator.pop(ctx);
                   _openFullScreen(context);
@@ -247,10 +231,8 @@ class _LoyaltyCardTile extends StatelessWidget {
               ListTile(
                 leading:
                     Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text('Supprimer',
-                    style: TextStyle(color: cs.error)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                shape: context.tabbyShapes.fieldShape,
                 onTap: () async {
                   Navigator.pop(ctx);
                   await context.read<CardsCubit>().deleteCard(card.id);
@@ -276,75 +258,58 @@ class _CardFullScreen extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final cardColor = card.flutterColor;
 
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        title: Text(card.brandName,
-            style: const TextStyle(color: Colors.black87)),
-      ),
+      backgroundColor: cs.surfaceContainerLow,
+      appBar: AppBar(title: Text(card.brandName)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Marque
               Text(
                 card.brandName,
-                style: tt.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: cardColor,
-                ),
+                style: tt.headlineMedium?.copyWith(color: cardColor),
               ),
               const SizedBox(height: 40),
-
-              // Code
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: card.isBarcode
-                    ? bw.BarcodeWidget(
-                        barcode: bw.Barcode.code128(),
-                        data: card.codeValue,
-                        width: double.infinity,
-                        height: 100,
-                        drawText: true,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
+              Card(
+                color: cs.surfaceContainerHighest,
+                elevation: 0,
+                shape: shapes.cardShape,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: card.isBarcode
+                      ? bw.BarcodeWidget(
+                          barcode: bw.Barcode.code128(),
+                          data: card.codeValue,
+                          width: double.infinity,
+                          height: 100,
+                          drawText: true,
+                          style: tt.bodyMedium?.copyWith(color: cs.onSurface),
+                        )
+                      : bw.BarcodeWidget(
+                          barcode: bw.Barcode.qrCode(),
+                          data: card.codeValue,
+                          width: 200,
+                          height: 200,
                         ),
-                      )
-                    : bw.BarcodeWidget(
-                        barcode: bw.Barcode.qrCode(),
-                        data: card.codeValue,
-                        width: 200,
-                        height: 200,
-                      ),
+                ),
               ),
-
               const SizedBox(height: 32),
               Text(
                 card.codeValue,
-                style: tt.bodyMedium
-                    ?.copyWith(color: Colors.black54, letterSpacing: 2),
+                style: tt.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  letterSpacing: 2,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 card.isBarcode ? 'Code-barres' : 'QR Code',
-                style: tt.bodySmall?.copyWith(color: Colors.black38),
+                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),
@@ -392,7 +357,7 @@ class _ScannerViewState extends State<_ScannerView> {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: context.tabbyShapes.radiusLarge,
           child: SizedBox(
             height: 240,
             child: Stack(
@@ -448,19 +413,17 @@ class _ScannerViewState extends State<_ScannerView> {
                           height: 110,
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                width: 2),
-                            borderRadius: BorderRadius.circular(12),
+                              color: cs.onPrimary.withValues(alpha: 0.8),
+                              width: 2,
+                            ),
+                            borderRadius: context.tabbyShapes.radiusMedium,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Centrez le code dans le cadre',
                           style: tt.bodySmall?.copyWith(
-                            color: Colors.white,
-                            shadows: const [
-                              Shadow(blurRadius: 4, color: Colors.black54),
-                            ],
+                            color: cs.onPrimary,
                           ),
                         ),
                       ],
@@ -498,16 +461,19 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   final _nameCtrl = TextEditingController();
   String _codeValue = '';
   String _codeType = 'barcode'; // 'barcode' | 'qrcode'
-  Color _selectedColor = AppColors.categoryPalette[4];
+  late Color _selectedColor;
   bool _scanning = false;
   bool _loading = false;
+  bool _colorInitialized = false;
 
-  static const _colors = [
-    Color(0xFF5C6BC0), Color(0xFFEC407A), Color(0xFF26A69A),
-    Color(0xFFEF5350), Color(0xFFFF7043), Color(0xFF66BB6A),
-    Color(0xFFAB47BC), Color(0xFF42A5F5), Color(0xFFFFCA28),
-    Color(0xFF8D6E63),
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_colorInitialized) {
+      _selectedColor = context.tabbySemantic.categoryPalette[4];
+      _colorInitialized = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -538,8 +504,10 @@ class _AddCardSheetState extends State<_AddCardSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final shapes = context.tabbyShapes;
+    final palette = context.tabbySemantic.categoryPalette;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -558,7 +526,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: cs.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: shapes.radiusExtraSmall,
                 ),
               ),
             ),
@@ -612,7 +580,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: shapes.radiusLarge,
                   ),
                   child: Row(
                     children: [
@@ -673,7 +641,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
             const SizedBox(height: 8),
             Wrap(
               spacing: 10,
-              children: _colors.map((color) {
+              children: palette.map((color) {
                 final isSelected = _selectedColor == color;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedColor = color),
@@ -690,8 +658,8 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                       ),
                     ),
                     child: isSelected
-                        ? const Icon(Symbols.check_rounded,
-                            color: Colors.white, size: 16)
+                        ? Icon(Symbols.check_rounded,
+                            color: cs.onPrimary, size: 16)
                         : null,
                   ),
                 );

@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../shared/models/group.dart';
+import '../../../shared/widgets/expressive/expressive.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/group_card.dart';
 
@@ -108,11 +110,21 @@ class _HomeView extends StatelessWidget {
             return RefreshIndicator(
               onRefresh: () => context.read<HomeCubit>().loadGroups(),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 children: [
-                  // ── Header expressif ───────────────────────────────────────────────
-                  _HomeHeader(isEmpty: state.groups.isEmpty),
-                  const SizedBox(height: 8),
+                  if (state.groups.isEmpty)
+                    _HomeHeader(isEmpty: true)
+                  else ...[
+                    _HomeHeroBanner(groups: state.groups),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                      child: Text(
+                        'Tes groupes',
+                        style: context.tabbyType.displayEditorial,
+                      ),
+                    ),
+                  ],
                   if (state.groups.isEmpty)
                     _EmptyState().animate(delay: 100.ms)
                         .fadeIn(duration: 500.ms)
@@ -125,18 +137,20 @@ class _HomeView extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: ExpressiveCtaButton(
+                          icon: Symbols.add_rounded,
+                          label: 'Créer',
+                          variant: ExpressiveCtaVariant.filled,
                           onPressed: () => context.push('/groups/create'),
-                          icon: const Icon(Symbols.add_rounded, size: 18),
-                          label: const Text('Créer'),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: ExpressiveCtaButton(
+                          icon: Symbols.person_add_rounded,
+                          label: 'Rejoindre',
+                          variant: ExpressiveCtaVariant.tonal,
                           onPressed: () => context.push('/groups/join'),
-                          icon: const Icon(Symbols.person_add_rounded, size: 18),
-                          label: const Text('Rejoindre'),
                         ),
                       ),
                     ],
@@ -190,17 +204,18 @@ class _HealthIndicatorState extends State<_HealthIndicator> {
           _Status.ok => 'Serveur connecté ✓',
           _Status.error => 'Serveur inaccessible — tap pour réessayer',
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
+        child: SizedBox(
+          width: 14,
+          height: 14,
+          child: Material(
             color: switch (_status) {
-              _Status.checking => Colors.orange,
-              _Status.ok => AppColors.success,
-              _Status.error => AppColors.danger,
+              _Status.checking => context.tabbySemantic.warning,
+              _Status.ok => context.tabbySemantic.success,
+              _Status.error => context.tabbySemantic.danger,
             },
+            elevation: 0,
+            shape: context.tabbyShapes.circle(),
+            clipBehavior: Clip.antiAlias,
           ),
         ),
       ),
@@ -209,6 +224,39 @@ class _HealthIndicatorState extends State<_HealthIndicator> {
 }
 
 enum _Status { checking, ok, error }
+
+// ─── Hero solde global ────────────────────────────────────────────────────────
+
+class _HomeHeroBanner extends StatelessWidget {
+  const _HomeHeroBanner({required this.groups});
+
+  final List<Group> groups;
+
+  @override
+  Widget build(BuildContext context) {
+    final netBalance =
+        groups.fold<double>(0, (sum, g) => sum + g.balance);
+    final count = groups.length;
+    final subtitle = count == 1 ? '1 groupe actif' : '$count groupes actifs';
+
+    return ExpressiveHeroBanner(
+      label: 'Solde global',
+      value: netBalance.abs().toStringAsFixed(2),
+      suffix: ' €',
+      subtitle: netBalance.abs() < 0.01
+          ? '$subtitle · tout est réglé'
+          : netBalance > 0
+              ? '$subtitle · on te doit'
+              : '$subtitle · tu dois',
+      variant: ExpressiveTonalVariant.violet,
+      accentIcon: Symbols.account_balance_wallet_rounded,
+      margin: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+    )
+        .animate()
+        .fadeIn(duration: 350.ms, curve: Curves.easeOut)
+        .slideY(begin: -0.05, end: 0, duration: 350.ms, curve: Curves.easeOut);
+  }
+}
 
 // ─── Home header ──────────────────────────────────────────────────────────────
 
@@ -228,7 +276,7 @@ class _HomeHeader extends StatelessWidget {
         children: [
           Text(
             isEmpty ? 'Bienvenue 👋' : 'Tes groupes',
-            style: tt.displaySmall,
+            style: context.tabbyType.displayEditorial,
           ),
           const SizedBox(height: 4),
           Text(
@@ -258,15 +306,21 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: 96,
             height: 96,
-            decoration: BoxDecoration(
+            child: Material(
               color: cs.primaryContainer.withValues(alpha: 0.5),
-              shape: BoxShape.circle,
+              elevation: 0,
+              shape: context.tabbyShapes.circle(),
+              clipBehavior: Clip.antiAlias,
+              child: Icon(
+                Symbols.group_rounded,
+                size: 48,
+                color: cs.primary,
+                fill: 1,
+              ),
             ),
-            child: Icon(Symbols.group_rounded,
-                size: 48, color: cs.primary, fill: 1),
           ),
           const SizedBox(height: 24),
           Text('Aucun groupe pour l\'instant',
