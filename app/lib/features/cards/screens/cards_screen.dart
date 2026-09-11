@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/loyalty_card.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../shared/widgets/tabby_sheet.dart';
 import '../cubit/cards_cubit.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
@@ -37,11 +38,6 @@ class _CardsView extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: const Text('Mes cartes')),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showAddSheet(context),
-            icon: const Icon(Symbols.add_rounded, fill: 1),
-            label: const Text('Ajouter'),
-          ),
           body: switch (state) {
             CardsInitial() || CardsLoading() =>
               const Center(child: CircularProgressIndicator()),
@@ -59,36 +55,57 @@ class _CardsView extends StatelessWidget {
                 ),
               ),
             CardsLoaded(:final cards) when cards.isEmpty => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Symbols.credit_card_rounded,
-                        size: 56, color: cs.outlineVariant),
-                    const SizedBox(height: 16),
-                    Text('Aucune carte', style: tt.headlineSmall),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Appuie sur + pour ajouter\nta première carte de fidélité',
-                      style: tt.bodyMedium
-                          ?.copyWith(color: cs.onSurfaceVariant),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Symbols.credit_card_rounded,
+                          size: 56, color: cs.outlineVariant),
+                      const SizedBox(height: 16),
+                      Text('Aucune carte', style: tt.headlineSmall),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ajoute ta première carte de fidélité\navec le bouton ci-dessous',
+                        style: tt.bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ExpressiveCtaButton(
+                        label: 'Ajouter une carte',
+                        onPressed: () => _showAddSheet(context),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            CardsLoaded(:final cards) => ReorderableListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                itemCount: cards.length,
-                onReorderItem: (oldIndex, newIndex) {
-                  final list = List<LoyaltyCard>.from(cards);
-                  final item = list.removeAt(oldIndex);
-                  list.insert(newIndex, item);
-                  context.read<CardsCubit>().reorder(list);
-                },
-                itemBuilder: (context, i) => _LoyaltyCardTile(
-                  key: ValueKey(cards[i].id),
-                  card: cards[i],
-                ),
+            CardsLoaded(:final cards) => Column(
+                children: [
+                  Expanded(
+                    child: ReorderableListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      itemCount: cards.length,
+                      onReorderItem: (oldIndex, newIndex) {
+                        final list = List<LoyaltyCard>.from(cards);
+                        final item = list.removeAt(oldIndex);
+                        list.insert(newIndex, item);
+                        context.read<CardsCubit>().reorder(list);
+                      },
+                      itemBuilder: (context, i) => _LoyaltyCardTile(
+                        key: ValueKey(cards[i].id),
+                        card: cards[i],
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: ExpressiveCtaButton(
+                      label: 'Ajouter une carte',
+                      onPressed: () => _showAddSheet(context),
+                    ),
+                  ),
+                  const SizedBox(height: 100),
+                ],
               ),
             _ => const SizedBox.shrink(),
           },
@@ -98,11 +115,9 @@ class _CardsView extends StatelessWidget {
   }
 
   void _showAddSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
+    showTabbySheet(
+      context,
       isScrollControlled: true,
-      useSafeArea: true,
-      shape: context.tabbyShapes.modalTopShape,
       builder: (_) => BlocProvider.value(
         value: context.read<CardsCubit>(),
         child: const _AddCardSheet(),
@@ -511,174 +526,178 @@ class _AddCardSheetState extends State<_AddCardSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: 24, right: 24, top: 24,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 32, height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: cs.outlineVariant,
-                  borderRadius: shapes.radiusExtraSmall,
-                ),
-              ),
+            ExpressiveSheetHeader(
+              title: 'Nouvelle carte',
+              subtitle: 'Scanne ou saisis ta carte de fidélité',
+              onClose: () => Navigator.of(context).pop(),
             ),
-            Text('Nouvelle carte', style: tt.headlineSmall),
-            const SizedBox(height: 20),
-
-            // Nom de la marque
-            TextField(
-              controller: _nameCtrl,
-              textCapitalization: TextCapitalization.words,
-              decoration:
-                  const InputDecoration(labelText: 'Nom de la marque'),
-              autofocus: true,
-            ),
-            const SizedBox(height: 20),
-
-            // Type de code
-            Text('Type de code', style: tt.titleSmall),
-            const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
-                  value: 'barcode',
-                  icon: Icon(Symbols.barcode_rounded),
-                  label: Text('Code-barres'),
-                ),
-                ButtonSegment(
-                  value: 'qrcode',
-                  icon: Icon(Symbols.qr_code_rounded),
-                  label: Text('QR Code'),
-                ),
-              ],
-              selected: {_codeType},
-              onSelectionChanged: (s) =>
-                  setState(() => _codeType = s.first),
-            ),
-            const SizedBox(height: 20),
-
-            // Scanner ou saisie manuelle
-            if (_scanning)
-              _ScannerView(
-                onDetected: (value) => setState(() {
-                  _codeValue = value;
-                  _scanning = false;
-                }),
-                onCancel: () => setState(() => _scanning = false),
-              )
-            else ...[
-              if (_codeValue.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
-                    borderRadius: shapes.radiusLarge,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _codeType == 'barcode'
-                            ? Symbols.barcode_rounded
-                            : Symbols.qr_code_rounded,
-                        size: 20,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _codeValue,
-                          style: tt.bodyMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Symbols.close_rounded, size: 18),
-                        onPressed: () =>
-                            setState(() => _codeValue = ''),
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-              Row(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _startScan,
-                      icon: const Icon(Symbols.photo_camera_rounded),
-                      label: Text(_codeValue.isEmpty
-                          ? 'Scanner'
-                          : 'Rescanner'),
+                  ExpressiveSheetSection(
+                    label: 'Marque',
+                    child: TextField(
+                      controller: _nameCtrl,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        hintText: 'Ex. Carrefour, Sephora…',
+                      ),
+                      autofocus: true,
+                      onChanged: (_) => setState(() {}),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showManualInput(context),
-                      icon: const Icon(Symbols.edit_rounded),
-                      label: const Text('Saisir'),
+                  const SizedBox(height: 24),
+                  ExpressiveSheetSection(
+                    label: 'Type de code',
+                    child: ExpressiveButtonGroup<String>(
+                      value: _codeType,
+                      onChanged: (v) => setState(() => _codeType = v),
+                      segments: const [
+                        ExpressiveButtonGroupSegment(
+                          value: 'barcode',
+                          label: 'Code-barres',
+                        ),
+                        ExpressiveButtonGroupSegment(
+                          value: 'qrcode',
+                          label: 'QR Code',
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  ExpressiveSheetSection(
+                    label: 'Code',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+
+                        if (_scanning)
+                          _ScannerView(
+                            onDetected: (value) => setState(() {
+                              _codeValue = value;
+                              _scanning = false;
+                            }),
+                            onCancel: () => setState(() => _scanning = false),
+                          )
+                        else ...[
+                          if (_codeValue.isNotEmpty) ...[
+                            ExpressiveTonalCard(
+                              variant: ExpressiveTonalVariant.neutral,
+                              margin: EdgeInsets.zero,
+                              padding: const EdgeInsets.all(14),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _codeType == 'barcode'
+                                        ? Symbols.barcode_rounded
+                                        : Symbols.qr_code_rounded,
+                                    size: 20,
+                                    color: cs.onSurfaceVariant,
+                                    fill: 1,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      _codeValue,
+                                      style: tt.bodyMedium,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Symbols.close_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: () =>
+                                        setState(() => _codeValue = ''),
+                                    padding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ExpressiveCtaButton(
+                                  icon: Symbols.photo_camera_rounded,
+                                  label: _codeValue.isEmpty
+                                      ? 'Scanner'
+                                      : 'Rescanner',
+                                  variant: ExpressiveCtaVariant.tonal,
+                                  expanded: true,
+                                  onPressed: _startScan,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ExpressiveCtaButton(
+                                  icon: Symbols.edit_rounded,
+                                  label: 'Saisir',
+                                  variant: ExpressiveCtaVariant.tonal,
+                                  expanded: true,
+                                  onPressed: () =>
+                                      _showManualInput(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ExpressiveSheetSection(
+                    label: 'Couleur',
+                    child: Wrap(
+                      spacing: 10,
+                      children: palette.map((color) {
+                        final isSelected = _selectedColor == color;
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedColor = color),
+                          child: Material(
+                            color: color,
+                            shape: shapes.circle(),
+                            clipBehavior: Clip.antiAlias,
+                            child: SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: isSelected
+                                  ? Icon(
+                                      Symbols.check_rounded,
+                                      color: cs.onPrimary,
+                                      size: 18,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  ExpressiveSheetSubmit(
+                    label: 'Ajouter la carte',
+                    loading: _loading,
+                    onPressed: (_nameCtrl.text.trim().isEmpty ||
+                            _codeValue.isEmpty)
+                        ? null
+                        : _submit,
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
-            ],
-
-            const SizedBox(height: 20),
-
-            // Couleur
-            Text('Couleur', style: tt.titleSmall),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              children: palette.map((color) {
-                final isSelected = _selectedColor == color;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedColor = color),
-                  child: Container(
-                    width: 32, height: 32,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? cs.onSurface
-                            : Colors.transparent,
-                        width: 3,
-                      ),
-                    ),
-                    child: isSelected
-                        ? Icon(Symbols.check_rounded,
-                            color: cs.onPrimary, size: 16)
-                        : null,
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 28),
-
-            FilledButton(
-              onPressed: (_loading ||
-                      _nameCtrl.text.trim().isEmpty ||
-                      _codeValue.isEmpty)
-                  ? null
-                  : _submit,
-              child: _loading
-                  ? const SizedBox(
-                      height: 18, width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Ajouter la carte'),
             ),
           ],
         ),

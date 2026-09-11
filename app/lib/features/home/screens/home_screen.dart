@@ -11,6 +11,7 @@ import '../../../shared/models/group.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/group_card.dart';
+import '../widgets/new_group_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -133,27 +134,11 @@ class _HomeView extends StatelessWidget {
                     ...state.groups.asMap().entries.map((e) =>
                       GroupCard(group: e.value, index: e.key)),
                   const SizedBox(height: 16),
-                  // ── Boutons Créer / Rejoindre ──────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ExpressiveCtaButton(
-                          icon: Symbols.add_rounded,
-                          label: 'Créer',
-                          variant: ExpressiveCtaVariant.filled,
-                          onPressed: () => context.push('/groups/create'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ExpressiveCtaButton(
-                          icon: Symbols.person_add_rounded,
-                          label: 'Rejoindre',
-                          variant: ExpressiveCtaVariant.tonal,
-                          onPressed: () => context.push('/groups/join'),
-                        ),
-                      ),
-                    ],
+                  Center(
+                    child: ExpressiveCtaButton(
+                      label: 'Nouveau groupe',
+                      onPressed: () => showNewGroupSheet(context),
+                    ),
                   ).animate(delay: 200.ms)
                     .fadeIn(duration: 400.ms)
                     .slideY(begin: 0.05, end: 0, duration: 400.ms),
@@ -281,7 +266,7 @@ class _HomeHeader extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             isEmpty
-                ? 'Crée ou rejoins un groupe pour commencer'
+                ? 'Appuie sur Nouveau groupe pour commencer'
                 : 'Appuie sur un groupe pour voir les détails',
             style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
@@ -327,7 +312,7 @@ class _EmptyState extends StatelessWidget {
               style: tt.headlineSmall, textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text(
-            'Crée ton premier groupe ci-dessous\net invite tes amis à rejoindre !',
+            'Utilise Nouveau groupe ci-dessous\npour créer ou rejoindre un groupe !',
             style:
                 tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             textAlign: TextAlign.center,

@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/home/cubit/home_cubit.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../shared/widgets/tabby_sheet.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../cubit/add_expense_cubit.dart';
@@ -17,11 +18,9 @@ Future<bool?> showAddExpenseSheet(
   String? groupId,
 }) {
   final lock = groupId != null && groupId.isNotEmpty;
-  return showModalBottomSheet<bool>(
-    context: context,
+  return showTabbySheet<bool>(
+    context,
     isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
     builder: (_) => BlocProvider(
       create: (_) => AddExpenseCubit()
         ..load(groupId: groupId, lockGroup: lock),
@@ -235,201 +234,201 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
               key: _formKey,
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text('Nouvelle dépense',
-                              style: tt.headlineSmall),
-                        ),
-                        IconButton(
-                          icon: const Icon(Symbols.close_rounded),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
-                    ),
+                  ExpressiveSheetHeader(
+                    title: 'Nouvelle dépense',
+                    subtitle: 'Saisis le montant et les détails ci-dessous',
+                    onClose: () => Navigator.of(context).pop(),
                   ),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       children: [
-                        // 1. Montant
-                        Center(
-                          child: IntrinsicWidth(
-                            child: TextFormField(
-                              controller: _amountCtrl,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              textAlign: TextAlign.center,
-                              style: type.figureHero.copyWith(color: cs.onSurface),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'[\d,.]')),
-                              ],
-                              onChanged: (_) {
-                                if (_customSplit) setState(() {});
-                              },
-                              decoration: InputDecoration(
-                                filled: false,
-                                border: InputBorder.none,
-                                hintText: '0,00',
-                                hintStyle: type.figureLarge
-                                    .copyWith(color: cs.outlineVariant),
-                                suffixText: '€',
-                                suffixStyle: type.figureMedium
-                                    .copyWith(color: cs.onSurfaceVariant),
+                        ExpressiveTonalCard(
+                          variant: ExpressiveTonalVariant.violet,
+                          margin: EdgeInsets.zero,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: IntrinsicWidth(
+                              child: TextFormField(
+                                controller: _amountCtrl,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                textAlign: TextAlign.center,
+                                style: type.figureHero.copyWith(
+                                  color: cs.onSecondaryContainer,
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(r'[\d,.]')),
+                                ],
+                                onChanged: (_) {
+                                  if (_customSplit) setState(() {});
+                                },
+                                decoration: InputDecoration(
+                                  filled: false,
+                                  border: InputBorder.none,
+                                  hintText: '0,00',
+                                  hintStyle: type.figureLarge.copyWith(
+                                    color: cs.onSecondaryContainer
+                                        .withValues(alpha: 0.45),
+                                  ),
+                                  suffixText: '€',
+                                  suffixStyle: type.figureMedium.copyWith(
+                                    color: cs.onSecondaryContainer
+                                        .withValues(alpha: 0.75),
+                                  ),
+                                ),
+                                validator: (v) {
+                                  if (v == null || v.isEmpty) return 'Requis';
+                                  if (double.tryParse(
+                                          v.replaceAll(',', '.')) ==
+                                      null) {
+                                    return 'Invalide';
+                                  }
+                                  return null;
+                                },
+                                autofocus: true,
                               ),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) return 'Requis';
-                                if (double.tryParse(
-                                        v.replaceAll(',', '.')) ==
-                                    null) {
-                                  return 'Invalide';
-                                }
-                                return null;
-                              },
-                              autofocus: true,
                             ),
                           ),
                         ),
 
-                        // 2. Groupe
-                        const SizedBox(height: 8),
-                        Text('Groupe', style: tt.titleSmall),
-                        const SizedBox(height: 8),
-                        if (ready.groups.isEmpty)
-                          Text(
-                            'Crée d\'abord un groupe pour ajouter une dépense.',
-                            style: tt.bodyMedium
-                                ?.copyWith(color: cs.onSurfaceVariant),
-                          )
-                        else if (ready.groupLocked && ready.group != null)
-                          InputDecorator(
-                            decoration: const InputDecoration(
-                              prefixIcon:
-                                  Icon(Symbols.lock_rounded, size: 18),
-                            ),
-                            child: Text(ready.group!.name,
-                                style: tt.bodyLarge),
-                          )
-                        else
-                          DropdownButtonFormField<String>(
-                            key: ValueKey(ready.group?.id),
-                            initialValue: ready.group?.id,
-                            isExpanded: true,
-                            hint: const Text('Choisir un groupe'),
-                            items: ready.groups
-                                .map((g) => DropdownMenuItem(
-                                      value: g.id,
-                                      child: Text(g.name),
-                                    ))
-                                .toList(),
-                            onChanged: _onGroupChanged,
-                          ),
+                        const SizedBox(height: 24),
+                        ExpressiveSheetSection(
+                          label: 'Groupe',
+                          child: ready.groups.isEmpty
+                              ? Text(
+                                  'Crée d\'abord un groupe pour ajouter une dépense.',
+                                  style: tt.bodyMedium?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                )
+                              : ready.groupLocked && ready.group != null
+                                  ? InputDecorator(
+                                      decoration: const InputDecoration(
+                                        prefixIcon: Icon(
+                                          Symbols.lock_rounded,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        ready.group!.name,
+                                        style: tt.bodyLarge,
+                                      ),
+                                    )
+                                  : DropdownButtonFormField<String>(
+                                      key: ValueKey(ready.group?.id),
+                                      initialValue: ready.group?.id,
+                                      isExpanded: true,
+                                      hint: const Text('Choisir un groupe'),
+                                      items: ready.groups
+                                          .map((g) => DropdownMenuItem(
+                                                value: g.id,
+                                                child: Text(g.name),
+                                              ))
+                                          .toList(),
+                                      onChanged: _onGroupChanged,
+                                    ),
+                        ),
 
                         if (ready.group != null) ...[
-                          // 3. Catégorie
                           const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Text('Catégorie', style: tt.titleSmall),
-                              const Spacer(),
-                              TextButton.icon(
-                                onPressed: () =>
-                                    _showCreateCategorySheet(context, ready),
-                                icon: const Icon(Symbols.add_rounded,
-                                    size: 16),
-                                label: const Text('Nouvelle'),
-                                style: TextButton.styleFrom(
-                                  visualDensity: VisualDensity.compact,
-                                ),
+                          ExpressiveSheetSection(
+                            label: 'Catégorie',
+                            trailing: TextButton.icon(
+                              onPressed: () =>
+                                  _showCreateCategorySheet(context, ready),
+                              icon: const Icon(Symbols.add_rounded, size: 16),
+                              label: const Text('Nouvelle'),
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          _CategoryGrid(
-                            categories: ready.categories,
-                            selected: _selectedCategory,
-                            onSelect: (c) =>
-                                setState(() => _selectedCategory = c),
-                          ),
-
-                          // 4. Description
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: _nameCtrl,
-                            textCapitalization:
-                                TextCapitalization.sentences,
-                            textInputAction: TextInputAction.done,
-                            decoration: const InputDecoration(
-                              labelText: 'Description',
-                              hintText: 'Facultatif',
+                            ),
+                            child: _CategoryGrid(
+                              categories: ready.categories,
+                              selected: _selectedCategory,
+                              onSelect: (c) =>
+                                  setState(() => _selectedCategory = c),
                             ),
                           ),
 
-                          // 5. Payé par
                           const SizedBox(height: 24),
-                          Text('Payé par', style: tt.titleSmall),
-                          const SizedBox(height: 8),
-                          _PayerDropdown(
-                            members: ready.group!.members,
-                            selectedId: _selectedPayerId,
-                            onChanged: (id) =>
-                                setState(() => _selectedPayerId = id),
-                          ),
-
-                          // 6. Date
-                          const SizedBox(height: 24),
-                          Text('Date', style: tt.titleSmall),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _pickDate,
-                            borderRadius: shapes.radiusLarge,
-                            child: InputDecorator(
+                          ExpressiveSheetSection(
+                            label: 'Description',
+                            child: TextFormField(
+                              controller: _nameCtrl,
+                              textCapitalization:
+                                  TextCapitalization.sentences,
+                              textInputAction: TextInputAction.done,
                               decoration: const InputDecoration(
-                                prefixIcon: Icon(
-                                    Symbols.calendar_month_rounded,
-                                    size: 18),
-                              ),
-                              child: Text(
-                                '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
-                                style: tt.bodyMedium,
+                                hintText: 'Facultatif',
                               ),
                             ),
                           ),
 
-                          // 7. Répartition
                           const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              Text('Répartition', style: tt.titleSmall),
-                              const Spacer(),
-                              SegmentedButton<bool>(
-                                segments: const [
-                                  ButtonSegment(
-                                      value: false, label: Text('Égale')),
-                                  ButtonSegment(
-                                      value: true, label: Text('Perso')),
-                                ],
-                                selected: {_customSplit},
-                                onSelectionChanged: _recurring
-                                    ? null
-                                    : (set) {
-                                        setState(() {
-                                          _customSplit = set.first;
-                                          if (_customSplit) {
-                                            _initSplitCtrls(
-                                                ready.group!.members);
-                                          }
-                                        });
-                                      },
-                                style: SegmentedButton.styleFrom(
-                                  visualDensity: VisualDensity.compact,
+                          ExpressiveSheetSection(
+                            label: 'Payé par',
+                            child: _PayerDropdown(
+                              members: ready.group!.members,
+                              selectedId: _selectedPayerId,
+                              onChanged: (id) =>
+                                  setState(() => _selectedPayerId = id),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+                          ExpressiveSheetSection(
+                            label: 'Date',
+                            child: InkWell(
+                              onTap: _pickDate,
+                              borderRadius: shapes.radiusLarge,
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(
+                                    Symbols.calendar_month_rounded,
+                                    size: 18,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
+                                  style: tt.bodyMedium,
                                 ),
                               ),
-                            ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+                          ExpressiveSheetSection(
+                            label: 'Répartition',
+                            child: AbsorbPointer(
+                              absorbing: _recurring,
+                              child: Opacity(
+                                opacity: _recurring ? 0.45 : 1,
+                                child: ExpressiveButtonGroup<bool>(
+                                  value: _customSplit,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      _customSplit = v;
+                                      if (_customSplit) {
+                                        _initSplitCtrls(ready.group!.members);
+                                      }
+                                    });
+                                  },
+                                  segments: const [
+                                    ExpressiveButtonGroupSegment(
+                                      value: false,
+                                      label: 'Égale',
+                                    ),
+                                    ExpressiveButtonGroupSegment(
+                                      value: true,
+                                      label: 'Perso',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                           if (_customSplit) ...[
                             const SizedBox(height: 12),
@@ -455,22 +454,13 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                           ),
                         ],
 
-                        // 9. Enregistrer
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: submitting || ready.group == null
-                              ? null
-                              : _submit,
-                          child: submitting
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2),
-                                )
-                              : Text(_recurring
-                                  ? 'Programmer la récurrence'
-                                  : 'Enregistrer'),
+                        const SizedBox(height: 28),
+                        ExpressiveSheetSubmit(
+                          label: _recurring
+                              ? 'Programmer la récurrence'
+                              : 'Enregistrer',
+                          loading: submitting,
+                          onPressed: ready.group == null ? null : _submit,
                         ),
                       ],
                     ),
@@ -490,11 +480,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   ) {
     final groupId = ready.group?.id;
     if (groupId == null) return;
-    showModalBottomSheet(
-      context: context,
+    showTabbySheet(
+      context,
       isScrollControlled: true,
-      useSafeArea: true,
-      shape: context.tabbyShapes.modalTopShape,
       builder: (_) => BlocProvider.value(
         value: context.read<AddExpenseCubit>(),
         child: _CreateCategorySheet(
@@ -531,12 +519,13 @@ class _CustomSplitSection extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final diff = (total - splitsTotal).abs();
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            ...members.map((m) {
+    return ExpressiveTonalCard(
+      variant: ExpressiveTonalVariant.neutral,
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          ...members.map((m) {
               final ctrl = splitCtrls[m.user.id]!;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -589,41 +578,40 @@ class _CustomSplitSection extends StatelessWidget {
                   ],
                 ),
               );
-            }),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Total réparti', style: tt.bodySmall),
-                Row(
-                  children: [
-                    if (!isValid)
-                      Text(
-                        diff < 0.01
-                            ? '≈ ok'
-                            : '${diff > 0 ? '-' : '+'}${diff.toStringAsFixed(2)} €',
-                        style: tt.bodySmall?.copyWith(
-                          color: context.tabbySemantic.danger,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    const SizedBox(width: 8),
+          }),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total réparti', style: tt.bodySmall),
+              Row(
+                children: [
+                  if (!isValid)
                     Text(
-                      '${splitsTotal.toStringAsFixed(2)} / ${total.toStringAsFixed(2)} €',
-                      style: tt.bodyMedium?.copyWith(
-                        color: isValid
-                            ? context.tabbySemantic.success
-                            : context.tabbySemantic.danger,
-                        fontWeight: FontWeight.w700,
+                      diff < 0.01
+                          ? '≈ ok'
+                          : '${diff > 0 ? '-' : '+'}${diff.toStringAsFixed(2)} €',
+                      style: tt.bodySmall?.copyWith(
+                        color: context.tabbySemantic.danger,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${splitsTotal.toStringAsFixed(2)} / ${total.toStringAsFixed(2)} €',
+                    style: tt.bodyMedium?.copyWith(
+                      color: isValid
+                          ? context.tabbySemantic.success
+                          : context.tabbySemantic.danger,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -849,39 +837,26 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
-    final tt = Theme.of(context).textTheme;
     final shapes = context.tabbyShapes;
     final palette = context.tabbySemantic.categoryPalette;
 
     return Padding(
       padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: SingleChildScrollView(
         child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: cs.outlineVariant,
-                borderRadius: shapes.radiusExtraSmall,
-              ),
-            ),
+          ExpressiveSheetHeader(
+            title: 'Nouvelle catégorie',
+            subtitle: 'Personnalise l\'icône et la couleur',
+            onClose: () => Navigator.of(context).pop(),
           ),
-
-          Text('Nouvelle catégorie', style: tt.headlineSmall),
-          const SizedBox(height: 20),
-
-          // Prévisualisation + nom
-          Row(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
             children: [
               Container(
                 width: 52,
@@ -910,14 +885,15 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                 ),
               ),
             ],
+            ),
           ),
 
           const SizedBox(height: 20),
-
-          // Grille d'icônes Material Symbols
-          Text('Icône', style: tt.titleSmall),
-          const SizedBox(height: 10),
-          Wrap(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ExpressiveSheetSection(
+              label: 'Icône',
+              child: Wrap(
             spacing: 6,
             runSpacing: 6,
             children: CategoryIcons.all.map((entry) {
@@ -952,50 +928,48 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                 ),
               );
             }).toList(),
+              ),
+            ),
           ),
 
           const SizedBox(height: 20),
-
-          // Couleur
-          Text('Couleur', style: tt.titleSmall),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 10,
-            children: palette.map((color) {
-              final isSelected = _selectedColor == color;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedColor = color),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? cs.onSurface : Colors.transparent,
-                      width: 3,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ExpressiveSheetSection(
+              label: 'Couleur',
+              child: Wrap(
+                spacing: 10,
+                children: palette.map((color) {
+                  final isSelected = _selectedColor == color;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedColor = color),
+                    child: Material(
+                      color: color,
+                      shape: shapes.circle(),
+                      clipBehavior: Clip.antiAlias,
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: isSelected
+                            ? Icon(Symbols.check_rounded,
+                                color: cs.onPrimary, size: 18)
+                            : null,
+                      ),
                     ),
-                  ),
-                  child: isSelected
-                      ? Icon(Symbols.check_rounded,
-                          color: cs.onPrimary, size: 18)
-                      : null,
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
+              ),
+            ),
           ),
 
           const SizedBox(height: 28),
-
-          FilledButton(
-            onPressed: _loading ? null : _submit,
-            child: _loading
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Créer la catégorie'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: ExpressiveSheetSubmit(
+              label: 'Créer la catégorie',
+              loading: _loading,
+              onPressed: _submit,
+            ),
           ),
         ],
         ),
