@@ -136,9 +136,14 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
       }).toList();
     }
 
+    // Description facultative : repli sur le nom de la catégorie
+    final name = _nameCtrl.text.trim().isEmpty
+        ? _selectedCategory!.name
+        : _nameCtrl.text.trim();
+
     final ok = await context.read<AddExpenseCubit>().submit(
           groupId: widget.groupId,
-          name: _nameCtrl.text.trim(),
+          name: name,
           amount: amount,
           categoryId: _selectedCategory!.id,
           paidBy: payerId,
@@ -264,9 +269,10 @@ class _AddExpenseViewState extends State<_AddExpenseView> {
                   controller: _nameCtrl,
                   textCapitalization: TextCapitalization.sentences,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Requis' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Facultatif',
+                  ),
                 ),
 
                 // ── Catégorie ──────────────────────────────────────────────
