@@ -74,6 +74,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/brands/
 
   # Variable font (wght, ROND, GRAD, opsz, wdth, slnt).
   # google_fonts ne livre que des TTF statiques → ROND ignoré.

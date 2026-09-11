@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'loyalty_brand.dart';
 
 class LoyaltyCard extends Equatable {
   const LoyaltyCard({
@@ -11,6 +12,7 @@ class LoyaltyCard extends Equatable {
     required this.codeValue,
     required this.color,
     required this.sortOrder,
+    this.brandId,
   });
 
   final String id;
@@ -19,6 +21,7 @@ class LoyaltyCard extends Equatable {
   final String codeValue;
   final String? color; // hex
   final int sortOrder;
+  final String? brandId;
 
   bool get isBarcode => codeType == 'barcode';
 
@@ -32,6 +35,15 @@ class LoyaltyCard extends Equatable {
     }
   }
 
+  LoyaltyBrand get brand {
+    final known =
+        LoyaltyBrand.byId(brandId) ?? LoyaltyBrand.byName(brandName);
+    if (known != null) return known;
+    return LoyaltyBrand.custom(name: brandName, color: flutterColor);
+  }
+
+  String get heroTag => 'loyalty-card-$id';
+
   factory LoyaltyCard.fromJson(Map<String, dynamic> json) => LoyaltyCard(
         id: json['id'] as String,
         brandName: json['brand_name'] as String,
@@ -39,8 +51,10 @@ class LoyaltyCard extends Equatable {
         codeValue: json['code_value'] as String,
         color: json['color'] as String?,
         sortOrder: json['sort_order'] as int,
+        brandId: json['brand_id'] as String?,
       );
 
   @override
-  List<Object?> get props => [id, brandName, codeType, codeValue, color, sortOrder];
+  List<Object?> get props =>
+      [id, brandName, codeType, codeValue, color, sortOrder, brandId];
 }

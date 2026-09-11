@@ -57,6 +57,7 @@ class CardsCubit extends Cubit<CardsState> {
     required String codeType,
     required String codeValue,
     String? color,
+    String? brandId,
   }) async {
     try {
       await apiClient.dio.post('/loyalty-cards', data: {
@@ -64,6 +65,7 @@ class CardsCubit extends Cubit<CardsState> {
         'code_type': codeType,
         'code_value': codeValue,
         if (color != null) 'color': color,
+        if (brandId != null) 'brand_id': brandId,
       });
       await load();
       return true;

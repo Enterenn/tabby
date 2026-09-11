@@ -19,6 +19,7 @@ router = APIRouter(prefix="/loyalty-cards", tags=["loyalty-cards"])
 
 class LoyaltyCardCreate(BaseModel):
     brand_name: str
+    brand_id: Optional[str] = None
     code_type: str  # 'barcode' | 'qrcode'
     code_value: str
     color: Optional[str] = None
@@ -26,12 +27,14 @@ class LoyaltyCardCreate(BaseModel):
 
 class LoyaltyCardUpdate(BaseModel):
     brand_name: Optional[str] = None
+    brand_id: Optional[str] = None
     color: Optional[str] = None
 
 
 class LoyaltyCardResponse(BaseModel):
     id: str
     brand_name: str
+    brand_id: Optional[str]
     code_type: str
     code_value: str
     color: Optional[str]
@@ -51,6 +54,7 @@ def _to_response(c: LoyaltyCard) -> LoyaltyCardResponse:
     return LoyaltyCardResponse(
         id=str(c.id),
         brand_name=c.brand_name,
+        brand_id=c.brand_id,
         code_type=c.code_type,
         code_value=c.code_value,
         color=c.color,
@@ -96,6 +100,7 @@ async def create_card(
         id=uuid.uuid4(),
         user_id=current_user.id,
         brand_name=body.brand_name.strip(),
+        brand_id=body.brand_id,
         code_type=body.code_type,
         code_value=body.code_value.strip(),
         color=body.color,
@@ -118,6 +123,8 @@ async def update_card(
         raise HTTPException(status_code=404, detail="Card not found")
     if body.brand_name is not None:
         card.brand_name = body.brand_name.strip()
+    if body.brand_id is not None:
+        card.brand_id = body.brand_id
     if body.color is not None:
         card.color = body.color
     await db.flush()

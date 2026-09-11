@@ -217,6 +217,7 @@ class LoyaltyCard(Base):
         UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     brand_name: Mapped[str] = mapped_column(Text, nullable=False)
+    brand_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     code_type: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("code_type IN ('barcode', 'qrcode')", name="ck_loyalty_code_type"),
