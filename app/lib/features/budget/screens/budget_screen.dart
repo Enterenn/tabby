@@ -297,8 +297,8 @@ class _StatsSectionState extends State<_StatsSection> {
               final dx = local.dx - center.dx;
               final dy = local.dy - center.dy;
               final dist = math.sqrt(dx * dx + dy * dy);
-              // Anneau entre r=64 et r=108
-              if (dist < 64 || dist > 108) {
+              // Anneau ~stroke 48 + marge de tap
+              if (dist < 72 || dist > 140) {
                 setState(() => _touchedIndex = null);
                 return;
               }
@@ -319,17 +319,38 @@ class _StatsSectionState extends State<_StatsSection> {
             },
             child: SizedBox(
               height: 280,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CustomPaint(
-                    size: const Size(double.infinity, 280),
-                    painter: _DonutPainter(
-                      sections: stats.categories,
-                      touchedIndex: _touchedIndex,
-                    ),
-                  ),
-                  // Label central
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final donutSize = Size(constraints.maxWidth, 280);
+                  final emojiSlots = _DonutPainter.emojiSlots(
+                    donutSize,
+                    stats.categories,
+                    _touchedIndex,
+                  );
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: donutSize,
+                        painter: _DonutPainter(
+                          sections: stats.categories,
+                          touchedIndex: _touchedIndex,
+                        ),
+                      ),
+                      ...emojiSlots.map(
+                        (slot) => Positioned(
+                          left: slot.offset.dx - 13,
+                          top: slot.offset.dy - 13,
+                          width: 26,
+                          height: 26,
+                          child: IgnorePointer(
+                            child: Center(
+                              child: slot.stat.category.iconWidget(size: 18),
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Label central
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -351,7 +372,9 @@ class _StatsSectionState extends State<_StatsSection> {
                       ),
                     ],
                   ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -409,9 +432,12 @@ class _StatsSectionState extends State<_StatsSection> {
                                 .withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(cat.category.flutterIcon,
+                          child: Center(
+                            child: cat.category.iconWidget(
                               size: 18,
-                              color: cat.category.flutterColor),
+                              color: cat.category.flutterColor,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -462,6 +488,12 @@ class _StatsSectionState extends State<_StatsSection> {
 
 // ─── Custom donut painter ─────────────────────────────────────────────────────
 
+class _DonutEmojiSlot {
+  const _DonutEmojiSlot({required this.offset, required this.stat});
+  final Offset offset;
+  final CategoryStat stat;
+}
+
 class _DonutPainter extends CustomPainter {
   const _DonutPainter({
     required this.sections,
@@ -471,9 +503,48 @@ class _DonutPainter extends CustomPainter {
   final List<CategoryStat> sections;
   final int? touchedIndex;
 
-  static const double _strokeWidth = 28.0;
+  static const double _strokeWidth = 48.0;
   static const double _touchedExtra = 8.0;
   static const double _gapDeg = 2.0;
+  /// Longueur d'arc minimale (px) pour coller un emoji dans la part.
+  static const double _minArcForEmoji = 40.0;
+
+  static List<_DonutEmojiSlot> emojiSlots(
+    Size size,
+    List<CategoryStat> sections,
+    int? touchedIndex,
+  ) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final baseRadius =
+        size.shortestSide / 2 - _strokeWidth / 2 - _touchedExtra - 4;
+    final gapRad = _gapDeg * math.pi / 180;
+    final availableRad = 2 * math.pi - gapRad * 2 * sections.length;
+
+    double startAngle = -math.pi / 2;
+    final slots = <_DonutEmojiSlot>[];
+
+    for (int i = 0; i < sections.length; i++) {
+      final cat = sections[i];
+      final isTouched = touchedIndex == i;
+      final radius = isTouched ? baseRadius + _touchedExtra / 2 : baseRadius;
+      final sweepAngle = (cat.percent / 100) * availableRad;
+      final arcLength = radius * sweepAngle;
+
+      if (arcLength >= _minArcForEmoji) {
+        final mid = startAngle + gapRad + sweepAngle / 2;
+        slots.add(_DonutEmojiSlot(
+          offset: Offset(
+            center.dx + radius * math.cos(mid),
+            center.dy + radius * math.sin(mid),
+          ),
+          stat: cat,
+        ));
+      }
+
+      startAngle += sweepAngle + gapRad * 2;
+    }
+    return slots;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -549,8 +620,12 @@ class _BudgetCard extends StatelessWidget {
                       color: b.category.flutterColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(b.category.flutterIcon,
-                        color: b.category.flutterColor, size: 22),
+                    child: Center(
+                      child: b.category.iconWidget(
+                        size: 22,
+                        color: b.category.flutterColor,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -657,8 +732,10 @@ class _BudgetCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
                   children: [
-                    Icon(budget.category.flutterIcon,
-                        color: budget.category.flutterColor, size: 20),
+                    budget.category.iconWidget(
+                      size: 20,
+                      color: budget.category.flutterColor,
+                    ),
                     const SizedBox(width: 10),
                     Text(budget.category.name, style: tt.titleMedium),
                   ],
@@ -793,8 +870,12 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
                   color: b.category.flutterColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(b.category.flutterIcon,
-                    color: b.category.flutterColor, size: 20),
+                child: Center(
+                  child: b.category.iconWidget(
+                    size: 20,
+                    color: b.category.flutterColor,
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               Text(b.category.name, style: tt.titleMedium),
@@ -933,8 +1014,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                         value: c,
                         child: Row(
                           children: [
-                            Icon(c.flutterIcon,
-                                color: c.flutterColor, size: 18),
+                            c.iconWidget(size: 18, color: c.flutterColor),
                             const SizedBox(width: 8),
                             Text(c.name),
                           ],
