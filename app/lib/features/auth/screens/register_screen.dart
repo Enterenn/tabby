@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -38,6 +39,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
@@ -48,23 +51,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
           }
         },
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 64),
-                  Text('Créer un compte', style: Theme.of(context).textTheme.displaySmall),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 56),
+
+                  // Logo centré
+                  Center(
+                    child: SvgPicture.asset(
+                      'assets/images/tabby_color.svg',
+                      height: 44,
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
                   Text(
-                    'Bienvenue sur Tabby',
+                    'Créer un compte',
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Rejoins Tabby pour partager tes dépenses',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: cs.onSurfaceVariant,
                         ),
                   ),
-                  const SizedBox(height: 48),
+
+                  const SizedBox(height: 36),
+
                   TextFormField(
                     controller: _nameCtrl,
                     textInputAction: TextInputAction.next,
@@ -73,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (v) =>
                         v == null || v.trim().isEmpty ? 'Champ requis' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
@@ -82,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (v) =>
                         v == null || !v.contains('@') ? 'Email invalide' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   TextFormField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
@@ -92,15 +111,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'Mot de passe',
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscure ? Symbols.visibility_off_rounded : Symbols.visibility_rounded,
+                          _obscure
+                              ? Symbols.visibility_off_rounded
+                              : Symbols.visibility_rounded,
                         ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
+                        onPressed: () =>
+                            setState(() => _obscure = !_obscure),
                       ),
                     ),
                     validator: (v) =>
-                        v == null || v.length < 6 ? 'Minimum 6 caractères' : null,
+                        v == null || v.length < 6
+                            ? 'Minimum 6 caractères'
+                            : null,
                   ),
-                  const SizedBox(height: 32),
+
+                  const SizedBox(height: 28),
+
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
                       return FilledButton(
@@ -109,13 +135,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('S\'inscrire'),
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 12),
                   Center(
                     child: TextButton(
                       onPressed: () => context.go('/login'),

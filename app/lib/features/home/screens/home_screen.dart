@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
@@ -30,7 +31,10 @@ class _HomeView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tabby'),
+        title: SvgPicture.asset(
+          'assets/images/tabby_color.svg',
+          height: 28,
+        ),
         actions: [
           const Padding(
             padding: EdgeInsets.only(right: 16),
