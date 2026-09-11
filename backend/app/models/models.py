@@ -10,10 +10,11 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     Numeric,
+    TIMESTAMP,
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import TIMESTAMPTZ, UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -32,7 +33,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     group_memberships: Mapped[list["GroupMember"]] = relationship(back_populates="user")
     paid_expenses: Mapped[list["Expense"]] = relationship(back_populates="paid_by_user")
@@ -46,7 +47,7 @@ class Group(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     members: Mapped[list["GroupMember"]] = relationship(back_populates="group")
     categories: Mapped[list["Category"]] = relationship(back_populates="group")
@@ -65,7 +66,7 @@ class GroupMember(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), primary_key=True
     )
-    joined_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, server_default=func.now())
+    joined_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     group: Mapped["Group"] = relationship(back_populates="members")
     user: Mapped["User"] = relationship(back_populates="group_memberships")
@@ -110,7 +111,7 @@ class Expense(Base):
     recurring_source_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("recurring_expense.id"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     group: Mapped["Group"] = relationship(back_populates="expenses")
     category: Mapped["Category"] = relationship(back_populates="expenses")
@@ -161,7 +162,7 @@ class RecurringExpense(Base):
     )
     day_of_period: Mapped[int] = mapped_column(Integer, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     group: Mapped["Group"] = relationship(back_populates="recurring_expenses")
     category: Mapped["Category"] = relationship(back_populates="recurring_expenses")
@@ -221,7 +222,7 @@ class GroupInvite(Base):
         UUID(as_uuid=True), ForeignKey("group.id", ondelete="CASCADE"), nullable=False
     )
     code: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(TIMESTAMPTZ, nullable=False)
-    used_at: Mapped[datetime | None] = mapped_column(TIMESTAMPTZ, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
     group: Mapped["Group"] = relationship(back_populates="invites")
