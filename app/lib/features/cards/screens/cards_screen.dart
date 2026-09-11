@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/loyalty_card.dart';
@@ -374,7 +373,9 @@ class _ScannerViewState extends State<_ScannerView> {
   @override
   void initState() {
     super.initState();
-    _ctrl = MobileScannerController();
+    _ctrl = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+    );
   }
 
   @override
@@ -386,13 +387,14 @@ class _ScannerViewState extends State<_ScannerView> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Column(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: SizedBox(
-            height: 220,
+            height: 240,
             child: Stack(
               children: [
                 MobileScanner(
@@ -405,15 +407,63 @@ class _ScannerViewState extends State<_ScannerView> {
                       widget.onDetected(value);
                     }
                   },
+                  errorBuilder: (context, error) {
+                    // Permission refusée ou caméra indisponible
+                    return Container(
+                      color: cs.surfaceContainerHighest,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Symbols.photo_camera_rounded,
+                                size: 40, color: cs.onSurfaceVariant),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Accès à la caméra refusé',
+                              style: tt.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: () async {
+                                await _ctrl.stop();
+                                await _ctrl.start();
+                              },
+                              child: const Text('Réessayer'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 // Viseur central
-                Center(
-                  child: Container(
-                    width: 200,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(12),
+                IgnorePointer(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 220,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                width: 2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Centrez le code dans le cadre',
+                          style: tt.bodySmall?.copyWith(
+                            color: Colors.white,
+                            shadows: const [
+                              Shadow(blurRadius: 4, color: Colors.black54),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -668,14 +718,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
     );
   }
 
-  Future<void> _startScan() async {
-    final status = await Permission.camera.request();
-    if (status.isGranted) {
-      setState(() => _scanning = true);
-    } else if (status.isPermanentlyDenied) {
-      await openAppSettings();
-    }
-  }
+  void _startScan() => setState(() => _scanning = true);
 
   void _showManualInput(BuildContext context) {
     final ctrl = TextEditingController(text: _codeValue);
