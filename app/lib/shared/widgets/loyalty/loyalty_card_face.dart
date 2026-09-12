@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../models/loyalty_brand.dart';
+import '../../models/loyalty_brand_logos.dart';
 import '../../models/loyalty_card.dart';
 
 /// Dimensions partagées — doivent correspondre au padding horizontal de
@@ -325,11 +326,12 @@ class _BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = brand.onPrimary;
+    final logo = LoyaltyBrandLogos.assetFor(brand);
 
     return Container(
       width: size,
       height: size,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: brand.logoBackground,
         shape: BoxShape.circle,
@@ -338,30 +340,54 @@ class _BrandLogo extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Center(
-        child: brand.logoAsset != null
-            ? SvgPicture.asset(
-                brand.logoAsset!,
-                width: size * 0.62,
-                height: size * 0.62,
-                fit: BoxFit.contain,
-              )
-            : brand.monogram.isEmpty
-            ? Icon(
-                Symbols.storefront_rounded,
-                color: fg,
-                size: size * 0.45,
-                fill: 1,
-              )
-            : Text(
-                brand.monogram,
-                style: TextStyle(
-                  color: fg,
-                  fontWeight: FontWeight.w900,
-                  fontSize: size * 0.38,
-                  height: 1,
-                ),
-              ),
+      child: logo != null
+          ? logo.isSvg
+              ? Padding(
+                  padding: EdgeInsets.all(size * 0.18),
+                  child: SvgPicture.asset(
+                    logo.path,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : Image.asset(
+                  logo.path,
+                  fit: BoxFit.cover,
+                  width: size,
+                  height: size,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, _, _) => _Monogram(brand: brand, size: size),
+                )
+          : _Monogram(brand: brand, size: size),
+    );
+  }
+}
+
+class _Monogram extends StatelessWidget {
+  const _Monogram({required this.brand, required this.size});
+
+  final LoyaltyBrand brand;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = brand.onPrimary;
+    if (brand.monogram.isEmpty) {
+      return Icon(
+        Symbols.storefront_rounded,
+        color: fg,
+        size: size * 0.45,
+        fill: 1,
+      );
+    }
+    return Center(
+      child: Text(
+        brand.monogram,
+        style: TextStyle(
+          color: fg,
+          fontWeight: FontWeight.w900,
+          fontSize: size * 0.38,
+          height: 1,
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/api/token_storage.dart';
 import 'core/auth/biometric_settings.dart';
 import 'core/locale/locale_cubit.dart';
+import 'shared/models/loyalty_brand_logos.dart';
 import 'shared/models/loyalty_prefix_store.dart';
 import 'core/router/app_router.dart';
 import 'core/services/fcm_service.dart';
@@ -29,6 +30,7 @@ void main() async {
   await initTokenStorage();
   await initBiometricSettings();
   await LoyaltyPrefixStore.load();
+  await LoyaltyBrandLogos.load();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   Animate.restartOnHotReload = true;
