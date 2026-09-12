@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.12.2
+  sdk: ^3.13.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -52,9 +52,10 @@ dependencies:
   firebase_messaging: ^15.2.5
   flutter_animate: ^4.5.2
   animations: ^3.0.0
-  # Harmonisation HCT des tokens success/warning. 2.x incompatible (material_ui).
-  dynamic_color: 1.8.1
+  material_color_utilities: ^0.13.0
   image_picker: ^1.2.0
+  material_ui: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

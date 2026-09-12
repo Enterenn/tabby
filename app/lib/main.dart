@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -112,7 +112,17 @@ class _TabbyAppState extends State<TabbyApp> {
                   }
                   return const Locale('en');
                 },
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                localizationsDelegates: [
+                  AppLocalizations.delegate,
+                  ...GlobalMaterialLocalizations.delegates,
+                ],
+                builder: (context, child) {
+                  // Pont officiel le temps que go_router / animations /
+                  // flutter_animate lisent encore flutter/material.dart.
+                  return MaterialUiCompatibilityBridge( // ignore: deprecated_member_use
+                    child: child ?? const SizedBox.shrink(),
+                  );
+                },
                 routerConfig: _router,
                 debugShowCheckedModeBanner: false,
               );

@@ -1,5 +1,5 @@
-import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../shared/models/budget.dart';
 import '../../shared/models/category.dart';
@@ -364,6 +364,11 @@ class TabbyTypographyTokens extends ThemeExtension<TabbyTypographyTokens> {
   }
 }
 
+Color _harmonizeWith(Color from, Color to) {
+  if (from == to) return from;
+  return Color(Blend.harmonize(from.toARGB32(), to.toARGB32()));
+}
+
 // ─── Couleurs sémantiques métier ──────────────────────────────────────────────
 
 /// Success / warning + palettes dérivées du [ColorScheme].
@@ -417,7 +422,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
 
   factory TabbySemanticColors.fromScheme(ColorScheme scheme) {
     final isDark = scheme.brightness == Brightness.dark;
-    Color hue(Color color) => color.harmonizeWith(scheme.primary);
+    Color hue(Color color) => _harmonizeWith(color, scheme.primary);
     return TabbySemanticColors(
       success: hue(isDark ? AppColors.successDark : AppColors.success),
       onSuccess: hue(isDark ? AppColors.onSuccessDark : AppColors.onSuccessLight),
