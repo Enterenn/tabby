@@ -5,7 +5,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://tabby:tabby@db:5432/tabby
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      SECRET_KEY: ${SECRET_KEY}
       DEBUG: ${DEBUG:-false}
       FIREBASE_CREDENTIALS_PATH: /run/secrets/firebase.json
     volumes:

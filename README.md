@@ -55,7 +55,8 @@ La documentation Swagger est accessible sur `http://localhost:8000/docs` **uniqu
 
 1. Créer un conteneur LXC sur Proxmox, installer Docker.
 2. Cloner le repo sur le LXC et aller dans `backend/`.
-3. Configurer le `.env` (notamment `SECRET_KEY` avec une valeur aléatoire sécurisée).
+3. Configurer le `.env` : `SECRET_KEY` obligatoire (32+ caractères, générée).
+   `python -c "import secrets; print(secrets.token_urlsafe(48))"`
 4. `docker compose up -d` puis `docker compose exec api alembic upgrade head`.
 5. L'API est accessible sur `http://<ip-tailscale>:8000`.
 
@@ -76,7 +77,7 @@ cd app
 flutter pub get
 
 # Adapter l'URL du serveur si besoin
-# → éditer lib/core/api/api_client.dart : constante _defaultBaseUrl
+# flutter run --dart-define=API_BASE_URL=https://<host>:8000
 
 # Lancer sur un appareil connecté
 flutter run
