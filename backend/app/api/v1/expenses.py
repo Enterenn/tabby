@@ -113,8 +113,14 @@ async def create_expense(
                 amount=split_amount,
             ))
     else:
-        # Répartition personnalisée — validée par le schéma Pydantic
+        # Répartition personnalisée — validée par le schéma Pydantic + membership
         for item in body.splits:  # type: ignore[union-attr]
+            split_member = await db.get(GroupMember, (group_id, item.user_id))
+            if split_member is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Split user is not a member of this group",
+                )
             db.add(ExpenseSplit(
                 id=uuid.uuid4(),
                 expense_id=expense.id,

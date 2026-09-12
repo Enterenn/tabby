@@ -1,16 +1,18 @@
-import random
+import secrets
 import string
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.balance import ExpenseRecord, compute_balances, user_balance
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_group_member
+from app.core.deps import get_current_user, require_group_member, require_group_owner
+from app.core.rate_limit import limiter
+from app.core.uploads import avatar_public_url
 from app.models.models import Expense, ExpenseSplit, Group, GroupInvite, GroupMember, User
 from app.schemas.group import (
     BalanceEntry,
@@ -29,8 +31,11 @@ from decimal import Decimal
 router = APIRouter(prefix="/groups", tags=["groups"])
 
 
+_INVITE_ALPHABET = string.ascii_uppercase + string.digits
+
+
 def _invite_code() -> str:
-    return "".join(random.choices(string.digits, k=6))
+    return "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(8))
 
 
 async def _load_group_with_balance(
@@ -66,6 +71,7 @@ async def _load_group_with_balance(
     return GroupResponse(
         id=str(group.id),
         name=group.name,
+        owner_id=str(group.owner_id),
         created_at=group.created_at,
         members=[
             MemberResponse(
@@ -73,7 +79,7 @@ async def _load_group_with_balance(
                     id=str(m.user.id),
                     name=m.user.name,
                     email=m.user.email,
-                    avatar_url=m.user.avatar_url,
+                    avatar_url=avatar_public_url(str(m.user.id)) if m.user.avatar_url else None,
                 ),
                 joined_at=m.joined_at,
             )
@@ -105,7 +111,7 @@ async def create_group(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    group = Group(id=uuid.uuid4(), name=body.name)
+    group = Group(id=uuid.uuid4(), name=body.name, owner_id=current_user.id)
     db.add(group)
     await db.flush()
 
@@ -163,7 +169,7 @@ async def update_group(
 @router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_group(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
+    current_user: User = Depends(require_group_owner),
     db: AsyncSession = Depends(get_db),
 ):
     group = await db.get(Group, group_id)
@@ -200,7 +206,9 @@ async def create_invite(
 
 
 @router.post("/join", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def join_group(
+    request: Request,
     body: JoinRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -299,13 +307,39 @@ async def settle_debt(
         db.add(category)
         await db.flush()
 
+    try:
+        from_user_id = uuid.UUID(str(body.from_user_id))
+        to_user_id = uuid.UUID(str(body.to_user_id))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user id",
+        )
+    from_member = await db.get(GroupMember, (group_id, from_user_id))
+    to_member = await db.get(GroupMember, (group_id, to_user_id))
+    if from_member is None or to_member is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Both users must be members of this group",
+        )
+    if from_user_id == to_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot settle with the same user",
+        )
+
     amount = Decimal(str(body.amount)).quantize(Decimal("0.01"))
+    if amount <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount must be greater than zero",
+        )
     expense = Expense(
         id=uuid.uuid4(),
         group_id=group_id,
         category_id=category.id,
-        paid_by=body.from_user_id,
-        name=f"Remboursement",
+        paid_by=from_user_id,
+        name="Remboursement",
         amount=amount,
         expense_date=datetime.now(timezone.utc).date(),
     )
@@ -316,7 +350,7 @@ async def settle_debt(
     db.add(ExpenseSplit(
         id=uuid.uuid4(),
         expense_id=expense.id,
-        user_id=body.to_user_id,
+        user_id=to_user_id,
         amount=amount,
     ))
     await db.flush()
@@ -351,6 +385,21 @@ async def leave_group(
             detail=f"Solde non nul ({balance:+.2f}€). Réglez vos dettes avant de quitter.",
         )
 
+    group = await db.get(Group, group_id)
+    if group is not None and group.owner_id == current_user.id:
+        others_result = await db.execute(
+            select(GroupMember)
+            .where(GroupMember.group_id == group_id, GroupMember.user_id != current_user.id)
+            .order_by(GroupMember.joined_at.asc())
+        )
+        successor = others_result.scalars().first()
+        if successor is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Delete the group instead of leaving as the last owner",
+            )
+        group.owner_id = successor.user_id
+
     membership = await db.get(GroupMember, (group_id, current_user.id))
     if membership:
         await db.delete(membership)
@@ -361,9 +410,15 @@ async def leave_group(
 async def remove_member(
     group_id: uuid.UUID,
     user_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
+    current_user: User = Depends(require_group_owner),
     db: AsyncSession = Depends(get_db),
 ):
+    group = await db.get(Group, group_id)
+    if group is not None and group.owner_id == user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot remove the group owner",
+        )
     membership = await db.get(GroupMember, (group_id, user_id))
     if membership is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")

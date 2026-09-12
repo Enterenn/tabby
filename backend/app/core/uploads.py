@@ -1,6 +1,12 @@
+import hashlib
+import hmac
+import re
+import time
 from pathlib import Path
 
 from PIL import Image, ImageOps
+
+from app.core.config import settings
 
 UPLOADS_DIR = Path("uploads")
 AVATARS_DIR = UPLOADS_DIR / "avatars"
@@ -10,6 +16,11 @@ ALLOWED_AVATAR_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_AVATAR_BYTES = 20 * 1024 * 1024
 MIN_AVATAR_SIZE = 128
 AVATAR_OUTPUT_SIZE = 256
+AVATAR_URL_TTL_SECONDS = 3600
+_AVATAR_FILENAME = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(webp|jpg)$",
+    re.IGNORECASE,
+)
 
 
 def ensure_upload_dirs() -> None:
@@ -23,10 +34,30 @@ def avatar_path(user_id: str) -> Path:
     return AVATARS_DIR / f"{user_id}.jpg"
 
 
+def _sign(message: str) -> str:
+    return hmac.new(
+        settings.secret_key.encode(),
+        message.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
 def avatar_public_url(user_id: str) -> str:
     path = avatar_path(user_id)
     version = int(path.stat().st_mtime) if path.exists() else 0
-    return f"/uploads/avatars/{path.name}?v={version}"
+    name = path.name
+    exp = int(time.time()) + AVATAR_URL_TTL_SECONDS
+    sig = _sign(f"{name}:{exp}:{version}")
+    return f"/uploads/avatars/{name}?v={version}&exp={exp}&sig={sig}"
+
+
+def verify_avatar_signature(filename: str, exp: int, sig: str, version: int) -> bool:
+    if not _AVATAR_FILENAME.fullmatch(filename):
+        return False
+    if exp < int(time.time()):
+        return False
+    expected = _sign(f"{filename}:{exp}:{version}")
+    return hmac.compare_digest(expected, sig)
 
 
 def delete_avatar_files(user_id: str) -> None:

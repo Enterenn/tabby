@@ -1,16 +1,14 @@
-"""FastAPI dependency injection — current user, group membership guard."""
+"""FastAPI dependency injection — current user, group membership / owner guards."""
 
 import uuid
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import decode_token
-from app.models.models import GroupMember, User
+from app.core.security import JWTError, decode_token
+from app.models.models import Group, GroupMember, User
 
 bearer_scheme = HTTPBearer()
 
@@ -49,5 +47,20 @@ async def require_group_member(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not a member of this group",
+        )
+    return current_user
+
+
+async def require_group_owner(
+    group_id: uuid.UUID,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Ensures the current user owns the requested group."""
+    group = await db.get(Group, group_id)
+    if group is None or group.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the group owner can perform this action",
         )
     return current_user

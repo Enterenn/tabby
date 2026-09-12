@@ -29,6 +29,7 @@ class MemberResponse(BaseModel):
 class GroupResponse(BaseModel):
     id: str
     name: str
+    owner_id: str
     created_at: datetime
     members: list[MemberResponse] = []
     # Solde du groupe depuis le point de vue de l'utilisateur courant (calculé)

@@ -3,10 +3,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.health import router as health_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.avatars import router as avatars_router
 from app.api.v1.categories import router as categories_router
 from app.api.v1.expenses import router as expenses_router
 from app.api.v1.groups import router as groups_router
@@ -22,7 +23,8 @@ from app.api.v1.recurring_expenses import (
     router as recurring_router,
 )
 from app.core.config import settings
-from app.core.uploads import UPLOADS_DIR, ensure_upload_dirs
+from app.core.rate_limit import RateLimitExceeded, _rate_limit_exceeded_handler, limiter
+from app.core.uploads import ensure_upload_dirs
 from app.scheduler import recurring_job_loop
 
 
@@ -45,6 +47,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,6 +61,7 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(avatars_router)
 app.include_router(groups_router)
 app.include_router(categories_router)
 app.include_router(expenses_router)
@@ -67,4 +74,3 @@ app.include_router(devices_router)
 app.include_router(loyalty_cards_router)
 
 ensure_upload_dirs()
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
