@@ -41,6 +41,9 @@ class User(Base):
     loyalty_cards: Mapped[list["LoyaltyCard"]] = relationship(back_populates="user", passive_deletes=True)
     recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="paid_by_user")
     device_tokens: Mapped[list["DeviceToken"]] = relationship(back_populates="user", passive_deletes=True)
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        back_populates="user", passive_deletes=True
+    )
 
 
 class DeviceToken(Base):
@@ -57,11 +60,28 @@ class DeviceToken(Base):
     user: Mapped["User"] = relationship(back_populates="device_tokens")
 
 
+class RefreshToken(Base):
+    __tablename__ = "refresh_token"
+
+    jti: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+
+
 class Group(Base):
     __tablename__ = "group"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     name: Mapped[str] = mapped_column(Text, nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="RESTRICT"), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     members: Mapped[list["GroupMember"]] = relationship(back_populates="group", passive_deletes=True)

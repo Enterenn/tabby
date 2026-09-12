@@ -1,9 +1,10 @@
-"""Password hashing and JWT utilities."""
+"""Password hashing and JWT utilities (PyJWT)."""
 
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
+from jwt import InvalidTokenError as JWTError
 
 from app.core.config import settings
 
@@ -42,9 +43,9 @@ def create_access_token(user_id: str) -> str:
     )
 
 
-def create_refresh_token(user_id: str) -> str:
+def create_refresh_token(user_id: str, jti: str) -> str:
     return _create_token(
-        {"sub": user_id, "type": "refresh"},
+        {"sub": user_id, "type": "refresh", "jti": jti},
         timedelta(days=settings.refresh_token_expire_days),
     )
 
@@ -52,3 +53,15 @@ def create_refresh_token(user_id: str) -> str:
 def decode_token(token: str) -> dict:
     """Raises JWTError if token is invalid or expired."""
     return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+
+
+__all__ = [
+    "JWTError",
+    "PASSWORD_POLICY_ERROR",
+    "create_access_token",
+    "create_refresh_token",
+    "decode_token",
+    "hash_password",
+    "validate_password_strength",
+    "verify_password",
+]

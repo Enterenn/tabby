@@ -2,20 +2,21 @@ import io
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    hash_password,
-    verify_password,
+from app.core.rate_limit import limiter
+from app.core.refresh_tokens import (
+    issue_token_pair,
+    revoke_all_refresh_tokens,
+    revoke_refresh_token,
+    rotate_refresh_token,
 )
+from app.core.security import hash_password, verify_password
 from app.core.uploads import (
     ALLOWED_AVATAR_SUFFIXES,
     ALLOWED_AVATAR_TYPES,
@@ -36,7 +37,6 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
-from jose import JWTError  # noqa: F401 (used in refresh)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -56,7 +56,8 @@ async def me(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
@@ -73,7 +74,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or not verify_password(body.password, user.password_hash):
@@ -81,30 +83,18 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
-    return TokenResponse(
-        access_token=create_access_token(str(user.id)),
-        refresh_token=create_refresh_token(str(user.id)),
-    )
+    return await issue_token_pair(db, user.id)
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
-    try:
-        payload = decode_token(body.refresh_token)
-        if payload.get("type") != "refresh":
-            raise JWTError("wrong token type")
-        user_id = uuid.UUID(payload["sub"])
-    except (JWTError, ValueError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+@limiter.limit("10/minute")
+async def refresh(request: Request, body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    return await rotate_refresh_token(db, body.refresh_token)
 
-    user = await db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
-    return TokenResponse(
-        access_token=create_access_token(str(user.id)),
-        refresh_token=create_refresh_token(str(user.id)),
-    )
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+    await revoke_refresh_token(db, body.refresh_token)
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -139,6 +129,7 @@ async def change_password(
             detail="Current password is incorrect",
         )
     current_user.password_hash = hash_password(body.new_password)
+    await revoke_all_refresh_tokens(db, current_user.id)
     await db.flush()
 
 
@@ -188,4 +179,3 @@ async def upload_avatar(
     current_user.avatar_url = f"/uploads/avatars/{current_user.id}.webp"
     await db.flush()
     return _user_response(current_user)
-
