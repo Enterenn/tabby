@@ -1,8 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/theme/app_theme.dart';
-import 'expressive_cta_button.dart';
+import '../../core/theme/app_theme.dart';
+import '../actions/expressive_cta_button.dart';
 
 /// En-tête standard des bottom sheets M3 Expressive.
 class ExpressiveSheetHeader extends StatelessWidget {
@@ -112,22 +112,10 @@ class ExpressiveSheetSubmit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const SizedBox(
-        height: 52,
-        child: Center(
-          child: SizedBox(
-            height: 22,
-            width: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
-
     return ExpressiveCtaButton(
       label: label,
       expanded: true,
+      loading: loading,
       onPressed: onPressed,
     );
   }

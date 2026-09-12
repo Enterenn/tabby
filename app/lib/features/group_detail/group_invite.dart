@@ -5,7 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/widgets/tabby_sheet.dart';
+import '../../design_system/design_system.dart';
 
 /// Génère un code d'invitation et affiche la boîte de dialogue de partage.
 Future<void> showGroupInviteDialog(

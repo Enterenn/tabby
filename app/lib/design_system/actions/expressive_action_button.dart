@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Bouton d'action circulaire — FAB nav, actions prioritaires.
 class ExpressiveActionButton extends StatelessWidget {

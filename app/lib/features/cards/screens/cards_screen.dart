@@ -12,10 +12,9 @@ import '../../../shared/models/loyalty_brand.dart';
 import '../../../shared/models/loyalty_card.dart';
 import '../../../shared/models/loyalty_prefix_store.dart';
 import '../../../shared/models/loyalty_scan.dart';
-import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/loyalty/loyalty_card_face.dart';
 import '../../../shared/widgets/loyalty/loyalty_wallet_stack.dart';
-import '../../../shared/widgets/tabby_sheet.dart';
 import '../cubit/cards_cubit.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────

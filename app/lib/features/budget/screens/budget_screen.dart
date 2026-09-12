@@ -7,11 +7,11 @@ import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/budget.dart';
-import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../design_system/design_system.dart';
+import '../../../shared/widgets/expressive/expressive_donut_chart.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/models/stats.dart';
-import '../../../shared/widgets/tabby_sheet.dart';
 import '../cubit/budget_cubit.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────

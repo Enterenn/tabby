@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
-import '../../../shared/widgets/tabby_sheet.dart';
+import '../../../design_system/design_system.dart';
 
 /// Ouvre le choix créer / rejoindre un groupe.
 Future<void> showNewGroupSheet(BuildContext context) {

@@ -1,8 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../l10n/l10n.dart';
+import '../../core/theme/app_theme.dart';
+import '../../l10n/l10n.dart';
 import 'expressive_action_button.dart';
 
 /// Action du menu FAB M3 — icône + libellé.

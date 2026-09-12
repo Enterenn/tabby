@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 enum ExpressiveFigureSize { hero, large, medium, small }
 
@@ -35,7 +35,10 @@ class ExpressiveFigure extends StatelessWidget {
       TextSpan(
         children: [
           if (prefix != null)
-            TextSpan(text: prefix, style: style.copyWith(fontSize: (style.fontSize ?? 16) * 0.65)),
+            TextSpan(
+              text: prefix,
+              style: style.copyWith(fontSize: (style.fontSize ?? 16) * 0.65),
+            ),
           TextSpan(text: value),
           if (suffix.isNotEmpty)
             TextSpan(

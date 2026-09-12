@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../core/theme/expressive_shapes.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/expressive_shapes.dart';
 
 /// Variantes tonales M3 Expressive — sémantiques pour soldes, neutres pour KPI.
 enum ExpressiveTonalVariant {

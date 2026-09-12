@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Badge pill M3 Expressive.
 class ExpressiveBadge extends StatelessWidget {

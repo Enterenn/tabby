@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../l10n/l10n.dart';
-import '../../../shared/widgets/tabby_logo.dart';
+import '../../../design_system/design_system.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/biometric_cubit.dart';
 
@@ -153,32 +153,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          FilledButton(
+                          ExpressiveCtaButton(
+                            label: context.l10n.loginSubmit,
+                            expanded: true,
+                            loading: state is AuthLoading,
                             onPressed: busy ? null : _submit,
-                            child: state is AuthLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(context.l10n.loginSubmit),
                           ),
                           if (showUnlock) ...[
                             const SizedBox(height: 12),
-                            OutlinedButton.icon(
+                            ExpressiveCtaButton(
+                              label: context.l10n.biometricUnlock,
+                              icon: Symbols.fingerprint_rounded,
+                              expanded: true,
+                              variant: ExpressiveCtaVariant.outlined,
+                              loading: _unlocking,
                               onPressed: busy ? null : _unlockWithBiometrics,
-                              icon: _unlocking
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Symbols.fingerprint_rounded),
-                              label: Text(context.l10n.biometricUnlock),
                             ),
                           ],
                         ],

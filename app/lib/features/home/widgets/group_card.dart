@@ -6,7 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/group.dart';
-import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../design_system/design_system.dart';
 
 class GroupCard extends StatefulWidget {
   const GroupCard({super.key, required this.group, this.index = 0});

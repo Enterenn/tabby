@@ -1,7 +1,7 @@
 import 'package:flutter/physics.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Segment d'un [ExpressiveButtonGroup].
 class ExpressiveButtonGroupSegment<T> {

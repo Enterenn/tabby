@@ -9,8 +9,7 @@ import '../../../core/api/token_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../l10n/l10n.dart';
-import '../../../shared/widgets/expressive/expressive.dart';
-import '../../../shared/widgets/tabby_sheet.dart';
+import '../../../design_system/design_system.dart';
 import '../group_invite.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
@@ -211,198 +210,107 @@ class _GroupSliverAppBar extends StatelessWidget {
 
   void _showGroupActions(BuildContext context) {
     final cubit = context.read<GroupDetailCubit>();
-    final state = cubit.state as GroupDetailLoaded;
+    final group = (cubit.state as GroupDetailLoaded).group;
 
-    showTabbySheet(
+    showTabbyActionSheet(
       context,
-      builder: (_) => BlocProvider.value(
-        value: cubit,
-        // pageContext = contexte de la page (toujours vivant après la fermeture du sheet)
-        child: _GroupActionsSheet(group: state.group, pageContext: context),
-      ),
-    );
-  }
-}
-
-// ─── Actions bottom sheet ─────────────────────────────────────────────────────
-
-class _GroupActionsSheet extends StatelessWidget {
-  const _GroupActionsSheet({required this.group, required this.pageContext});
-  final Group group;
-
-  /// Contexte de la page parente — reste valide après la fermeture du sheet.
-  final BuildContext pageContext;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 8),
-          Container(
-            width: 32,
-            height: 4,
-            decoration: BoxDecoration(
-              color: cs.outlineVariant,
-              borderRadius: context.tabbyShapes.radiusExtraSmall,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: Icon(
-              group.isPinned
-                  ? Symbols.keep_off_rounded
-                  : Symbols.push_pin_rounded,
-            ),
-            title: Text(
-              group.isPinned
-                  ? context.l10n.unpinGroup
-                  : context.l10n.pinGroup,
-            ),
-            onTap: () async {
-              Navigator.pop(context);
-              final err = await pageContext
-                  .read<GroupDetailCubit>()
-                  .setPinned(!group.isPinned);
-              if (err != null && pageContext.mounted) {
-                ScaffoldMessenger.of(pageContext).showSnackBar(
-                  SnackBar(content: Text(pageContext.l10nError(err))),
-                );
-              }
-            },
-          ),
-          ListTile(
-            leading: const Icon(Symbols.edit_rounded),
-            title: Text(context.l10n.editName),
-            onTap: () {
-              Navigator.pop(context);
-              _showEditNameDialog();
-            },
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: Icon(Symbols.exit_to_app_rounded, color: cs.error),
-            title: Text(context.l10n.leaveGroup, style: TextStyle(color: cs.error)),
-            onTap: () {
-              Navigator.pop(context);
-              _confirmLeave();
-            },
-          ),
-          ListTile(
-            leading: Icon(Symbols.delete_rounded, color: cs.error),
-            title: Text(
-              context.l10n.deleteGroup,
-              style: TextStyle(color: cs.error),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              _confirmDelete();
-            },
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
+      actions: [
+        TabbyActionSheetItem(
+          icon: group.isPinned
+              ? Symbols.keep_off_rounded
+              : Symbols.push_pin_rounded,
+          label: group.isPinned
+              ? context.l10n.unpinGroup
+              : context.l10n.pinGroup,
+          onTap: () async {
+            final err = await cubit.setPinned(!group.isPinned);
+            if (err != null && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.l10nError(err))),
+              );
+            }
+          },
+        ),
+        TabbyActionSheetItem(
+          icon: Symbols.edit_rounded,
+          label: context.l10n.editName,
+          onTap: () => _showEditNameDialog(context, group),
+        ),
+        const TabbyActionSheetItem.divider(),
+        TabbyActionSheetItem(
+          icon: Symbols.exit_to_app_rounded,
+          label: context.l10n.leaveGroup,
+          danger: true,
+          onTap: () => _confirmLeave(context),
+        ),
+        TabbyActionSheetItem(
+          icon: Symbols.delete_rounded,
+          label: context.l10n.deleteGroup,
+          danger: true,
+          onTap: () => _confirmDelete(context),
+        ),
+      ],
     );
   }
 
-  void _showEditNameDialog() {
+  Future<void> _showEditNameDialog(BuildContext context, Group group) async {
     final ctrl = TextEditingController(text: group.name);
-    showTabbyDialog(
-      context: pageContext,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.editName),
-        content: TextField(
+    await showTabbyFormDialog<void>(
+      context: context,
+      builder: (ctx) => TabbyFormDialog(
+        title: ctx.l10n.editName,
+        submitLabel: ctx.l10n.save,
+        cancelLabel: ctx.l10n.cancel,
+        onSubmit: () {
+          final name = ctrl.text.trim();
+          if (name.isEmpty) return;
+          Navigator.pop(ctx);
+          context.read<GroupDetailCubit>().updateName(name);
+        },
+        child: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(labelText: ctx.l10n.groupName),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(ctx.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final name = ctrl.text.trim();
-              if (name.isEmpty) return;
-              Navigator.pop(ctx);
-              pageContext.read<GroupDetailCubit>().updateName(name);
-            },
-            child: Text(ctx.l10n.save),
-          ),
-        ],
       ),
     );
+    ctrl.dispose();
   }
 
-  void _confirmLeave() {
-    showTabbyDialog(
-      context: pageContext,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.leaveGroup),
-        content: Text(ctx.l10n.leaveGroupBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(ctx.l10n.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final err = await pageContext
-                  .read<GroupDetailCubit>()
-                  .leaveGroup();
-              if (!pageContext.mounted) return;
-              if (err != null) {
-                ScaffoldMessenger.of(pageContext).showSnackBar(
-                  SnackBar(content: Text(pageContext.l10nError(err))),
-                );
-              }
-            },
-            child: Text(ctx.l10n.leave),
-          ),
-        ],
-      ),
+  Future<void> _confirmLeave(BuildContext context) async {
+    final ok = await showTabbyConfirm(
+      context,
+      title: context.l10n.leaveGroup,
+      body: context.l10n.leaveGroupBody,
+      cancelLabel: context.l10n.cancel,
+      confirmLabel: context.l10n.leave,
+      danger: true,
     );
+    if (!ok || !context.mounted) return;
+    final err = await context.read<GroupDetailCubit>().leaveGroup();
+    if (err != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10nError(err))),
+      );
+    }
   }
 
-  void _confirmDelete() {
-    showTabbyDialog(
-      context: pageContext,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.deleteGroup),
-        content: Text(ctx.l10n.deleteGroupBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(ctx.l10n.cancel),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final err = await pageContext
-                  .read<GroupDetailCubit>()
-                  .deleteGroup();
-              if (!pageContext.mounted) return;
-              if (err != null) {
-                ScaffoldMessenger.of(pageContext).showSnackBar(
-                  SnackBar(content: Text(pageContext.l10nError(err))),
-                );
-              }
-            },
-            child: Text(ctx.l10n.delete),
-          ),
-        ],
-      ),
+  Future<void> _confirmDelete(BuildContext context) async {
+    final ok = await showTabbyConfirm(
+      context,
+      title: context.l10n.deleteGroup,
+      body: context.l10n.deleteGroupBody,
+      cancelLabel: context.l10n.cancel,
+      confirmLabel: context.l10n.delete,
+      danger: true,
     );
+    if (!ok || !context.mounted) return;
+    final err = await context.read<GroupDetailCubit>().deleteGroup();
+    if (err != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10nError(err))),
+      );
+    }
   }
 }
 
@@ -477,14 +385,11 @@ class _BalanceTile extends StatelessWidget {
               ),
             ),
             if (isMine)
-              FilledButton.tonal(
-                // Override nécessaire : le thème global force minimumSize à double.infinity
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(72, 40),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
+              ExpressiveCtaButton(
+                label: context.l10n.settle,
+                compact: true,
+                variant: ExpressiveCtaVariant.tonal,
                 onPressed: () => _confirmSettle(context),
-                child: Text(context.l10n.settle),
               ),
           ],
         ),
@@ -492,45 +397,30 @@ class _BalanceTile extends StatelessWidget {
     );
   }
 
-  void _confirmSettle(BuildContext context) {
-    showTabbyDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.confirmSettle),
+  Future<void> _confirmSettle(BuildContext context) async {
+    final ok = await showTabbyConfirm(
+      context,
+      title: context.l10n.confirmSettle,
+      body: context.l10n.settleBody(
+        entry.fromUserName,
+        entry.amount.toStringAsFixed(2),
+        entry.toUserName,
+      ),
+      cancelLabel: context.l10n.cancel,
+      confirmLabel: context.l10n.confirm,
+    );
+    if (!ok || !context.mounted) return;
+    final err = await context.read<GroupDetailCubit>().settle(
+          fromUserId: entry.fromUserId,
+          toUserId: entry.toUserId,
+          amount: entry.amount,
+        );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
         content: Text(
-          ctx.l10n.settleBody(
-            entry.fromUserName,
-            entry.amount.toStringAsFixed(2),
-            entry.toUserName,
-          ),
+          err != null ? context.l10nError(err) : context.l10n.settleSaved,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(ctx.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final err = await context.read<GroupDetailCubit>().settle(
-                fromUserId: entry.fromUserId,
-                toUserId: entry.toUserId,
-                amount: entry.amount,
-              );
-              if (!context.mounted) return;
-              if (err != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10nError(err))),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10n.settleSaved)),
-                );
-              }
-            },
-            child: Text(ctx.l10n.confirm),
-          ),
-        ],
       ),
     );
   }
@@ -885,49 +775,35 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   void _showExpenseActions(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final cubit = context.read<GroupDetailCubit>();
     final state = cubit.state as GroupDetailLoaded;
 
-    showTabbySheet(
+    showTabbyActionSheet(
       context,
-      builder: (_) => BlocProvider.value(
-        value: cubit,
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Symbols.edit_rounded),
-                title: Text(context.l10n.editExpense),
-                subtitle: Text(expense.name),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showEditDialog(context, state, cubit);
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text(context.l10n.delete, style: TextStyle(color: cs.error)),
-                subtitle: Text(expense.name),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final err = await cubit.deleteExpense(expense.id);
-                  if (!context.mounted) return;
-                  if (err != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.l10nError(err))),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+      actions: [
+        TabbyActionSheetItem(
+          icon: Symbols.edit_rounded,
+          label: context.l10n.editExpense,
+          subtitle: expense.name,
+          onTap: () => _showEditDialog(context, state, cubit),
         ),
-      ),
+        const TabbyActionSheetItem.divider(),
+        TabbyActionSheetItem(
+          icon: Symbols.delete_rounded,
+          label: context.l10n.delete,
+          subtitle: expense.name,
+          danger: true,
+          onTap: () async {
+            final err = await cubit.deleteExpense(expense.id);
+            if (!context.mounted) return;
+            if (err != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(context.l10nError(err))),
+              );
+            }
+          },
+        ),
+      ],
     );
   }
 
@@ -1029,9 +905,13 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     final dateLabel =
         '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
 
-    return AlertDialog(
-      title: Text(context.l10n.editExpense),
-      content: SingleChildScrollView(
+    return TabbyFormDialog(
+      title: context.l10n.editExpense,
+      submitLabel: context.l10n.save,
+      cancelLabel: context.l10n.cancel,
+      loading: _loading,
+      onSubmit: _submit,
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1098,22 +978,6 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
-          child: Text(context.l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(context.l10n.save),
-        ),
-      ],
     );
   }
 

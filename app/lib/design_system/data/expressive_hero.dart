@@ -1,11 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../l10n/l10n.dart';
-import 'expressive_badge.dart';
+import '../../core/theme/app_theme.dart';
+import '../../l10n/l10n.dart';
+import '../identity/expressive_badge.dart';
+import '../surfaces/expressive_tonal_card.dart';
 import 'expressive_figure.dart';
-import 'expressive_tonal_card.dart';
 
 /// Bandeau hero réutilisable — label + chiffre + sous-titre.
 ///

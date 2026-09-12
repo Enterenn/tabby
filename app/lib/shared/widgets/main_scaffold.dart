@@ -6,7 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../features/add_expense/screens/add_expense_screen.dart';
 import '../../l10n/l10n.dart';
 import 'connectivity_banner.dart';
-import 'expressive/expressive.dart';
+import '../../design_system/design_system.dart';
 
 class MainScaffold extends StatelessWidget {
   const MainScaffold({super.key, required this.child});

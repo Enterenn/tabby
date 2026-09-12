@@ -5,7 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/auth/password_policy.dart';
 import '../../../l10n/l10n.dart';
-import '../../../shared/widgets/tabby_logo.dart';
+import '../../../design_system/design_system.dart';
 import '../cubit/auth_cubit.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -141,16 +141,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
-                      return FilledButton(
+                      return ExpressiveCtaButton(
+                        label: context.l10n.registerSubmit,
+                        expanded: true,
+                        loading: state is AuthLoading,
                         onPressed: state is AuthLoading ? null : _submit,
-                        child: state is AuthLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(context.l10n.registerSubmit),
                       );
                     },
                   ),

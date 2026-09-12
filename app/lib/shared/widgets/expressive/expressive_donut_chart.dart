@@ -4,10 +4,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../design_system/data/expressive_figure.dart';
+import '../../../design_system/surfaces/expressive_tonal_card.dart';
 import '../../../l10n/l10n.dart';
 import '../../models/stats.dart';
-import 'expressive_figure.dart';
-import 'expressive_tonal_card.dart';
 
 /// Donut chart M3 Expressive — segments espacés, aplats, icônes.
 class ExpressiveDonutChart extends StatelessWidget {

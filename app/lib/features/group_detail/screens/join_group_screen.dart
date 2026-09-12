@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../design_system/design_system.dart';
 import '../../../l10n/l10n.dart';
 
 class JoinGroupScreen extends StatefulWidget {
@@ -91,15 +92,11 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                     v == null || v.length != 6 ? context.l10n.inviteCodeRequired : null,
               ),
               const SizedBox(height: 32),
-              FilledButton(
+              ExpressiveCtaButton(
+                label: context.l10n.joinSubmit,
+                expanded: true,
+                loading: _loading,
                 onPressed: _loading ? null : _submit,
-                child: _loading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(context.l10n.joinSubmit),
               ),
             ],
           ),

@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../design_system/design_system.dart';
 import '../../../l10n/l10n.dart';
 
 class CreateGroupScreen extends StatefulWidget {
@@ -84,15 +85,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     v == null || v.trim().isEmpty ? context.l10n.requiredField : null,
               ),
               const SizedBox(height: 32),
-              FilledButton(
+              ExpressiveCtaButton(
+                label: context.l10n.createGroupSubmit,
+                expanded: true,
+                loading: _loading,
                 onPressed: _loading ? null : _submit,
-                child: _loading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(context.l10n.createGroupSubmit),
               ),
             ],
           ),

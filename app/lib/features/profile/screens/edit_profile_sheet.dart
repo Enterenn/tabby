@@ -9,8 +9,7 @@ import '../../../core/auth/password_policy.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/user.dart';
-import '../../../shared/widgets/expressive/expressive.dart';
-import '../../../shared/widgets/tabby_sheet.dart';
+import '../../../design_system/design_system.dart';
 import '../../auth/cubit/auth_cubit.dart';
 
 Future<void> showEditProfileSheet(BuildContext context) {

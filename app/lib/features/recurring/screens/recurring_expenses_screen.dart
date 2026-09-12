@@ -5,7 +5,7 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/recurring_expense.dart';
-import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../design_system/design_system.dart';
 
 class RecurringExpensesScreen extends StatefulWidget {
   const RecurringExpensesScreen({super.key});
