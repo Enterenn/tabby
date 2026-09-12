@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -59,6 +62,20 @@ class LoyaltyCardFace extends StatelessWidget {
           decoration: BoxDecoration(gradient: brand.gradient),
           child: Stack(
             children: [
+              const Positioned.fill(
+                child: IgnorePointer(child: _CardGrain()),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _CardEdgePainter(
+                      radius: shapes.cornerExtraLarge,
+                      light: brand.edgeLight,
+                      dark: brand.edgeDark,
+                    ),
+                  ),
+                ),
+              ),
               Positioned(
                 left: compact ? 14 : 20,
                 right: compact ? 14 : 20,
@@ -186,6 +203,120 @@ class LoyaltyCardFace extends StatelessWidget {
   }
 }
 
+/// Trait 1 px sur tout le contour arrondi — clair en haut, plus sombre en bas.
+class _CardEdgePainter extends CustomPainter {
+  const _CardEdgePainter({
+    required this.radius,
+    required this.light,
+    required this.dark,
+  });
+
+  final double radius;
+  final Color light;
+  final Color dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final rrect = RRect.fromRectAndRadius(
+      rect,
+      Radius.circular(radius),
+    ).deflate(0.5);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [light, dark],
+      ).createShader(rect);
+    canvas.drawRRect(rrect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CardEdgePainter old) =>
+      old.radius != radius || old.light != light || old.dark != dark;
+}
+
+/// Grain tuilé, très léger — matière papier / plastique.
+class _CardGrain extends StatefulWidget {
+  const _CardGrain();
+
+  @override
+  State<_CardGrain> createState() => _CardGrainState();
+}
+
+class _CardGrainState extends State<_CardGrain> {
+  static ui.Image? _tile;
+  static Future<ui.Image>? _pending;
+
+  static Future<ui.Image> _ensure() {
+    final cached = _tile;
+    if (cached != null) return Future.value(cached);
+    return _pending ??= _renderTile().then((image) {
+      _tile = image;
+      return image;
+    });
+  }
+
+  static Future<ui.Image> _renderTile() {
+    const size = 96;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final rng = math.Random(42);
+    final paint = Paint()..isAntiAlias = false;
+    for (var i = 0; i < 3200; i++) {
+      paint.color = (rng.nextBool() ? const Color(0xFFFFFFFF) : const Color(0xFF000000))
+          .withValues(alpha: 0.55 + rng.nextDouble() * 0.45);
+      canvas.drawRect(
+        Rect.fromLTWH(rng.nextDouble() * size, rng.nextDouble() * size, 1, 1),
+        paint,
+      );
+    }
+    return recorder.endRecording().toImage(size, size);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_tile == null) {
+      _ensure().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = _tile;
+    if (tile == null) return const SizedBox.shrink();
+    return CustomPaint(painter: _GrainPainter(tile));
+  }
+}
+
+class _GrainPainter extends CustomPainter {
+  const _GrainPainter(this.tile);
+
+  final ui.Image tile;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    paintImage(
+      canvas: canvas,
+      rect: Offset.zero & size,
+      image: tile,
+      repeat: ImageRepeat.repeat,
+      opacity: 0.06,
+      blendMode: BlendMode.overlay,
+      filterQuality: FilterQuality.none,
+      isAntiAlias: false,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GrainPainter old) => old.tile != tile;
+}
+
 class _BrandLogo extends StatelessWidget {
   const _BrandLogo({required this.brand, required this.size});
 
@@ -200,8 +331,12 @@ class _BrandLogo extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: brand.secondary ?? brand.primary,
+        color: brand.logoBackground,
         shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.22),
+          width: 1,
+        ),
       ),
       child: Center(
         child: brand.logoAsset != null

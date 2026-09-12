@@ -282,7 +282,6 @@ class _CardFullScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    final brand = card.brandFor(context.tabbySemantic.brandFallback);
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
 
@@ -292,7 +291,7 @@ class _CardFullScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: brand.onPrimary,
+        foregroundColor: cs.onSurface,
         title: Text(card.brandName),
       ),
       body: DecoratedBox(
@@ -575,14 +574,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   List<LoyaltyBrand> get _filteredBrands {
     final q = _brandSearchCtrl.text.trim().toLowerCase();
     if (q.isEmpty) return LoyaltyBrand.catalog;
-    return LoyaltyBrand.catalog.where((b) {
-      if (b.name.toLowerCase().contains(q)) return true;
-      if (b.id.contains(q)) return true;
-      for (final h in b.qrHints) {
-        if (h.toLowerCase().contains(q)) return true;
-      }
-      return false;
-    }).toList();
+    return LoyaltyBrand.catalog.where((b) => b.matchesQuery(q)).toList();
   }
 
   String _colorToHex(Color c) =>
@@ -1030,7 +1022,7 @@ class _DetectedBrandBanner extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: brand.secondary ?? brand.primary,
+              color: brand.logoBackground,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,

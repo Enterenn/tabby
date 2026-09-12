@@ -12,6 +12,7 @@ class LoyaltyBrand {
     this.onPrimary = Colors.white,
     this.codePrefixes = const [],
     this.qrHints = const [],
+    this.aliases = const [],
   });
 
   final String id;
@@ -25,20 +26,80 @@ class LoyaltyBrand {
   final List<String> codePrefixes;
   /// Indices dans une URL ou un QR texte (domaine, slug…).
   final List<String> qrHints;
+  /// Variantes de recherche (« bk », « burger king »…).
+  final List<String> aliases;
 
-  LinearGradient get gradient {
-    final hasDistinctSecondary =
-        secondary != null && secondary != primary;
-    return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        primary,
-        hasDistinctSecondary
-            ? secondary!
-            : Color.lerp(primary, Colors.white, 0.16)!,
-      ],
-    );
+  /// Halo depuis le haut — plus discret qu'un dégradé linéaire.
+  Gradient get gradient => RadialGradient(
+        center: const Alignment(0, -1.05),
+        radius: 1.25,
+        colors: [
+          Color.lerp(primary, Colors.white, 0.18)!,
+          primary,
+        ],
+      );
+
+  /// Trait du contour : clair en haut, un peu plus sombre que la carte en bas.
+  Color get edgeLight => Color.lerp(primary, Colors.white, 0.42)!;
+  Color get edgeDark => Color.lerp(primary, Colors.black, 0.1)!;
+
+  /// Disque des initiales — badge un peu plus clair que la carte.
+  Color get logoBackground {
+    if (primary.computeLuminance() > 0.65) {
+      return Color.lerp(primary, Colors.black, 0.1)!;
+    }
+    return Color.lerp(primary, Colors.white, 0.2)!;
+  }
+
+  /// Compare sans espaces, tirets ni accents (« burger king » → burgerking).
+  bool matchesQuery(String query) {
+    final q = normalizeSearch(query);
+    if (q.isEmpty) return true;
+    if (normalizeSearch(name).contains(q)) return true;
+    if (normalizeSearch(id).contains(q)) return true;
+    for (final alias in aliases) {
+      final a = normalizeSearch(alias);
+      if (a.isEmpty) continue;
+      if (a.contains(q) || q.contains(a)) return true;
+    }
+    for (final hint in qrHints) {
+      if (normalizeSearch(hint).contains(q)) return true;
+    }
+    return false;
+  }
+
+  static String normalizeSearch(String raw) {
+    const fold = {
+      'à': 'a',
+      'á': 'a',
+      'â': 'a',
+      'ä': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ê': 'e',
+      'ë': 'e',
+      'ï': 'i',
+      'î': 'i',
+      'ô': 'o',
+      'ö': 'o',
+      'ù': 'u',
+      'û': 'u',
+      'ü': 'u',
+      'ç': 'c',
+      'æ': 'ae',
+      'œ': 'oe',
+    };
+    final buf = StringBuffer();
+    for (final unit in raw.toLowerCase().trim().codeUnits) {
+      final c = String.fromCharCode(unit);
+      final mapped = fold[c];
+      if (mapped != null) {
+        buf.write(mapped);
+      } else if ((unit >= 97 && unit <= 122) || (unit >= 48 && unit <= 57)) {
+        buf.write(c);
+      }
+    }
+    return buf.toString();
   }
 
   /// Catalogue Tabby — ajouter un logo : `assets/brands/{id}.svg` + `logoAsset`.
@@ -123,10 +184,10 @@ class LoyaltyBrand {
     LoyaltyBrand(
       id: 'mcdo',
       name: 'McDonald\'s',
-      primary: Color(0xFFDA291C),
-      secondary: Color(0xFFFFBC0D),
+      primary: Color(0xFF264F36),
       monogram: 'M',
       qrHints: ['mcdonalds.fr', 'mcdonalds.com', 'mcdo'],
+      aliases: ['mcdo', 'mcdonalds', 'mcdonald', 'mc donalds'],
     ),
     LoyaltyBrand(
       id: 'ikea',
@@ -544,9 +605,9 @@ class LoyaltyBrand {
       id: 'quick',
       name: 'Quick',
       primary: Color(0xFFE2001A),
-      secondary: Color(0xFFFFCC00),
       monogram: 'Q',
       qrHints: ['quick.fr', 'quick.com', 'quick'],
+      aliases: ['quick restaurant'],
     ),
     LoyaltyBrand(
       id: 'kfc',
@@ -559,10 +620,10 @@ class LoyaltyBrand {
     LoyaltyBrand(
       id: 'burgerking',
       name: 'Burger King',
-      primary: Color(0xFFEC7000),
-      secondary: Color(0xFF502314),
+      primary: Color(0xFF502314),
       monogram: 'BK',
-      qrHints: ['burgerking.fr', 'burgerking.com', 'burger king'],
+      qrHints: ['burgerking.fr', 'burgerking.com', 'burgerking', 'burger king'],
+      aliases: ['bk', 'burger-king', 'burgerking', 'burger king'],
     ),
     LoyaltyBrand(
       id: 'dominos',
@@ -611,18 +672,20 @@ class LoyaltyBrand {
   static LoyaltyBrand? byName(String? name) {
     if (name == null || name.trim().isEmpty) return null;
     final n = name.trim().toLowerCase();
+    final compact = normalizeSearch(name);
     for (final b in catalog) {
-      if (b.name.toLowerCase() == n || b.id == n) return b;
+      if (b.name.toLowerCase() == n ||
+          b.id == n ||
+          normalizeSearch(b.name) == compact) {
+        return b;
+      }
+      for (final alias in b.aliases) {
+        if (normalizeSearch(alias) == compact) return b;
+      }
     }
-    // Correspondance partielle (ex. « maxi zoo » → Maxi Zoo).
-    if (n.length >= 3) {
+    if (compact.length >= 3) {
       for (final b in catalog) {
-        final bn = b.name.toLowerCase();
-        if (bn.contains(n) || n.contains(bn)) return b;
-        for (final hint in b.qrHints) {
-          final h = hint.toLowerCase();
-          if (h.length >= 3 && n.contains(h)) return b;
-        }
+        if (b.matchesQuery(name)) return b;
       }
     }
     return null;
