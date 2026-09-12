@@ -37,7 +37,7 @@ class _GroupCardState extends State<GroupCard> {
       curve: Curves.easeOut,
       child: Card(
         color: cs.surfaceContainerLow,
-        margin: const EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 8),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: openGroup,
