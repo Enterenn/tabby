@@ -35,6 +35,7 @@ class LoyaltyCardFace extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final Widget? trailing;
+
   /// Hero vers l'écran détail (désactivé pour les aperçus).
   final bool enableHero;
 
@@ -80,9 +81,7 @@ class LoyaltyCardFace extends StatelessWidget {
                             brand.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
                                   color: fg,
                                   fontWeight: FontWeight.w800,
@@ -93,12 +92,9 @@ class LoyaltyCardFace extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               'Carte de fidélité',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: fg,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(color: fg),
                             ),
                             const Spacer(),
                             Row(
@@ -113,12 +109,8 @@ class LoyaltyCardFace extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  card.isBarcode
-                                      ? 'Code-barres'
-                                      : 'QR Code',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
+                                  card.isBarcode ? 'Code-barres' : 'QR Code',
+                                  style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(
                                         color: fg,
                                         fontWeight: FontWeight.w600,
@@ -136,17 +128,14 @@ class LoyaltyCardFace extends StatelessWidget {
                           ] else
                             Text(
                               card.isBarcode ? 'Code-barres' : 'QR Code',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: fg,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(color: fg),
                             ),
                         ],
                       ),
                     ),
-                    if (trailing != null) trailing!,
+                    ?trailing,
                   ],
                 ),
               ),
@@ -166,30 +155,28 @@ class LoyaltyCardFace extends StatelessWidget {
 
     return Hero(
       tag: card.heroTag,
-      flightShuttleBuilder: (
-        flightContext,
-        animation,
-        flightDirection,
-        fromHeroContext,
-        toHeroContext,
-      ) {
-        return SizedBox(
-          width: LoyaltyCardLayout.cardWidth(flightContext),
-          height: height,
-          child: Material(
-            color: Colors.transparent,
-            child: LoyaltyCardFace(
-              card: card,
+      flightShuttleBuilder:
+          (
+            flightContext,
+            animation,
+            flightDirection,
+            fromHeroContext,
+            toHeroContext,
+          ) {
+            return SizedBox(
+              width: LoyaltyCardLayout.cardWidth(flightContext),
               height: height,
-              compact: compact,
-            ),
-          ),
-        );
-      },
-      child: Material(
-        color: Colors.transparent,
-        child: heroSize,
-      ),
+              child: Material(
+                color: Colors.transparent,
+                child: LoyaltyCardFace(
+                  card: card,
+                  height: height,
+                  compact: compact,
+                ),
+              ),
+            );
+          },
+      child: Material(color: Colors.transparent, child: heroSize),
     );
   }
 }
@@ -220,19 +207,22 @@ class _BrandLogo extends StatelessWidget {
                 fit: BoxFit.contain,
               )
             : brand.monogram.isEmpty
-                ? Icon(Symbols.storefront_rounded,
-                    color: fg, size: size * 0.45, fill: 1)
-                : Text(
-                    brand.monogram,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w900,
-                      fontSize: size * 0.38,
-                      height: 1,
-                    ),
-                  ),
+            ? Icon(
+                Symbols.storefront_rounded,
+                color: fg,
+                size: size * 0.45,
+                fill: 1,
+              )
+            : Text(
+                brand.monogram,
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w900,
+                  fontSize: size * 0.38,
+                  height: 1,
+                ),
+              ),
       ),
     );
   }
 }
-

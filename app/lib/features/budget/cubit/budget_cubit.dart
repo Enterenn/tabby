@@ -51,22 +51,27 @@ class BudgetLoaded extends BudgetState {
     int? selectedMonth,
     String? selectedGroupId,
     bool clearGroup = false,
-  }) =>
-      BudgetLoaded(
-        budgets: budgets ?? this.budgets,
-        groups: groups ?? this.groups,
-        allCategories: allCategories ?? this.allCategories,
-        stats: stats ?? this.stats,
-        selectedYear: selectedYear ?? this.selectedYear,
-        selectedMonth: selectedMonth ?? this.selectedMonth,
-        selectedGroupId:
-            clearGroup ? null : (selectedGroupId ?? this.selectedGroupId),
-      );
+  }) => BudgetLoaded(
+    budgets: budgets ?? this.budgets,
+    groups: groups ?? this.groups,
+    allCategories: allCategories ?? this.allCategories,
+    stats: stats ?? this.stats,
+    selectedYear: selectedYear ?? this.selectedYear,
+    selectedMonth: selectedMonth ?? this.selectedMonth,
+    selectedGroupId: clearGroup
+        ? null
+        : (selectedGroupId ?? this.selectedGroupId),
+  );
 
   @override
   List<Object?> get props => [
-        budgets, groups, stats, selectedYear, selectedMonth, selectedGroupId,
-      ];
+    budgets,
+    groups,
+    stats,
+    selectedYear,
+    selectedMonth,
+    selectedGroupId,
+  ];
 }
 
 class BudgetError extends BudgetState {
@@ -96,15 +101,14 @@ class BudgetCubit extends Cubit<BudgetState> {
     final targetYear = year ?? prev?.selectedYear ?? y;
     final targetMonth = month ?? prev?.selectedMonth ?? m;
     // clearGroup=true → null explicite, sinon on garde l'ancienne sélection
-    final targetGroup =
-        clearGroup ? null : (groupId ?? prev?.selectedGroupId);
+    final targetGroup = clearGroup ? null : (groupId ?? prev?.selectedGroupId);
 
     emit(const BudgetLoading());
     try {
       final queryParams = <String, dynamic>{
         'year': targetYear,
         'month': targetMonth,
-        if (targetGroup != null) 'group_id': targetGroup,
+        'group_id': ?targetGroup,
       };
 
       final results = await Future.wait([
@@ -123,18 +127,21 @@ class BudgetCubit extends Cubit<BudgetState> {
       final categories = (results[2].data as List)
           .map((c) => Category.fromJson(c as Map<String, dynamic>))
           .toList();
-      final stats =
-          MonthStats.fromJson(results[3].data as Map<String, dynamic>);
+      final stats = MonthStats.fromJson(
+        results[3].data as Map<String, dynamic>,
+      );
 
-      emit(BudgetLoaded(
-        budgets: budgets,
-        groups: groups,
-        allCategories: categories,
-        stats: stats,
-        selectedYear: targetYear,
-        selectedMonth: targetMonth,
-        selectedGroupId: targetGroup,
-      ));
+      emit(
+        BudgetLoaded(
+          budgets: budgets,
+          groups: groups,
+          allCategories: categories,
+          stats: stats,
+          selectedYear: targetYear,
+          selectedMonth: targetMonth,
+          selectedGroupId: targetGroup,
+        ),
+      );
     } catch (e) {
       emit(BudgetError(e.toString()));
     }
@@ -173,10 +180,10 @@ class BudgetCubit extends Cubit<BudgetState> {
     required double limitAmount,
   }) async {
     try {
-      await apiClient.dio.post('/groups/$groupId/budgets', data: {
-        'category_id': categoryId,
-        'limit_amount': limitAmount,
-      });
+      await apiClient.dio.post(
+        '/groups/$groupId/budgets',
+        data: {'category_id': categoryId, 'limit_amount': limitAmount},
+      );
       final s = state is BudgetLoaded ? state as BudgetLoaded : null;
       await load(
         year: s?.selectedYear,
@@ -195,8 +202,10 @@ class BudgetCubit extends Cubit<BudgetState> {
     required double limitAmount,
   }) async {
     try {
-      await apiClient.dio.put('/groups/$groupId/budgets/$budgetId',
-          data: {'limit_amount': limitAmount});
+      await apiClient.dio.put(
+        '/groups/$groupId/budgets/$budgetId',
+        data: {'limit_amount': limitAmount},
+      );
       final s = state is BudgetLoaded ? state as BudgetLoaded : null;
       await load(
         year: s?.selectedYear,

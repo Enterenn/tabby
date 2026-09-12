@@ -54,27 +54,27 @@ class _GroupDetailView extends StatelessWidget {
       builder: (context, state) {
         return switch (state) {
           GroupDetailLoading() || GroupDetailInitial() => const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            ),
+            body: Center(child: CircularProgressIndicator()),
+          ),
           GroupDetailLoaded(:final group, :final balances, :final expenses) =>
             _LoadedBody(group: group, balances: balances, expenses: expenses),
           GroupDetailError(:final message) => Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Symbols.error_outline_rounded, size: 48),
-                    const SizedBox(height: 16),
-                    Text(message, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () => context.read<GroupDetailCubit>().load(),
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Symbols.error_outline_rounded, size: 48),
+                  const SizedBox(height: 16),
+                  Text(message, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => context.read<GroupDetailCubit>().load(),
+                    child: const Text('Réessayer'),
+                  ),
+                ],
               ),
             ),
+          ),
           _ => const SizedBox.shrink(),
         };
       },
@@ -105,33 +105,34 @@ class _LoadedBody extends StatelessWidget {
           CustomScrollView(
             slivers: [
               _GroupSliverAppBar(group: group),
-          // Total des dépenses — hero display
-          if (expenses.isNotEmpty)
-            SliverToBoxAdapter(
-              child: _TotalHero(expenses: expenses),
-            ),
-          SliverToBoxAdapter(
-            child: _GroupDetailSheet(
-              group: group,
-              expenses: expenses,
-              balances: balances,
-              currentUserId: me,
-            ),
-          ),
-          // ── 3. À régler ──────────────────────────────────────────────────
-          if (balances.isNotEmpty) ...[
-            _SectionHeader(title: 'À régler', icon: Symbols.payments_rounded),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList.separated(
-                itemCount: balances.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (ctx, i) =>
-                    _BalanceTile(entry: balances[i], currentUserId: me),
+              // Total des dépenses — hero display
+              if (expenses.isNotEmpty)
+                SliverToBoxAdapter(child: _TotalHero(expenses: expenses)),
+              SliverToBoxAdapter(
+                child: _GroupDetailSheet(
+                  group: group,
+                  expenses: expenses,
+                  balances: balances,
+                  currentUserId: me,
+                ),
               ),
-            ),
-          ],
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              // ── 3. À régler ──────────────────────────────────────────────────
+              if (balances.isNotEmpty) ...[
+                _SectionHeader(
+                  title: 'À régler',
+                  icon: Symbols.payments_rounded,
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList.separated(
+                    itemCount: balances.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (ctx, i) =>
+                        _BalanceTile(entry: balances[i], currentUserId: me),
+                  ),
+                ),
+              ],
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           ),
           ExpressiveScreenFabMenu(
@@ -211,6 +212,7 @@ class _GroupSliverAppBar extends StatelessWidget {
 class _GroupActionsSheet extends StatelessWidget {
   const _GroupActionsSheet({required this.group, required this.pageContext});
   final Group group;
+
   /// Contexte de la page parente — reste valide après la fermeture du sheet.
   final BuildContext pageContext;
 
@@ -250,7 +252,10 @@ class _GroupActionsSheet extends StatelessWidget {
           ),
           ListTile(
             leading: Icon(Symbols.delete_rounded, color: cs.error),
-            title: Text('Supprimer le groupe', style: TextStyle(color: cs.error)),
+            title: Text(
+              'Supprimer le groupe',
+              style: TextStyle(color: cs.error),
+            ),
             onTap: () {
               Navigator.pop(context);
               _confirmDelete();
@@ -275,8 +280,9 @@ class _GroupActionsSheet extends StatelessWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             onPressed: () async {
               final name = ctrl.text.trim();
@@ -297,22 +303,27 @@ class _GroupActionsSheet extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Quitter le groupe'),
         content: const Text(
-            'Vous ne pourrez plus accéder à ce groupe. Cette action est irréversible.'),
+          'Vous ne pourrez plus accéder à ce groupe. Cette action est irréversible.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              final err = await pageContext.read<GroupDetailCubit>().leaveGroup();
+              final err = await pageContext
+                  .read<GroupDetailCubit>()
+                  .leaveGroup();
               if (!pageContext.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(pageContext)
-                    .showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(
+                  pageContext,
+                ).showSnackBar(SnackBar(content: Text(err)));
               }
             },
             child: const Text('Quitter'),
@@ -328,22 +339,27 @@ class _GroupActionsSheet extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Supprimer le groupe'),
         content: const Text(
-            'Toutes les dépenses seront supprimées. Cette action est irréversible.'),
+          'Toutes les dépenses seront supprimées. Cette action est irréversible.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              final err = await pageContext.read<GroupDetailCubit>().deleteGroup();
+              final err = await pageContext
+                  .read<GroupDetailCubit>()
+                  .deleteGroup();
               if (!pageContext.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(pageContext)
-                    .showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(
+                  pageContext,
+                ).showSnackBar(SnackBar(content: Text(err)));
               }
             },
             child: const Text('Supprimer'),
@@ -366,10 +382,7 @@ class _SectionHeader extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
+        child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
       ),
     );
   }
@@ -453,20 +466,22 @@ class _BalanceTile extends StatelessWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
               final err = await context.read<GroupDetailCubit>().settle(
-                    fromUserId: entry.fromUserId,
-                    toUserId: entry.toUserId,
-                    amount: entry.amount,
-                  );
+                fromUserId: entry.fromUserId,
+                toUserId: entry.toUserId,
+                amount: entry.amount,
+              );
               if (!context.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(err)));
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Remboursement enregistré ✓')),
@@ -723,10 +738,7 @@ class _GroupedSection extends StatelessWidget {
 // ─── Expense row ──────────────────────────────────────────────────────────────
 
 class _ExpenseTile extends StatelessWidget {
-  const _ExpenseTile({
-    required this.expense,
-    required this.currentUserId,
-  });
+  const _ExpenseTile({required this.expense, required this.currentUserId});
 
   final Expense expense;
   final String currentUserId;
@@ -761,10 +773,7 @@ class _ExpenseTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 child: Center(
-                  child: expense.category.iconWidget(
-                    size: 20,
-                    color: onCat,
-                  ),
+                  child: expense.category.iconWidget(size: 20, color: onCat),
                 ),
               ),
             ),
@@ -859,8 +868,9 @@ class _ExpenseTile extends StatelessWidget {
                   final err = await cubit.deleteExpense(expense.id);
                   if (!context.mounted) return;
                   if (err != null) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(err)));
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(err)));
                   }
                 },
               ),
@@ -873,7 +883,10 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   void _showEditDialog(
-      BuildContext context, GroupDetailLoaded state, GroupDetailCubit cubit) {
+    BuildContext context,
+    GroupDetailLoaded state,
+    GroupDetailCubit cubit,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => _EditExpenseDialog(
@@ -883,7 +896,6 @@ class _ExpenseTile extends StatelessWidget {
       ),
     );
   }
-
 }
 
 // ─── Total card ───────────────────────────────────────────────────────────────
@@ -938,7 +950,8 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.expense.name);
     _amountCtrl = TextEditingController(
-        text: widget.expense.amount.toStringAsFixed(2));
+      text: widget.expense.amount.toStringAsFixed(2),
+    );
     _paidBy = widget.expense.paidBy;
     _date = widget.expense.expenseDate;
   }
@@ -981,8 +994,9 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Montant',
                 suffixText: '€',
@@ -992,13 +1006,15 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
             Text('Payé par', style: tt.labelMedium),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
-              value: _paidBy,
+              initialValue: _paidBy,
               decoration: const InputDecoration(),
               items: widget.members
-                  .map((m) => DropdownMenuItem(
-                        value: m.user.id,
-                        child: Text(m.user.name),
-                      ))
+                  .map(
+                    (m) => DropdownMenuItem(
+                      value: m.user.id,
+                      child: Text(m.user.name),
+                    ),
+                  )
                   .toList(),
               onChanged: (v) => setState(() => _paidBy = v ?? _paidBy),
             ),
@@ -1009,15 +1025,21 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
               onTap: _pickDate,
               borderRadius: context.tabbyShapes.radiusMedium,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
                   borderRadius: context.tabbyShapes.radiusMedium,
                 ),
                 child: Row(
                   children: [
-                    Icon(Symbols.calendar_month_rounded,
-                        size: 18, color: cs.onSurfaceVariant),
+                    Icon(
+                      Symbols.calendar_month_rounded,
+                      size: 18,
+                      color: cs.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 8),
                     Text(dateLabel, style: tt.bodyMedium),
                   ],
@@ -1079,4 +1101,3 @@ String _formatRelativeDateFr(DateTime date) {
   if (days == 1) return 'Il y a 1 jour';
   return 'Il y a $days jours';
 }
-
