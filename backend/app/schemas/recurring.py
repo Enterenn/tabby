@@ -3,14 +3,14 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.expense import CategoryResponse
 
 
 class RecurringExpenseCreate(BaseModel):
-    name: str
-    amount: float
+    name: str = Field(min_length=1, max_length=120)
+    amount: float = Field(gt=0)
     category_id: uuid.UUID
     paid_by: uuid.UUID
     day_of_period: int  # jour du mois (1-28)

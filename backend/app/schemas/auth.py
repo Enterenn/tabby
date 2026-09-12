@@ -8,6 +8,14 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        name = value.strip()
+        if not (2 <= len(name) <= 50):
+            raise ValueError("Name must be 2-50 characters")
+        return name
+
     @field_validator("password")
     @classmethod
     def password_strength(cls, value: str) -> str:

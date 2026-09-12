@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class CategoryResponse(BaseModel):
@@ -38,13 +38,21 @@ class SplitItem(BaseModel):
 
 
 class ExpenseCreate(BaseModel):
-    name: str
-    amount: float
+    name: str = Field(min_length=1, max_length=120)
+    amount: float = Field(gt=0)
     category_id: uuid.UUID
     paid_by: uuid.UUID
     expense_date: date
     split_type: Literal["equal", "custom"] = "equal"
     splits: list[SplitItem] | None = None
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        name = value.strip()
+        if not name:
+            raise ValueError("Name is required")
+        return name
 
     @model_validator(mode="after")
     def validate_custom_splits(self) -> "ExpenseCreate":
@@ -60,11 +68,21 @@ class ExpenseCreate(BaseModel):
 
 
 class ExpenseUpdate(BaseModel):
-    name: str | None = None
-    amount: float | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    amount: float | None = Field(default=None, gt=0)
     category_id: uuid.UUID | None = None
     paid_by: uuid.UUID | None = None
     expense_date: date | None = None
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        name = value.strip()
+        if not name:
+            raise ValueError("Name is required")
+        return name
 
 
 class ExpenseResponse(BaseModel):

@@ -1,6 +1,7 @@
 import secrets
 import string
 import uuid
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -38,25 +39,12 @@ def _invite_code() -> str:
     return "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(8))
 
 
-async def _load_group_with_balance(
-    group: Group, current_user_id: uuid.UUID, db: AsyncSession
+def _group_response(
+    group: Group,
+    members: list[GroupMember],
+    expenses: list[Expense],
+    current_user_id: uuid.UUID,
 ) -> GroupResponse:
-    """Charge les membres et calcule le solde de l'utilisateur courant."""
-    result = await db.execute(
-        select(GroupMember)
-        .where(GroupMember.group_id == group.id)
-        .options(selectinload(GroupMember.user))
-    )
-    members = result.scalars().all()
-
-    # Récupérer toutes les dépenses + splits pour calculer les soldes
-    exp_result = await db.execute(
-        select(Expense)
-        .where(Expense.group_id == group.id)
-        .options(selectinload(Expense.splits))
-    )
-    expenses = exp_result.scalars().all()
-
     records = [
         ExpenseRecord(
             paid_by=str(e.paid_by),
@@ -90,6 +78,26 @@ async def _load_group_with_balance(
     )
 
 
+async def _load_group_with_balance(
+    group: Group, current_user_id: uuid.UUID, db: AsyncSession
+) -> GroupResponse:
+    """Charge les membres et calcule le solde de l'utilisateur courant."""
+    result = await db.execute(
+        select(GroupMember)
+        .where(GroupMember.group_id == group.id)
+        .options(selectinload(GroupMember.user))
+    )
+    members = list(result.scalars().all())
+
+    exp_result = await db.execute(
+        select(Expense)
+        .where(Expense.group_id == group.id)
+        .options(selectinload(Expense.splits))
+    )
+    expenses = list(exp_result.scalars().all())
+    return _group_response(group, members, expenses, current_user_id)
+
+
 @router.get("", response_model=list[GroupResponse])
 async def list_groups(
     current_user: User = Depends(get_current_user),
@@ -102,7 +110,32 @@ async def list_groups(
         .order_by(GroupMember.is_pinned.desc(), Group.created_at.desc())
     )
     groups = result.scalars().all()
-    return [await _load_group_with_balance(g, current_user.id, db) for g in groups]
+    if not groups:
+        return []
+
+    ids = [g.id for g in groups]
+    members_result = await db.execute(
+        select(GroupMember)
+        .where(GroupMember.group_id.in_(ids))
+        .options(selectinload(GroupMember.user))
+    )
+    members_by: dict[uuid.UUID, list[GroupMember]] = defaultdict(list)
+    for member in members_result.scalars().all():
+        members_by[member.group_id].append(member)
+
+    expenses_result = await db.execute(
+        select(Expense)
+        .where(Expense.group_id.in_(ids))
+        .options(selectinload(Expense.splits))
+    )
+    expenses_by: dict[uuid.UUID, list[Expense]] = defaultdict(list)
+    for expense in expenses_result.scalars().all():
+        expenses_by[expense.group_id].append(expense)
+
+    return [
+        _group_response(group, members_by[group.id], expenses_by[group.id], current_user.id)
+        for group in groups
+    ]
 
 
 @router.post("", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)

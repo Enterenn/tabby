@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.auth import UserResponse
 
@@ -10,9 +10,25 @@ from app.schemas.auth import UserResponse
 class GroupCreate(BaseModel):
     name: str
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        name = value.strip()
+        if not (2 <= len(name) <= 50):
+            raise ValueError("Name must be 2-50 characters")
+        return name
+
 
 class GroupUpdate(BaseModel):
     name: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        name = value.strip()
+        if not (2 <= len(name) <= 50):
+            raise ValueError("Name must be 2-50 characters")
+        return name
 
 
 class GroupPinUpdate(BaseModel):
@@ -60,4 +76,4 @@ class BalanceEntry(BaseModel):
 class SettleRequest(BaseModel):
     from_user_id: str
     to_user_id: str
-    amount: float
+    amount: float = Field(gt=0)
