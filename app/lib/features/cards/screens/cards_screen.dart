@@ -237,51 +237,7 @@ class _CardsBodyState extends State<_CardsBody> {
             ),
             child: Column(
               children: [
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 320),
-                  curve: Curves.easeOutCubic,
-                  alignment: Alignment.topCenter,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    layoutBuilder: (current, previous) => Stack(
-                      alignment: Alignment.topCenter,
-                      clipBehavior: Clip.none,
-                      children: [
-                        for (final child in previous)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            child: child,
-                          ),
-                        ?current,
-                      ],
-                    ),
-                    transitionBuilder: (child, animation) {
-                      final fade = CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                        reverseCurve: Curves.easeInCubic,
-                      );
-                      return FadeTransition(
-                        opacity: fade,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.04),
-                            end: Offset.zero,
-                          ).animate(fade),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: KeyedSubtree(
-                      key: ValueKey(filterKey),
-                      child: _cardsForView(context, visible),
-                    ),
-                  ),
-                ),
+                _cardsSwitcher(filterKey, visible),
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: () => _showCardSheet(context),
@@ -296,12 +252,61 @@ class _CardsBodyState extends State<_CardsBody> {
     );
   }
 
+  Widget _cardsSwitcher(String filterKey, List<LoyaltyCard> visible) {
+    final switcher = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topCenter,
+        clipBehavior: Clip.none,
+        children: [
+          for (final child in previous)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: child,
+            ),
+          ?current,
+        ],
+      ),
+      transitionBuilder: (child, animation) {
+        final fade = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: fade,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.04),
+              end: Offset.zero,
+            ).animate(fade),
+            child: child,
+          ),
+        );
+      },
+      child: KeyedSubtree(
+        key: ValueKey(filterKey),
+        child: _cardsForView(context, visible),
+      ),
+    );
+    if (widget.view == LoyaltyCardsView.wallet) return switcher;
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: switcher,
+    );
+  }
+
   Widget _cardsForView(BuildContext context, List<LoyaltyCard> visible) {
     return switch (widget.view) {
       LoyaltyCardsView.wallet => LoyaltyWalletStack(
           cards: visible,
           onTapCard: (c) => _openFullScreen(context, c),
-          onLongPressCard: (c) => _showActions(context, c, widget.cards),
           onReorder: (list) => context.read<CardsCubit>().reorder(
                 LoyaltyBrandCategory.mergeVisibleOrder(widget.cards, list),
               ),
@@ -446,6 +451,7 @@ void _showCardSheet(BuildContext context, {LoyaltyCard? existing}) {
 }
 
 void _openFullScreen(BuildContext context, LoyaltyCard card) {
+  final cubit = context.read<CardsCubit>();
   Navigator.of(context).push(
     PageRouteBuilder<void>(
       transitionDuration: const Duration(milliseconds: 420),
@@ -460,6 +466,10 @@ void _openFullScreen(BuildContext context, LoyaltyCard card) {
                   _showCardSheet(context, existing: card);
                 }
               });
+            },
+            onDelete: () {
+              Navigator.of(routeContext).pop();
+              cubit.deleteCard(card.id);
             },
           ),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {

@@ -2,9 +2,14 @@ part of 'cards_screen.dart';
 // ─── Full-screen card display ─────────────────────────────────────────────────
 
 class _CardFullScreen extends StatelessWidget {
-  const _CardFullScreen({required this.card, this.onEdit});
+  const _CardFullScreen({
+    required this.card,
+    this.onEdit,
+    this.onDelete,
+  });
   final LoyaltyCard card;
   final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +30,12 @@ class _CardFullScreen extends StatelessWidget {
               tooltip: context.l10n.edit,
               onPressed: onEdit,
               icon: const Icon(Symbols.edit_rounded),
+            ),
+          if (onDelete != null)
+            IconButton(
+              tooltip: context.l10n.delete,
+              onPressed: onDelete,
+              icon: Icon(Symbols.delete_rounded, color: cs.error),
             ),
         ],
       ),
