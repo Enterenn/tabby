@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/api/api_failure.dart';
+import '../../../data/repositories.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
@@ -123,31 +123,25 @@ class BudgetCubit extends Cubit<BudgetState> {
 
     if (prev == null) emit(const BudgetLoading());
     try {
-      final queryParams = <String, dynamic>{
-        'year': targetYear,
-        'month': targetMonth,
-        'group_id': ?targetGroup,
-      };
-
       final results = await Future.wait([
-        apiClient.dio.get('/budgets', queryParameters: queryParams),
-        apiClient.dio.get('/groups'),
-        apiClient.dio.get('/categories'),
-        apiClient.dio.get('/stats', queryParameters: queryParams),
+        budgetsRepository.list(
+          year: targetYear,
+          month: targetMonth,
+          groupId: targetGroup,
+        ),
+        groupsRepository.list(),
+        categoriesRepository.list(),
+        budgetsRepository.stats(
+          year: targetYear,
+          month: targetMonth,
+          groupId: targetGroup,
+        ),
       ]);
 
-      final budgets = (results[0].data as List)
-          .map((b) => Budget.fromJson(b as Map<String, dynamic>))
-          .toList();
-      final groups = (results[1].data as List)
-          .map((g) => Group.fromJson(g as Map<String, dynamic>))
-          .toList();
-      final categories = (results[2].data as List)
-          .map((c) => Category.fromJson(c as Map<String, dynamic>))
-          .toList();
-      final stats = MonthStats.fromJson(
-        results[3].data as Map<String, dynamic>,
-      );
+      final budgets = results[0] as List<Budget>;
+      final groups = results[1] as List<Group>;
+      final categories = results[2] as List<Category>;
+      final stats = results[3] as MonthStats;
 
       if (!isClosed) {
         emit(
@@ -211,9 +205,10 @@ class BudgetCubit extends Cubit<BudgetState> {
     required double limitAmount,
   }) async {
     try {
-      await apiClient.dio.post(
-        '/groups/$groupId/budgets',
-        data: {'category_id': categoryId, 'limit_amount': limitAmount},
+      await budgetsRepository.create(
+        groupId: groupId,
+        categoryId: categoryId,
+        limitAmount: limitAmount,
       );
       final s = state is BudgetLoaded ? state as BudgetLoaded : null;
       await load(
@@ -233,9 +228,10 @@ class BudgetCubit extends Cubit<BudgetState> {
     required double limitAmount,
   }) async {
     try {
-      await apiClient.dio.put(
-        '/groups/$groupId/budgets/$budgetId',
-        data: {'limit_amount': limitAmount},
+      await budgetsRepository.update(
+        groupId: groupId,
+        budgetId: budgetId,
+        limitAmount: limitAmount,
       );
       final s = state is BudgetLoaded ? state as BudgetLoaded : null;
       await load(
@@ -254,7 +250,7 @@ class BudgetCubit extends Cubit<BudgetState> {
     required String budgetId,
   }) async {
     try {
-      await apiClient.dio.delete('/groups/$groupId/budgets/$budgetId');
+      await budgetsRepository.delete(groupId: groupId, budgetId: budgetId);
       final s = state is BudgetLoaded ? state as BudgetLoaded : null;
       await load(
         year: s?.selectedYear,

@@ -21,6 +21,7 @@ import 'core/theme/theme_cubit.dart';
 import 'features/auth/cubit/auth_cubit.dart';
 import 'features/auth/cubit/biometric_cubit.dart';
 import 'features/auth/widgets/biometric_offer_listener.dart';
+import 'features/home/cubit/home_cubit.dart';
 import 'l10n/l10n.dart';
 
 void main() async {
@@ -57,16 +58,22 @@ class TabbyApp extends StatefulWidget {
 
 class _TabbyAppState extends State<TabbyApp> {
   late final AuthCubit _authCubit;
+  late final HomeCubit _homeCubit;
   late final ThemeCubit _themeCubit;
   late final LocaleCubit _localeCubit;
   late final BiometricCubit _biometricCubit;
   late final GoRouter _router;
   StreamSubscription<RemoteMessage>? _openedAppSub;
+  StreamSubscription<AuthState>? _authSub;
 
   @override
   void initState() {
     super.initState();
     _authCubit = AuthCubit()..checkAuth();
+    _homeCubit = HomeCubit();
+    _authSub = _authCubit.stream.listen((state) {
+      if (state is AuthUnauthenticated) _homeCubit.reset();
+    });
     _themeCubit = ThemeCubit(
       prefs: widget.themePrefs,
       initial: widget.initialTheme,
@@ -100,8 +107,10 @@ class _TabbyAppState extends State<TabbyApp> {
   @override
   void dispose() {
     _openedAppSub?.cancel();
+    _authSub?.cancel();
     FcmService.instance.dispose();
     _authCubit.close();
+    _homeCubit.close();
     _themeCubit.close();
     _localeCubit.close();
     _biometricCubit.close();
@@ -113,6 +122,7 @@ class _TabbyAppState extends State<TabbyApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _authCubit),
+        BlocProvider.value(value: _homeCubit),
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _localeCubit),
         BlocProvider.value(value: _biometricCubit),

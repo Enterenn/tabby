@@ -5,7 +5,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/expressive_shapes.dart';
-import '../../../features/group_detail/cubit/group_detail_cubit.dart';
 import '../../../l10n/l10n.dart';
 import '../../../features/home/cubit/home_cubit.dart';
 import '../../../design_system/design_system.dart';
@@ -20,13 +19,14 @@ Future<bool?> showAddExpenseSheet(
   String? groupId,
 }) {
   final lock = groupId != null && groupId.isNotEmpty;
+  final home = context.read<HomeCubit>();
   return showTabbySheet<bool>(
     context,
     isScrollControlled: true,
     builder: (_) => BlocProvider(
       create: (_) => AddExpenseCubit()
         ..load(groupId: groupId, lockGroup: lock),
-      child: const _AddExpenseSheet(),
+      child: _AddExpenseSheet(onCreated: home.loadGroups),
     ),
   );
 }
@@ -34,7 +34,9 @@ Future<bool?> showAddExpenseSheet(
 // ─── Sheet (stateful: owns all form state) ────────────────────────────────────
 
 class _AddExpenseSheet extends StatefulWidget {
-  const _AddExpenseSheet();
+  const _AddExpenseSheet({required this.onCreated});
+
+  final VoidCallback onCreated;
 
   @override
   State<_AddExpenseSheet> createState() => _AddExpenseSheetState();
@@ -155,8 +157,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         );
 
     if (ok && mounted) {
-      HomeCubit.refreshIfActive();
-      GroupDetailCubit.refreshIfActive();
+      widget.onCreated();
       Navigator.of(context).pop(true);
     }
   }

@@ -1,8 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/api/api_failure.dart';
+import '../../../data/repositories.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 
@@ -76,10 +76,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
   Future<void> load({String? groupId, bool lockGroup = false}) async {
     emit(const AddExpenseLoading());
     try {
-      final groupsResp = await apiClient.dio.get('/groups');
-      final groups = (groupsResp.data as List)
-          .map((g) => Group.fromJson(g as Map<String, dynamic>))
-          .toList();
+      final groups = await groupsRepository.list();
 
       if (groups.isEmpty) {
         if (!isClosed) {
@@ -130,14 +127,13 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
   Future<({Group group, List<Category> categories})> _fetchGroupData(
       String groupId) async {
     final results = await Future.wait([
-      apiClient.dio.get('/categories', queryParameters: {'group_id': groupId}),
-      apiClient.dio.get('/groups/$groupId'),
+      categoriesRepository.list(groupId: groupId),
+      groupsRepository.get(groupId),
     ]);
-    final categories = (results[0].data as List)
-        .map((c) => Category.fromJson(c as Map<String, dynamic>))
-        .toList();
-    final group = Group.fromJson(results[1].data as Map<String, dynamic>);
-    return (group: group, categories: categories);
+    return (
+      group: results[1] as Group,
+      categories: results[0] as List<Category>,
+    );
   }
 
   Future<Category?> createCategory({
@@ -149,13 +145,12 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     final current = state;
     if (current is! AddExpenseReady) return null;
     try {
-      final response = await apiClient.dio.post('/categories', data: {
-        'group_id': groupId,
-        'name': name,
-        'icon': icon,
-        'color': color,
-      });
-      final newCat = Category.fromJson(response.data as Map<String, dynamic>);
+      final newCat = await categoriesRepository.create(
+        groupId: groupId,
+        name: name,
+        icon: icon,
+        color: color,
+      );
       if (!isClosed) {
         emit(current.copyWith(categories: [...current.categories, newCat]));
       }
@@ -181,36 +176,24 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
 
     try {
       if (recurring) {
-        await apiClient.dio.post('/groups/$groupId/recurring-expenses', data: {
-          'name': name,
-          'amount': amount,
-          'category_id': categoryId,
-          'paid_by': paidBy,
-          'day_of_period': expenseDate.day,
-          'frequency': 'monthly',
-        });
+        await recurringRepository.create(
+          groupId: groupId,
+          name: name,
+          amount: amount,
+          categoryId: categoryId,
+          paidBy: paidBy,
+          dayOfPeriod: expenseDate.day,
+        );
       } else {
-        final dateStr =
-            '${expenseDate.year.toString().padLeft(4, '0')}-'
-            '${expenseDate.month.toString().padLeft(2, '0')}-'
-            '${expenseDate.day.toString().padLeft(2, '0')}';
-
-        final body = <String, dynamic>{
-          'name': name,
-          'amount': amount,
-          'category_id': categoryId,
-          'paid_by': paidBy,
-          'expense_date': dateStr,
-        };
-
-        if (customSplits != null) {
-          body['split_type'] = 'custom';
-          body['splits'] = customSplits;
-        } else {
-          body['split_type'] = 'equal';
-        }
-
-        await apiClient.dio.post('/groups/$groupId/expenses', data: body);
+        await expensesRepository.create(
+          groupId: groupId,
+          name: name,
+          amount: amount,
+          categoryId: categoryId,
+          paidBy: paidBy,
+          expenseDate: expenseDate,
+          customSplits: customSplits,
+        );
       }
 
       if (!isClosed) emit(const AddExpenseSuccess());

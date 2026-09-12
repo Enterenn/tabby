@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
-import '../api/api_client.dart';
+import '../../data/repositories.dart';
 
 /// Gère Firebase Cloud Messaging : permissions, token, messages.
 class FcmService {
@@ -47,7 +47,7 @@ class FcmService {
     try {
       final token = await _fm.getToken();
       if (token != null) {
-        await apiClient.dio.delete('/devices/token', data: {'token': token});
+        await devicesRepository.deleteToken(token);
       }
       await _fm.deleteToken();
     } catch (e) {
@@ -66,10 +66,7 @@ class FcmService {
 
   Future<void> _sendTokenToBackend(String token) async {
     try {
-      await apiClient.dio.post('/devices/token', data: {
-        'token': token,
-        'platform': 'android',
-      });
+      await devicesRepository.registerToken(token);
       debugPrint('[FCM] Token enregistré');
     } catch (e) {
       debugPrint('[FCM] _sendTokenToBackend error: $e');

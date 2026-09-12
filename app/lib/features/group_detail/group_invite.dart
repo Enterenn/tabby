@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../core/api/api_client.dart';
+import '../../data/repositories.dart';
 import '../../l10n/l10n.dart';
 import '../../design_system/design_system.dart';
 
@@ -22,8 +22,7 @@ Future<void> showGroupInviteDialog(
 
   String? code;
   try {
-    final res = await apiClient.dio.post('/groups/$groupId/invite');
-    code = res.data['code'] as String;
+    code = await groupsRepository.createInvite(groupId);
   } catch (_) {
     code = null;
   }

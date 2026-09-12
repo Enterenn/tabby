@@ -1,64 +1,29 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/api/api_client.dart';
-import '../../../core/api/api_failure.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/recurring_expense.dart';
 import '../../../design_system/design_system.dart';
+import '../cubit/recurring_cubit.dart';
 
-class RecurringExpensesScreen extends StatefulWidget {
+class RecurringExpensesScreen extends StatelessWidget {
   const RecurringExpensesScreen({super.key});
 
   @override
-  State<RecurringExpensesScreen> createState() =>
-      _RecurringExpensesScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => RecurringCubit()..load(),
+      child: const _RecurringView(),
+    );
+  }
 }
 
-class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
-  List<RecurringExpense>? _items;
-  String? _error;
+class _RecurringView extends StatelessWidget {
+  const _RecurringView();
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() => _error = null);
-    try {
-      final resp = await apiClient.dio.get('/recurring-expenses');
-      setState(() {
-        _items = (resp.data as List)
-            .map((e) => RecurringExpense.fromJson(e as Map<String, dynamic>))
-            .toList();
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = ApiFailure.from(e).message);
-    }
-  }
-
-  Future<void> _toggle(RecurringExpense item) async {
-    try {
-      final resp = await apiClient.dio.patch(
-        '/groups/${item.groupId}/recurring-expenses/${item.id}/toggle',
-      );
-      final updated = RecurringExpense.fromJson(
-          resp.data as Map<String, dynamic>);
-      setState(() {
-        final idx = _items!.indexWhere((e) => e.id == item.id);
-        if (idx >= 0) _items![idx] = updated;
-      });
-    } catch (_) {
-      if (mounted) {
-        showTabbySnack(context, context.l10n.errorUpdate);
-      }
-    }
-  }
-
-  Future<void> _delete(RecurringExpense item) async {
+  Future<void> _delete(BuildContext context, RecurringExpense item) async {
     final confirmed = await showTabbyConfirm(
       context,
       title: context.l10n.deleteRecurringTitle,
@@ -66,58 +31,54 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       confirmLabel: context.l10n.delete,
       danger: true,
     );
-    if (!confirmed) return;
-
-    try {
-      await apiClient.dio.delete(
-        '/groups/${item.groupId}/recurring-expenses/${item.id}',
-      );
-      setState(() => _items!.removeWhere((e) => e.id == item.id));
-    } catch (_) {
-      if (mounted) {
-        showTabbySnack(context, context.l10n.errorDelete);
-      }
-    }
+    if (!confirmed || !context.mounted) return;
+    final err = await context.read<RecurringCubit>().delete(item);
+    if (!context.mounted || err == null) return;
+    showTabbySnack(context, context.l10nError(err));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.recurringTitle)),
-      body: _error != null
-          ? TabbyErrorState(
-              message: context.l10nError(_error),
-              retryLabel: context.l10n.retry,
-              onRetry: _load,
-            )
-          : _items == null
-              ? const TabbyLoading()
-              : _items!.isEmpty
-                  ? TabbyEmptyState(
-                      icon: Symbols.repeat_rounded,
-                      title: context.l10n.noRecurring,
-                      body: context.l10n.noRecurringHint,
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _items!.length,
-                        separatorBuilder: (context, _) =>
-                            const SizedBox(height: 8),
-                        itemBuilder: (context, i) =>
-                            _RecurringCard(
-                          item: _items![i],
-                          onToggle: () => _toggle(_items![i]),
-                          onDelete: () => _delete(_items![i]),
-                        ),
-                      ),
-                    ),
+      body: BlocBuilder<RecurringCubit, RecurringState>(
+        builder: (context, state) {
+          return switch (state) {
+            RecurringLoading() => const TabbyLoading(),
+            RecurringError(:final message) => TabbyErrorState(
+                message: context.l10nError(message),
+                retryLabel: context.l10n.retry,
+                onRetry: () => context.read<RecurringCubit>().load(),
+              ),
+            RecurringLoaded(:final items) when items.isEmpty => TabbyEmptyState(
+                icon: Symbols.repeat_rounded,
+                title: context.l10n.noRecurring,
+                body: context.l10n.noRecurringHint,
+              ),
+            RecurringLoaded(:final items) => RefreshIndicator(
+                onRefresh: () => context.read<RecurringCubit>().load(),
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: items.length,
+                  separatorBuilder: (context, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, i) => _RecurringCard(
+                    item: items[i],
+                    onToggle: () async {
+                      final err =
+                          await context.read<RecurringCubit>().toggle(items[i]);
+                      if (!context.mounted || err == null) return;
+                      showTabbySnack(context, context.l10nError(err));
+                    },
+                    onDelete: () => _delete(context, items[i]),
+                  ),
+                ),
+              ),
+          };
+        },
+      ),
     );
   }
 }
-
-// ─── Card item ────────────────────────────────────────────────────────────────
 
 class _RecurringCard extends StatelessWidget {
   const _RecurringCard({
@@ -138,82 +99,73 @@ class _RecurringCard extends StatelessWidget {
     return TabbyListCard(
       padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
       child: Row(
-          children: [
-            TabbyCategoryGlyph(
-              icon: item.category.flutterIcon,
-              background: item.active
-                  ? context.tabbySemantic.chartColorFor(item.category)
-                  : cs.surfaceContainerHighest,
-              foreground: item.active
-                  ? context.tabbySemantic.onFor(
-                      context.tabbySemantic.chartColorFor(item.category),
-                      cs,
-                    )
-                  : cs.onSurfaceVariant,
-              size: 44,
-              iconSize: 22,
-            ),
-            const SizedBox(width: 14),
-
-            // Infos
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: tt.titleMedium?.copyWith(
-                      color: item.active ? null : cs.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      ExpressiveFigure(
-                        value: item.amount.toStringAsFixed(2),
-                        suffix: ' €',
-                        size: ExpressiveFigureSize.small,
-                        color: item.active
-                            ? cs.secondary
-                            : cs.onSurfaceVariant,
-                      ),
-                      Text(
-                        ' · ${item.dayLabel(context.l10n.recurringFirstOfMonth, context.l10n.recurringNthOfMonth)}',
-                        style: tt.bodySmall
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    item.groupName,
-                    style: tt.bodySmall
-                        ?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-
-            // Actions
-            Column(
-              mainAxisSize: MainAxisSize.min,
+        children: [
+          TabbyCategoryGlyph(
+            icon: item.category.flutterIcon,
+            background: item.active
+                ? context.tabbySemantic.chartColorFor(item.category)
+                : cs.surfaceContainerHighest,
+            foreground: item.active
+                ? context.tabbySemantic.onFor(
+                    context.tabbySemantic.chartColorFor(item.category),
+                    cs,
+                  )
+                : cs.onSurfaceVariant,
+            size: 44,
+            iconSize: 22,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Switch(
-                  value: item.active,
-                  onChanged: (_) => onToggle(),
+                Text(
+                  item.name,
+                  style: tt.titleMedium?.copyWith(
+                    color: item.active ? null : cs.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                IconButton(
-                  icon: Icon(Symbols.delete_rounded,
-                      size: 20, color: cs.error),
-                  onPressed: onDelete,
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    ExpressiveFigure(
+                      value: item.amount.toStringAsFixed(2),
+                      suffix: ' €',
+                      size: ExpressiveFigureSize.small,
+                      color: item.active ? cs.secondary : cs.onSurfaceVariant,
+                    ),
+                    Text(
+                      ' · ${item.dayLabel(context.l10n.recurringFirstOfMonth, context.l10n.recurringNthOfMonth)}',
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+                Text(
+                  item.groupName,
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Switch(
+                value: item.active,
+                onChanged: (_) => onToggle(),
+              ),
+              IconButton(
+                icon: Icon(Symbols.delete_rounded, size: 20, color: cs.error),
+                onPressed: onDelete,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

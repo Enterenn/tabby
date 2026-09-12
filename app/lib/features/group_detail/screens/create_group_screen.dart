@@ -1,22 +1,34 @@
-import 'package:dio/dio.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../design_system/design_system.dart';
 import '../../../l10n/l10n.dart';
+import '../../home/cubit/home_cubit.dart';
+import '../cubit/group_form_cubit.dart';
 
-class CreateGroupScreen extends StatefulWidget {
+class CreateGroupScreen extends StatelessWidget {
   const CreateGroupScreen({super.key});
 
   @override
-  State<CreateGroupScreen> createState() => _CreateGroupScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => GroupFormCubit(),
+      child: const _CreateGroupView(),
+    );
+  }
 }
 
-class _CreateGroupScreenState extends State<CreateGroupScreen> {
+class _CreateGroupView extends StatefulWidget {
+  const _CreateGroupView();
+
+  @override
+  State<_CreateGroupView> createState() => _CreateGroupViewState();
+}
+
+class _CreateGroupViewState extends State<_CreateGroupView> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
-  bool _loading = false;
 
   @override
   void dispose() {
@@ -24,77 +36,75 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    try {
-      final response = await apiClient.dio.post('/groups', data: {
-        'name': _nameCtrl.text.trim(),
-      });
-      final groupId = response.data['id'] as String;
-      if (mounted) {
-        context.pushReplacement('/groups/$groupId/invite');
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        showTabbySnack(
-          context,
-          context.l10nError(e.response?.data?['detail']?.toString()),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+    context.read<GroupFormCubit>().create(_nameCtrl.text.trim());
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.newGroup)),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              Text(context.l10n.createGroupHeadline,
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Text(
-                context.l10n.createGroupHint,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
+    return BlocConsumer<GroupFormCubit, GroupFormState>(
+      listener: (context, state) {
+        if (state is GroupFormCreated) {
+          context.read<HomeCubit>().loadGroups();
+          context.pushReplacement('/groups/${state.groupId}/invite');
+        } else if (state is GroupFormError) {
+          showTabbySnack(context, context.l10nError(state.message));
+        }
+      },
+      builder: (context, state) {
+        final loading = state is GroupFormSubmitting;
+        return Scaffold(
+          appBar: AppBar(title: Text(context.l10n.newGroup)),
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 32),
+                  Text(
+                    context.l10n.createGroupHeadline,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.l10n.createGroupHint,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 32),
+                  TextFormField(
+                    controller: _nameCtrl,
+                    textCapitalization: TextCapitalization.sentences,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    decoration: InputDecoration(labelText: context.l10n.groupName),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? context.l10n.requiredField
+                        : null,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: loading ? null : _submit,
+                      child: loading
+                          ? const TabbyButtonSpinner()
+                          : Text(context.l10n.createGroupSubmit),
                     ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-              TextFormField(
-                controller: _nameCtrl,
-                textCapitalization: TextCapitalization.sentences,
-                autofocus: true,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submit(),
-                decoration: InputDecoration(labelText: context.l10n.groupName),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? context.l10n.requiredField : null,
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _loading ? null : _submit,
-                  child: _loading
-                      ? const TabbyButtonSpinner()
-                      : Text(context.l10n.createGroupSubmit),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

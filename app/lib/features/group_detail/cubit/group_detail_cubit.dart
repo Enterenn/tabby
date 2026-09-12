@@ -1,13 +1,11 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/api/api_client.dart';
 import '../../../core/api/api_failure.dart';
+import '../../../data/repositories.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
 import '../../home/cubit/home_cubit.dart';
-
-// ─── States ──────────────────────────────────────────────────────────────────
 
 sealed class GroupDetailState extends Equatable {
   const GroupDetailState();
@@ -54,45 +52,35 @@ class GroupDetailError extends GroupDetailState {
 
 class GroupDetailLeft extends GroupDetailState {}
 
-// ─── Cubit ───────────────────────────────────────────────────────────────────
-
 class GroupDetailCubit extends Cubit<GroupDetailState> {
-  static GroupDetailCubit? _active;
-
-  GroupDetailCubit(this._groupId) : super(GroupDetailInitial()) {
-    _active = this;
-  }
-
-  static void refreshIfActive() => _active?.load();
-
-  @override
-  Future<void> close() {
-    if (_active == this) _active = null;
-    return super.close();
-  }
+  GroupDetailCubit(
+    this._groupId,
+    this._home, {
+    GroupsRepository? groups,
+    ExpensesRepository? expenses,
+  })  : _groups = groups ?? groupsRepository,
+        _expenses = expenses ?? expensesRepository,
+        super(GroupDetailInitial());
 
   final String _groupId;
-  final _dio = apiClient.dio;
+  final HomeCubit _home;
+  final GroupsRepository _groups;
+  final ExpensesRepository _expenses;
 
   Future<void> load() async {
     emit(GroupDetailLoading());
     try {
       final results = await Future.wait([
-        _dio.get('/groups/$_groupId'),
-        _dio.get('/groups/$_groupId/balances'),
-        _dio.get('/groups/$_groupId/expenses'),
+        _groups.get(_groupId),
+        _groups.balances(_groupId),
+        _expenses.list(_groupId),
       ]);
-
-      final group = Group.fromJson(results[0].data as Map<String, dynamic>);
-      final balances = (results[1].data as List)
-          .map((e) => BalanceEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
-      final expenses = (results[2].data as List)
-          .map((e) => Expense.fromJson(e as Map<String, dynamic>))
-          .toList();
-
       if (!isClosed) {
-        emit(GroupDetailLoaded(group: group, balances: balances, expenses: expenses));
+        emit(GroupDetailLoaded(
+          group: results[0] as Group,
+          balances: results[1] as List<BalanceEntry>,
+          expenses: results[2] as List<Expense>,
+        ));
       }
     } catch (e) {
       if (!isClosed) emit(GroupDetailError(ApiFailure.from(e).message));
@@ -103,8 +91,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     final prev = state;
     if (prev is! GroupDetailLoaded) return null;
     try {
-      final res = await _dio.patch('/groups/$_groupId', data: {'name': name});
-      final updated = Group.fromJson(res.data as Map<String, dynamic>);
+      final updated = await _groups.updateName(_groupId, name);
       if (!isClosed) emit(prev.copyWith(group: updated));
       return null;
     } catch (e) {
@@ -114,8 +101,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
 
   Future<String?> generateInviteCode() async {
     try {
-      final res = await _dio.post('/groups/$_groupId/invite');
-      return res.data['code'] as String;
+      return await _groups.createInvite(_groupId);
     } catch (_) {
       return null;
     }
@@ -127,11 +113,12 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     required double amount,
   }) async {
     try {
-      await _dio.post('/groups/$_groupId/settle', data: {
-        'from_user_id': fromUserId,
-        'to_user_id': toUserId,
-        'amount': amount,
-      });
+      await _groups.settle(
+        groupId: _groupId,
+        fromUserId: fromUserId,
+        toUserId: toUserId,
+        amount: amount,
+      );
       await load();
       return null;
     } catch (e) {
@@ -147,30 +134,21 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     String? paidBy,
     DateTime? expenseDate,
   }) async {
-    final prev = state as GroupDetailLoaded?;
-    if (prev == null) return null;
+    final prev = state;
+    if (prev is! GroupDetailLoaded) return null;
     try {
-      final data = <String, dynamic>{};
-      if (name != null) data['name'] = name;
-      if (amount != null) data['amount'] = amount;
-      if (categoryId != null) data['category_id'] = categoryId;
-      if (paidBy != null) data['paid_by'] = paidBy;
-      if (expenseDate != null) {
-        data['expense_date'] =
-            '${expenseDate.year}-${expenseDate.month.toString().padLeft(2, '0')}-${expenseDate.day.toString().padLeft(2, '0')}';
-      }
-
-      final res = await _dio.patch(
-        '/groups/$_groupId/expenses/$expenseId',
-        data: data,
+      final updated = await _expenses.update(
+        groupId: _groupId,
+        expenseId: expenseId,
+        name: name,
+        amount: amount,
+        categoryId: categoryId,
+        paidBy: paidBy,
+        expenseDate: expenseDate,
       );
-      final updated = Expense.fromJson(res.data as Map<String, dynamic>);
-      final expenses = prev.expenses.map((e) => e.id == expenseId ? updated : e).toList();
-      // Recalcule les balances
-      final balRes = await _dio.get('/groups/$_groupId/balances');
-      final balances = (balRes.data as List)
-          .map((e) => BalanceEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final expenses =
+          prev.expenses.map((e) => e.id == expenseId ? updated : e).toList();
+      final balances = await _groups.balances(_groupId);
       if (!isClosed) emit(prev.copyWith(expenses: expenses, balances: balances));
       return null;
     } catch (e) {
@@ -179,19 +157,16 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
   }
 
   Future<String?> deleteExpense(String expenseId) async {
-    final prev = state as GroupDetailLoaded?;
-    if (prev == null) return null;
+    final prev = state;
+    if (prev is! GroupDetailLoaded) return null;
     try {
-      await _dio.delete('/groups/$_groupId/expenses/$expenseId');
+      await _expenses.delete(groupId: _groupId, expenseId: expenseId);
       if (!isClosed) {
         emit(prev.copyWith(
           expenses: prev.expenses.where((e) => e.id != expenseId).toList(),
         ));
       }
-      final balRes = await _dio.get('/groups/$_groupId/balances');
-      final balances = (balRes.data as List)
-          .map((e) => BalanceEntry.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final balances = await _groups.balances(_groupId);
       final current = state;
       if (!isClosed && current is GroupDetailLoaded) {
         emit(current.copyWith(balances: balances));
@@ -203,20 +178,16 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
   }
 
   Future<String?> setPinned(bool isPinned) async {
-    final prev = state as GroupDetailLoaded?;
-    if (prev == null) return null;
+    final prev = state;
+    if (prev is! GroupDetailLoaded) return null;
     emit(prev.copyWith(group: prev.group.copyWith(isPinned: isPinned)));
     try {
-      final res = await _dio.patch(
-        '/groups/$_groupId/pin',
-        data: {'is_pinned': isPinned},
-      );
-      final updated = Group.fromJson(res.data as Map<String, dynamic>);
+      final updated = await _groups.setPinned(_groupId, isPinned: isPinned);
       final current = state;
       if (!isClosed && current is GroupDetailLoaded) {
         emit(current.copyWith(group: updated));
       }
-      HomeCubit.refreshIfActive();
+      await _home.loadGroups();
       return null;
     } catch (e) {
       if (!isClosed) emit(prev);
@@ -226,7 +197,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
 
   Future<String?> leaveGroup() async {
     try {
-      await _dio.post('/groups/$_groupId/leave');
+      await _groups.leave(_groupId);
       if (!isClosed) emit(GroupDetailLeft());
       return null;
     } catch (e) {
@@ -236,7 +207,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
 
   Future<String?> deleteGroup() async {
     try {
-      await _dio.delete('/groups/$_groupId');
+      await _groups.delete(_groupId);
       if (!isClosed) emit(GroupDetailLeft());
       return null;
     } catch (e) {

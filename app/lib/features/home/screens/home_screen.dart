@@ -19,7 +19,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final HomeCubit _cubit;
   GoRouter? _router;
   String _lastPath = '';
   bool _listenerAdded = false;
@@ -27,7 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _cubit = HomeCubit()..loadGroups();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<HomeCubit>().loadGroups();
+    });
   }
 
   @override
@@ -46,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final newPath = _router!.state.uri.path;
     // Recharge uniquement quand on revient sur /home depuis une autre route
     if (newPath == '/home' && _lastPath != '/home') {
-      _cubit.loadGroups();
+      context.read<HomeCubit>().loadGroups();
     }
     _lastPath = newPath;
   }
@@ -54,16 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _router?.routerDelegate.removeListener(_onRouteChange);
-    _cubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _cubit,
-      child: const _HomeView(),
-    );
+    return const _HomeView();
   }
 }
 

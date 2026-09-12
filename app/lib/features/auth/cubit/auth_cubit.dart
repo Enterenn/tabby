@@ -6,6 +6,7 @@ import '../../../core/api/api_failure.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/auth/biometric_settings.dart';
 import '../../../core/services/fcm_service.dart';
+import '../../../data/repositories.dart';
 import '../../../shared/models/user.dart';
 
 part 'auth_state.dart';
@@ -42,8 +43,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
     emit(AuthLoading());
     try {
-      final response = await apiClient.dio.get('/auth/me');
-      final user = User.fromJson(response.data as Map<String, dynamic>);
+      final user = await authRepository.me();
       if (tokenStorage.userId == null) {
         await tokenStorage.save(
           access: tokenStorage.accessToken!,
@@ -74,11 +74,11 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     emit(AuthLoading());
     try {
-      await apiClient.dio.post('/auth/register', data: {
-        'name': name,
-        'email': email,
-        'password': password,
-      });
+      await authRepository.register(
+        name: name,
+        email: email,
+        password: password,
+      );
       await login(email: email, password: password);
     } on DioException catch (e) {
       if (!isClosed) {
@@ -92,19 +92,19 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login({required String email, required String password}) async {
     emit(AuthLoading());
     try {
-      final response = await apiClient.dio.post('/auth/login', data: {
-        'email': email,
-        'password': password,
-      });
-      final data = response.data as Map<String, dynamic>;
-      final access = data['access_token'] as String;
-      final refresh = data['refresh_token'] as String;
-      await tokenStorage.save(access: access, refresh: refresh);
-      apiClient.setAccessToken(access);
+      final tokens = await authRepository.login(
+        email: email,
+        password: password,
+      );
+      await tokenStorage.save(access: tokens.access, refresh: tokens.refresh);
+      apiClient.setAccessToken(tokens.access);
 
-      final profileResponse = await apiClient.dio.get('/auth/me');
-      final user = User.fromJson(profileResponse.data as Map<String, dynamic>);
-      await tokenStorage.save(access: access, refresh: refresh, userId: user.id);
+      final user = await authRepository.me();
+      await tokenStorage.save(
+        access: tokens.access,
+        refresh: tokens.refresh,
+        userId: user.id,
+      );
       _offerBiometrics = !biometricSettings.enabled && !biometricSettings.prompted;
       if (isClosed) return;
       emit(AuthAuthenticated(user));
@@ -124,7 +124,7 @@ class AuthCubit extends Cubit<AuthState> {
     final refresh = tokenStorage.refreshToken;
     try {
       if (refresh != null) {
-        await apiClient.dio.post('/auth/logout', data: {'refresh_token': refresh});
+        await authRepository.logout(refresh);
       }
     } catch (_) {
       // On continue le logout local même si le réseau est down.
@@ -142,13 +142,8 @@ class AuthCubit extends Cubit<AuthState> {
     final prev = state;
     if (prev is! AuthAuthenticated) return 'errorUnexpected';
     try {
-      final response = await apiClient.dio.patch('/auth/me', data: {
-        'name': name,
-        'email': email,
-      });
-      if (!isClosed) {
-        emit(AuthAuthenticated(User.fromJson(response.data as Map<String, dynamic>)));
-      }
+      final user = await authRepository.updateProfile(name: name, email: email);
+      if (!isClosed) emit(AuthAuthenticated(user));
       return null;
     } on DioException catch (e) {
       return ApiFailure.fromDio(e, fallback: 'errorUpdate').message;
@@ -163,10 +158,10 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     if (state is! AuthAuthenticated) return 'errorUnexpected';
     try {
-      await apiClient.dio.post('/auth/change-password', data: {
-        'current_password': currentPassword,
-        'new_password': newPassword,
-      });
+      await authRepository.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
       return null;
     } on DioException catch (e) {
       return ApiFailure.fromDio(e, fallback: 'errorUpdate').message;
@@ -179,21 +174,8 @@ class AuthCubit extends Cubit<AuthState> {
     final prev = state;
     if (prev is! AuthAuthenticated) return 'errorUnexpected';
     try {
-      final form = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath),
-      });
-      final response = await apiClient.dio.post(
-        '/auth/me/avatar',
-        data: form,
-        options: Options(
-          contentType: Headers.multipartFormDataContentType,
-          sendTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      );
-      if (!isClosed) {
-        emit(AuthAuthenticated(User.fromJson(response.data as Map<String, dynamic>)));
-      }
+      final user = await authRepository.uploadAvatar(filePath);
+      if (!isClosed) emit(AuthAuthenticated(user));
       return null;
     } on DioException catch (e) {
       return ApiFailure.fromDio(e, fallback: 'avatarUploadFailed').message;
