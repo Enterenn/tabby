@@ -13,8 +13,8 @@
   "edit": "Edit",
   "requiredField": "Required",
   "invalidEmail": "Invalid email",
-  "minPassword": "8 characters, a letter, a number and a symbol",
-  "passwordPolicy": "At least 8 characters, a letter, a number and a symbol",
+  "minPassword": "8 characters, an uppercase letter, a number and a symbol",
+  "passwordPolicy": "At least 8 characters, an uppercase letter, a number and a symbol",
   "me": "Me",
   "you": "You",
   "ok": "OK",
@@ -269,7 +269,7 @@
   "currentPassword": "Current password",
   "newPassword": "New password",
   "confirmPassword": "Confirm password",
-  "passwordMin8": "At least 8 characters, a letter, a number and a symbol",
+  "passwordMin8": "At least 8 characters, an uppercase letter, a number and a symbol",
   "passwordMismatch": "Passwords do not match",
   "changePassword": "Change password",
   "profileSaved": "Profile updated",
@@ -284,5 +284,5 @@
   "avatarUploadFailed": "Could not upload the photo",
   "errorWrongPassword": "Current password is incorrect",
   "errorNameLength": "Name must be 2-50 characters",
-  "errorPasswordLength": "Password must be at least 8 characters and include a letter, a number and a symbol"
+  "errorPasswordLength": "Password must be at least 8 characters and include an uppercase letter, a number and a symbol"
 }

@@ -167,13 +167,13 @@ abstract class AppLocalizations {
   /// No description provided for @minPassword.
   ///
   /// In fr, this message translates to:
-  /// **'8 caractères, une lettre, un chiffre et un symbole'**
+  /// **'8 caractères, une majuscule, un chiffre et un symbole'**
   String get minPassword;
 
   /// No description provided for @passwordPolicy.
   ///
   /// In fr, this message translates to:
-  /// **'8 caractères min., une lettre, un chiffre et un symbole'**
+  /// **'8 caractères min., une majuscule, un chiffre et un symbole'**
   String get passwordPolicy;
 
   /// No description provided for @me.
@@ -1619,7 +1619,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordMin8.
   ///
   /// In fr, this message translates to:
-  /// **'8 caractères min., une lettre, un chiffre et un symbole'**
+  /// **'8 caractères min., une majuscule, un chiffre et un symbole'**
   String get passwordMin8;
 
   /// No description provided for @passwordMismatch.
@@ -1709,7 +1709,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorPasswordLength.
   ///
   /// In fr, this message translates to:
-  /// **'Le mot de passe doit faire au moins 8 caractères, avec une lettre, un chiffre et un symbole'**
+  /// **'Le mot de passe doit faire au moins 8 caractères, avec une majuscule, un chiffre et un symbole'**
   String get errorPasswordLength;
 }
 

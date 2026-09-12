@@ -43,11 +43,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get minPassword =>
-      '8 caractères, une lettre, un chiffre et un symbole';
+      '8 caractères, une majuscule, un chiffre et un symbole';
 
   @override
   String get passwordPolicy =>
-      '8 caractères min., une lettre, un chiffre et un symbole';
+      '8 caractères min., une majuscule, un chiffre et un symbole';
 
   @override
   String get me => 'Moi';
@@ -838,7 +838,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get passwordMin8 =>
-      '8 caractères min., une lettre, un chiffre et un symbole';
+      '8 caractères min., une majuscule, un chiffre et un symbole';
 
   @override
   String get passwordMismatch => 'Les mots de passe ne correspondent pas';
@@ -884,5 +884,5 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorPasswordLength =>
-      'Le mot de passe doit faire au moins 8 caractères, avec une lettre, un chiffre et un symbole';
+      'Le mot de passe doit faire au moins 8 caractères, avec une majuscule, un chiffre et un symbole';
 }

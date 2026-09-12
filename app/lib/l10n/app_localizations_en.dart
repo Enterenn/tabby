@@ -42,11 +42,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidEmail => 'Invalid email';
 
   @override
-  String get minPassword => '8 characters, a letter, a number and a symbol';
+  String get minPassword =>
+      '8 characters, an uppercase letter, a number and a symbol';
 
   @override
   String get passwordPolicy =>
-      'At least 8 characters, a letter, a number and a symbol';
+      'At least 8 characters, an uppercase letter, a number and a symbol';
 
   @override
   String get me => 'Me';
@@ -830,7 +831,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordMin8 =>
-      'At least 8 characters, a letter, a number and a symbol';
+      'At least 8 characters, an uppercase letter, a number and a symbol';
 
   @override
   String get passwordMismatch => 'Passwords do not match';
@@ -876,5 +877,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorPasswordLength =>
-      'Password must be at least 8 characters and include a letter, a number and a symbol';
+      'Password must be at least 8 characters and include an uppercase letter, a number and a symbol';
 }
