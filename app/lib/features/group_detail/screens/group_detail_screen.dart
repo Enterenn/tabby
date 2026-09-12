@@ -336,11 +336,10 @@ class _BalanceTile extends StatelessWidget {
     final isMine =
         entry.fromUserId == currentUserId || entry.toUserId == currentUserId;
 
-    return Card(
+    return TabbyListCard(
       color: isMine ? cs.primaryContainer : cs.surfaceContainerLow,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+      padding: const EdgeInsets.all(16),
+      child: Row(
           children: [
             ExpressiveAvatar(label: entry.fromUserName, size: 36),
             const SizedBox(width: 12),
@@ -381,7 +380,6 @@ class _BalanceTile extends StatelessWidget {
               ),
           ],
         ),
-      ),
     );
   }
 
@@ -674,7 +672,6 @@ class _ExpenseTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final shapes = context.tabbyShapes;
     final semantic = context.tabbySemantic;
     final catColor = semantic.chartColorFor(expense.category);
     final onCat = semantic.onFor(catColor, cs);
@@ -692,17 +689,12 @@ class _ExpenseTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Material(
-              color: catColor,
-              shape: shapes.circle(),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(
-                  child: expense.category.iconWidget(size: 20, color: onCat),
-                ),
-              ),
+            TabbyCategoryGlyph(
+              icon: expense.category.flutterIcon,
+              background: catColor,
+              foreground: onCat,
+              size: 40,
+              iconSize: 20,
             ),
             const SizedBox(width: 12),
             Expanded(

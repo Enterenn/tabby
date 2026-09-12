@@ -217,7 +217,6 @@ class _CardFullScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final cs = context.tabbyColors;
-    final shapes = context.tabbyShapes;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLow,
@@ -245,13 +244,10 @@ class _CardFullScreen extends StatelessWidget {
                   enableHero: true,
                 ),
                 const SizedBox(height: 28),
-                Card(
+                TabbyListCard(
                   color: cs.surfaceContainerLowest,
-                  elevation: 0,
-                  shape: shapes.cardShape,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: card.isBarcode
+                  padding: const EdgeInsets.all(24),
+                  child: card.isBarcode
                         ? bw.BarcodeWidget(
                             barcode: bw.Barcode.code128(),
                             data: card.codeValue,
@@ -267,7 +263,6 @@ class _CardFullScreen extends StatelessWidget {
                             width: 220,
                             height: 220,
                           ),
-                  ),
                 )
                     .animate()
                     .fadeIn(delay: 160.ms, duration: 380.ms)

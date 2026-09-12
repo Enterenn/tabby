@@ -35,10 +35,9 @@ class _GroupCardState extends State<GroupCard> {
       scale: _pressed ? 0.98 : 1.0,
       duration: const Duration(milliseconds: 100),
       curve: Curves.easeOut,
-      child: Card(
+      child: TabbyListCard(
         color: cs.surfaceContainerLow,
         margin: const EdgeInsets.only(bottom: 8),
-        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: openGroup,
           onTapDown: (_) => setState(() => _pressed = true),

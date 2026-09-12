@@ -1,10 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../core/format/money.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../identity/expressive_badge.dart';
 import '../surfaces/expressive_tonal_card.dart';
+import '../surfaces/tabby_list_card.dart';
 import 'expressive_figure.dart';
 
 /// Bandeau hero réutilisable — label + chiffre + sous-titre.
@@ -22,6 +24,7 @@ class ExpressiveHeroBanner extends StatelessWidget {
     this.accentIcon,
     this.figureSize = ExpressiveFigureSize.hero,
     this.margin = const EdgeInsets.fromLTRB(16, 8, 16, 16),
+    this.compact = false,
   }) : assert(value != null || amount != null);
 
   final String label;
@@ -33,9 +36,12 @@ class ExpressiveHeroBanner extends StatelessWidget {
   final IconData? accentIcon;
   final ExpressiveFigureSize figureSize;
   final EdgeInsetsGeometry margin;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    if (compact) return _buildCompact(context);
+
     final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
     final semantic = context.tabbySemantic;
@@ -103,6 +109,58 @@ class ExpressiveHeroBanner extends StatelessWidget {
       variant: effectiveVariant,
       margin: margin,
       child: content,
+    );
+  }
+
+  Widget _buildCompact(BuildContext context) {
+    final cs = context.tabbyColors;
+    final tt = Theme.of(context).textTheme;
+    final display = amount != null
+        ? formatMoney(context, amount!)
+        : suffix.isEmpty
+            ? value!
+            : '$value$suffix';
+    final figureColor = amount == null || amount!.abs() < 0.01
+        ? cs.onSurface
+        : amount! > 0
+            ? context.tabbySemantic.success
+            : context.tabbySemantic.danger;
+
+    return TabbyListCard(
+      margin: margin,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(
+        children: [
+          if (accentIcon != null) ...[
+            Icon(accentIcon, size: 20, color: cs.onSurfaceVariant),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  display,
+                  style: tt.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: figureColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (subtitle != null)
+            Text(
+              subtitle!,
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+        ],
+      ),
     );
   }
 

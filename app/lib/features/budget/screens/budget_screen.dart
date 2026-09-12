@@ -275,79 +275,23 @@ class _GroupFilter extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: _GroupFilterChip(
+            child: TabbyFilterChip(
               label: context.l10n.allGroups,
               selected: selectedGroupId == null,
-              onTap: () => cubit.selectGroup(null),
+              onSelected: () => cubit.selectGroup(null),
             ),
           ),
           ...groups.map(
             (g) => Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: _GroupFilterChip(
+              child: TabbyFilterChip(
                 label: g.name,
                 selected: selectedGroupId == g.id,
-                onTap: () => cubit.selectGroup(g.id),
+                onSelected: () => cubit.selectGroup(g.id),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _GroupFilterChip extends StatelessWidget {
-  const _GroupFilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.tabbyColors;
-    final shapes = context.tabbyShapes;
-    final tt = Theme.of(context).textTheme;
-
-    return Material(
-      color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
-      elevation: 0,
-      shape: shapes.pill(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: shapes.radiusFull,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                Icon(
-                  Symbols.check_rounded,
-                  size: 16,
-                  color: cs.onPrimaryContainer,
-                  fill: 1,
-                ),
-                const SizedBox(width: 4),
-              ],
-              Text(
-                label,
-                style: tt.labelLarge?.copyWith(
-                  color: selected
-                      ? cs.onPrimaryContainer
-                      : cs.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -441,21 +385,13 @@ class _StatsSection extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Material(
-                          color: isSelected ? onCat : catColor,
-                          shape: shapes.circle(),
-                          clipBehavior: Clip.antiAlias,
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: Center(
-                              child: cat.category.iconWidget(
-                                size: 18,
-                                color: isSelected ? catColor : onCat,
-                                fill: 1,
-                              ),
-                            ),
-                          ),
+                        TabbyCategoryGlyph(
+                          icon: cat.category.flutterIcon,
+                          background: isSelected ? onCat : catColor,
+                          foreground: isSelected ? catColor : onCat,
+                          size: 36,
+                          iconSize: 18,
+                          fill: 1,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -538,20 +474,12 @@ class _BudgetCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Material(
-              color: isDanger ? semantic.danger : catColor,
-              shape: shapes.circle(),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(
-                  child: b.category.iconWidget(
-                    size: 22,
-                    color: isDanger ? semantic.onDanger : onCat,
-                  ),
-                ),
-              ),
+            TabbyCategoryGlyph(
+              icon: b.category.flutterIcon,
+              background: isDanger ? semantic.danger : catColor,
+              foreground: isDanger ? semantic.onDanger : onCat,
+              size: 40,
+              iconSize: 22,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -650,17 +578,12 @@ class _BudgetCard extends StatelessWidget {
       );
     }
 
-    return Card(
+    return TabbyListCard(
       margin: const EdgeInsets.only(bottom: 10),
       color: selected ? catColor.withValues(alpha: 0.12) : null,
-      child: InkWell(
-        borderRadius: shapes.radiusExtraLarge,
-        onTap: onConsult,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 4, 16),
-          child: content,
-        ),
-      ),
+      onTap: onConsult,
+      padding: const EdgeInsets.fromLTRB(16, 16, 4, 16),
+      child: content,
     );
   }
 
@@ -771,19 +694,12 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: catColor,
-                  borderRadius: context.tabbyShapes.radiusMedium,
-                ),
-                child: Center(
-                  child: b.category.iconWidget(
-                    size: 20,
-                    color: b.category.onResolvedColor,
-                  ),
-                ),
+              TabbyCategoryGlyph(
+                icon: b.category.flutterIcon,
+                background: catColor,
+                foreground: b.category.onResolvedColor,
+                size: 36,
+                iconSize: 20,
               ),
               const SizedBox(width: 10),
               Text(b.category.name, style: tt.titleMedium),

@@ -138,7 +138,7 @@ class _CategoryManagementScreenState
                 style: tt.titleMedium,
               ),
             ),
-            Card(
+            TabbyListCard(
               child: Column(
                 children: cats.asMap().entries.map((e) {
                   final i = e.key;
@@ -146,23 +146,15 @@ class _CategoryManagementScreenState
                   return Column(
                     children: [
                       ListTile(
-                        leading: Material(
-                          color: context.tabbySemantic.chartColorFor(cat),
-                          shape: context.tabbyShapes.circle(),
-                          clipBehavior: Clip.antiAlias,
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: Center(
-                              child: cat.iconWidget(
-                                size: 20,
-                                color: context.tabbySemantic.onFor(
-                                  context.tabbySemantic.chartColorFor(cat),
-                                  cs,
-                                ),
-                              ),
-                            ),
+                        leading: TabbyCategoryGlyph(
+                          icon: cat.flutterIcon,
+                          background: context.tabbySemantic.chartColorFor(cat),
+                          foreground: context.tabbySemantic.onFor(
+                            context.tabbySemantic.chartColorFor(cat),
+                            cs,
                           ),
+                          size: 36,
+                          iconSize: 20,
                         ),
                         title: Text(cat.name),
                         trailing: IconButton(

@@ -28,10 +28,9 @@ class ProfileScreen extends StatelessWidget {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
+              TabbyListCard(
+                padding: const EdgeInsets.all(20),
+                child: Row(
                     children: [
                       GestureDetector(
                         onTap: () => pickAndUploadAvatar(context),
@@ -91,16 +90,14 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
               ),
               const SizedBox(height: 24),
               Text(context.l10n.appearance,
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+              TabbyListCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -133,7 +130,6 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
               ),
               const SizedBox(height: 12),
               BlocBuilder<LocaleCubit, Locale?>(
@@ -144,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
                           ? context.l10n.languageFrench
                           : context.l10n.languageEnglish;
                   final flag = _languageFlag(stored?.languageCode);
-                  return Card(
+                  return TabbyListCard(
                     child: ListTile(
                       title: Text(flag == null ? label : '$flag  $label'),
                       trailing: const Icon(Symbols.chevron_right_rounded),
@@ -177,7 +173,7 @@ class ProfileScreen extends StatelessWidget {
                   if (!bio.available && !bio.enabled) {
                     return const SizedBox.shrink();
                   }
-                  return Card(
+                  return TabbyListCard(
                     child: SwitchListTile(
                       secondary: const Icon(Symbols.fingerprint_rounded),
                       title: Text(context.l10n.biometricSetting),
@@ -329,7 +325,7 @@ class _ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
 
-    return Card(
+    return TabbyListCard(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Icon(icon, color: color ?? cs.onSurface, size: 20),

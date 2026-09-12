@@ -4,10 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
-import '../../../shared/models/group.dart';
 import '../../../design_system/design_system.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/group_card.dart';
@@ -145,7 +143,25 @@ class _HomeViewState extends State<_HomeView> {
                       if (!hasGroups)
                         _HomeHeader(isEmpty: true)
                       else ...[
-                        _HomeHeroBanner(groups: state.groups),
+                        ExpressiveHeroBanner(
+                          label: context.l10n.globalBalance,
+                          amount: state.groups.fold<double>(
+                            0,
+                            (sum, g) => sum + g.balance,
+                          ),
+                          subtitle: context.l10n.activeGroups(state.groups.length),
+                          accentIcon: Symbols.account_balance_wallet_rounded,
+                          compact: true,
+                          margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
+                        )
+                            .animate()
+                            .fadeIn(duration: 350.ms, curve: Curves.easeOut)
+                            .slideY(
+                              begin: -0.05,
+                              end: 0,
+                              duration: 350.ms,
+                              curve: Curves.easeOut,
+                            ),
                         const SizedBox(height: 4),
                         _GroupsSectionHeader(
                           key: _headerLinkKey,
@@ -237,74 +253,6 @@ class _GroupsSectionHeader extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-// ─── Hero solde global ────────────────────────────────────────────────────────
-
-class _HomeHeroBanner extends StatelessWidget {
-  const _HomeHeroBanner({required this.groups});
-
-  final List<Group> groups;
-
-  @override
-  Widget build(BuildContext context) {
-    final netBalance =
-        groups.fold<double>(0, (sum, g) => sum + g.balance);
-    final count = groups.length;
-
-    final cs = context.tabbyColors;
-    final tt = Theme.of(context).textTheme;
-    final color = netBalance.abs() < 0.01
-        ? cs.onSurface
-        : netBalance > 0
-            ? context.tabbySemantic.success
-            : context.tabbySemantic.danger;
-
-    return Card(
-      margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Row(
-          children: [
-            Icon(
-              Symbols.account_balance_wallet_rounded,
-              size: 20,
-              color: cs.onSurfaceVariant,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.globalBalance,
-                    style: tt.labelMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    formatMoney(context, netBalance),
-                    style: tt.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              context.l10n.activeGroups(count),
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-            ),
-          ],
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(duration: 350.ms, curve: Curves.easeOut)
-        .slideY(begin: -0.05, end: 0, duration: 350.ms, curve: Curves.easeOut);
   }
 }
 

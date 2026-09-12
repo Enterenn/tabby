@@ -137,34 +137,24 @@ class _RecurringCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
-    final shapes = context.tabbyShapes;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
-        child: Row(
+    return TabbyListCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+      child: Row(
           children: [
-            // Icône catégorie
-            Material(
-              color: item.active
+            TabbyCategoryGlyph(
+              icon: item.category.flutterIcon,
+              background: item.active
                   ? context.tabbySemantic.chartColorFor(item.category)
                   : cs.surfaceContainerHighest,
-              shape: shapes.circle(),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: 44,
-                height: 44,
-                child: Icon(
-                  item.category.flutterIcon,
-                  color: item.active
-                      ? context.tabbySemantic.onFor(
-                          context.tabbySemantic.chartColorFor(item.category),
-                          cs,
-                        )
-                      : cs.onSurfaceVariant,
-                  size: 22,
-                ),
-              ),
+              foreground: item.active
+                  ? context.tabbySemantic.onFor(
+                      context.tabbySemantic.chartColorFor(item.category),
+                      cs,
+                    )
+                  : cs.onSurfaceVariant,
+              size: 44,
+              iconSize: 22,
             ),
             const SizedBox(width: 14),
 
@@ -227,7 +217,6 @@ class _RecurringCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
