@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_group_member
+from app.core.deps import ensure_can_manage_paid, get_current_user, require_group_member
 from app.models.models import (
     Category,
     Expense,
@@ -133,6 +133,7 @@ async def toggle_recurring(
     rec = result.scalar_one_or_none()
     if rec is None:
         raise HTTPException(status_code=404, detail="Not found")
+    await ensure_can_manage_paid(db, group_id, current_user, rec.paid_by)
     rec.active = not rec.active
     await db.flush()
     return _to_response(rec)
@@ -155,6 +156,7 @@ async def delete_recurring(
     rec = result.scalar_one_or_none()
     if rec is None:
         raise HTTPException(status_code=404, detail="Not found")
+    await ensure_can_manage_paid(db, group_id, current_user, rec.paid_by)
     await db.delete(rec)
 
 

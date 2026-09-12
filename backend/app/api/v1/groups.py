@@ -189,7 +189,7 @@ async def set_group_pin(
 async def update_group(
     group_id: uuid.UUID,
     body: GroupUpdate,
-    current_user: User = Depends(require_group_member),
+    current_user: User = Depends(require_group_owner),
     db: AsyncSession = Depends(get_db),
 ):
     group = await db.get(Group, group_id)

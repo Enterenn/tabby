@@ -51,16 +51,43 @@ async def require_group_member(
     return current_user
 
 
+def is_group_admin(user_id: uuid.UUID, owner_id: uuid.UUID) -> bool:
+    return user_id == owner_id
+
+
+def can_manage_paid_record(
+    user_id: uuid.UUID, owner_id: uuid.UUID, paid_by: uuid.UUID
+) -> bool:
+    """Group admin or the person who paid can edit/delete the record."""
+    return is_group_admin(user_id, owner_id) or user_id == paid_by
+
+
 async def require_group_owner(
     group_id: uuid.UUID,
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Ensures the current user owns the requested group."""
+    """Ensures the current user is the group admin (the creator)."""
     group = await db.get(Group, group_id)
-    if group is None or group.owner_id != current_user.id:
+    if group is None or not is_group_admin(current_user.id, group.owner_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the group owner can perform this action",
+            detail="Only the group admin can perform this action",
         )
     return current_user
+
+
+async def ensure_can_manage_paid(
+    db: AsyncSession,
+    group_id: uuid.UUID,
+    current_user: User,
+    paid_by: uuid.UUID,
+) -> None:
+    group = await db.get(Group, group_id)
+    if group is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+    if not can_manage_paid_record(current_user.id, group.owner_id, paid_by):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the group admin or the payer can perform this action",
+        )

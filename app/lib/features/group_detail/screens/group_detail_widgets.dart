@@ -265,6 +265,7 @@ class _GroupDetailSheet extends StatelessWidget {
                 key: ValueKey(expenses[i].id),
                 expense: expenses[i],
                 currentUserId: currentUserId,
+                ownerId: group.ownerId,
               ),
             ),
             _GroupedSection(
@@ -362,10 +363,12 @@ class _ExpenseTile extends StatelessWidget {
     super.key,
     required this.expense,
     required this.currentUserId,
+    required this.ownerId,
   });
 
   final Expense expense;
   final String currentUserId;
+  final String? ownerId;
 
   @override
   Widget build(BuildContext context) {
@@ -381,8 +384,14 @@ class _ExpenseTile extends StatelessWidget {
     final metaLine =
         '$payerLabel - ${_formatRelativeDate(context, expense.expenseDate)}';
 
+    final canManage = canManagePaidRecord(
+      userId: currentUserId,
+      ownerId: ownerId,
+      paidBy: expense.paidBy,
+    );
+
     return InkWell(
-      onLongPress: () => _showExpenseActions(context),
+      onLongPress: canManage ? () => _showExpenseActions(context) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(

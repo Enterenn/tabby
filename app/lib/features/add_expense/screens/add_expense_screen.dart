@@ -198,9 +198,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
               ready = state;
               _lastReady = state;
               submitting = false;
-            } else {
+            } else if (state is AddExpenseSubmitting) {
               ready = _lastReady!;
               submitting = true;
+            } else {
+              ready = _lastReady!;
+              submitting = false;
             }
 
             if (_selectedPayerId == null &&

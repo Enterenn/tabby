@@ -217,7 +217,8 @@ class BudgetCubit extends Cubit<BudgetState> {
         groupId: s?.selectedGroupId,
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
       return false;
     }
   }
@@ -240,7 +241,8 @@ class BudgetCubit extends Cubit<BudgetState> {
         groupId: s?.selectedGroupId,
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
       return false;
     }
   }
@@ -258,7 +260,8 @@ class BudgetCubit extends Cubit<BudgetState> {
         groupId: s?.selectedGroupId,
       );
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
       return false;
     }
   }

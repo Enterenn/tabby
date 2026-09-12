@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/token_storage.dart';
+import '../../../core/auth/group_admin.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../features/home/cubit/home_cubit.dart';
@@ -222,11 +223,12 @@ class _GroupSliverAppBar extends StatelessWidget {
             }
           },
         ),
-        TabbyActionSheetItem(
-          icon: Symbols.edit_rounded,
-          label: context.l10n.editName,
-          onTap: () => _showEditNameDialog(context, group),
-        ),
+        if (isGroupAdmin(userId: tokenStorage.userId, ownerId: group.ownerId))
+          TabbyActionSheetItem(
+            icon: Symbols.edit_rounded,
+            label: context.l10n.editName,
+            onTap: () => _showEditNameDialog(context, group),
+          ),
         const TabbyActionSheetItem.divider(),
         TabbyActionSheetItem(
           icon: Symbols.exit_to_app_rounded,

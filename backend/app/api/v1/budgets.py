@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_group_member
+from app.core.deps import get_current_user, require_group_member, require_group_owner
 from app.models.models import Budget, Category, Expense, GroupMember, User
 from app.schemas.budget import BudgetCreate, BudgetResponse, BudgetUpdate
 from app.schemas.expense import CategoryResponse
@@ -42,15 +42,37 @@ async def _spending_for_month(
     year: int,
     month: int,
 ) -> float:
+    spent = await _spending_for_pairs(db, [(group_id, category_id)], year, month)
+    return spent[(group_id, category_id)]
+
+
+async def _spending_for_pairs(
+    db: AsyncSession,
+    pairs: list[tuple[uuid.UUID, uuid.UUID]],
+    year: int,
+    month: int,
+) -> dict[tuple[uuid.UUID, uuid.UUID], float]:
+    """One grouped query for all (group_id, category_id) spending in a month."""
+    out = {pair: 0.0 for pair in pairs}
+    if not pairs:
+        return out
+    group_ids = {group_id for group_id, _ in pairs}
+    category_ids = {category_id for _, category_id in pairs}
     result = await db.execute(
-        select(func.coalesce(func.sum(Expense.amount), 0)).where(
-            Expense.group_id == group_id,
-            Expense.category_id == category_id,
+        select(Expense.group_id, Expense.category_id, func.coalesce(func.sum(Expense.amount), 0))
+        .where(
+            Expense.group_id.in_(group_ids),
+            Expense.category_id.in_(category_ids),
             extract("year", Expense.expense_date) == year,
             extract("month", Expense.expense_date) == month,
         )
+        .group_by(Expense.group_id, Expense.category_id)
     )
-    return float(result.scalar_one())
+    for group_id, category_id, total in result.all():
+        key = (group_id, category_id)
+        if key in out:
+            out[key] = float(total)
+    return out
 
 
 def _to_response(b: Budget, spent: float) -> BudgetResponse:
@@ -90,13 +112,13 @@ async def list_budgets(
         .order_by(Budget.category_id)
     )
     budgets = result.scalars().all()
-    out = []
-    for b in budgets:
-        spent = await _spending_for_month(
-            db, group_id, b.category_id, target_year, target_month
-        )
-        out.append(_to_response(b, spent))
-    return out
+    spent = await _spending_for_pairs(
+        db,
+        [(group_id, b.category_id) for b in budgets],
+        target_year,
+        target_month,
+    )
+    return [_to_response(b, spent[(group_id, b.category_id)]) for b in budgets]
 
 
 @router.post(
@@ -107,7 +129,7 @@ async def list_budgets(
 async def create_budget(
     group_id: uuid.UUID,
     body: BudgetCreate,
-    current_user: User = Depends(require_group_member),
+    current_user: User = Depends(require_group_owner),
     db: AsyncSession = Depends(get_db),
 ):
     cat_id = uuid.UUID(body.category_id)
@@ -155,7 +177,7 @@ async def update_budget(
     group_id: uuid.UUID,
     budget_id: uuid.UUID,
     body: BudgetUpdate,
-    current_user: User = Depends(require_group_member),
+    current_user: User = Depends(require_group_owner),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -184,7 +206,7 @@ async def update_budget(
 async def delete_budget(
     group_id: uuid.UUID,
     budget_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
+    current_user: User = Depends(require_group_owner),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -229,10 +251,10 @@ async def list_all_budgets(
         .order_by(Budget.group_id)
     )
     budgets = result.scalars().all()
-    out = []
-    for b in budgets:
-        spent = await _spending_for_month(
-            db, b.group_id, b.category_id, target_year, target_month
-        )
-        out.append(_to_response(b, spent))
-    return out
+    spent = await _spending_for_pairs(
+        db,
+        [(b.group_id, b.category_id) for b in budgets],
+        target_year,
+        target_month,
+    )
+    return [_to_response(b, spent[(b.group_id, b.category_id)]) for b in budgets]

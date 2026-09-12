@@ -102,7 +102,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
   Future<String?> generateInviteCode() async {
     try {
       return await _groups.createInvite(_groupId);
-    } catch (_) {
+    } catch (e) {
       return null;
     }
   }

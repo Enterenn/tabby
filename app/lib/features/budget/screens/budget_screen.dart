@@ -2,6 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/api/token_storage.dart';
+import '../../../core/auth/group_admin.dart';
 import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
@@ -12,6 +14,25 @@ import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/models/stats.dart';
 import '../cubit/budget_cubit.dart';
+
+bool _isAdminOf(List<Group> groups, String? groupId) {
+  final userId = tokenStorage.userId;
+  if (groupId == null) {
+    return groups.any((g) => isGroupAdmin(userId: userId, ownerId: g.ownerId));
+  }
+  for (final group in groups) {
+    if (group.id == groupId) {
+      return isGroupAdmin(userId: userId, ownerId: group.ownerId);
+    }
+  }
+  return false;
+}
+
+List<Group> _adminGroups(List<Group> groups) {
+  return groups
+      .where((g) => isGroupAdmin(userId: tokenStorage.userId, ownerId: g.ownerId))
+      .toList();
+}
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
@@ -59,6 +80,7 @@ class _BudgetView extends StatelessWidget {
               ),
             BudgetLoaded() => _BudgetContent(
                 state: state,
+                canCreate: _isAdminOf(state.groups, state.selectedGroupId),
                 onCreateBudget: () => _showCreateDialog(context, state),
               ),
             _ => const SizedBox.shrink(),
@@ -84,10 +106,12 @@ class _BudgetView extends StatelessWidget {
 class _BudgetContent extends StatelessWidget {
   const _BudgetContent({
     required this.state,
+    required this.canCreate,
     required this.onCreateBudget,
   });
 
   final BudgetLoaded state;
+  final bool canCreate;
   final VoidCallback onCreateBudget;
 
   @override
@@ -130,10 +154,11 @@ class _BudgetContent extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                TextButton(
-                  onPressed: onCreateBudget,
-                  child: Text(context.l10n.newBudget),
-                ),
+                if (canCreate)
+                  TextButton(
+                    onPressed: onCreateBudget,
+                    child: Text(context.l10n.newBudget),
+                  ),
               ],
             ),
           ),
@@ -159,6 +184,7 @@ class _BudgetContent extends StatelessWidget {
                   return _BudgetCard(
                     budget: budget,
                     selected: state.selectedCategoryId == budget.category.id,
+                    canManage: _isAdminOf(state.groups, budget.groupId),
                   );
                 },
                 childCount: state.budgets.length,
@@ -167,7 +193,9 @@ class _BudgetContent extends StatelessWidget {
           ),
         ] else
           SliverToBoxAdapter(
-            child: _BudgetEmpty(onCreateBudget: onCreateBudget),
+            child: _BudgetEmpty(
+              onCreateBudget: canCreate ? onCreateBudget : null,
+            ),
           ),
       ],
     );
@@ -175,9 +203,9 @@ class _BudgetContent extends StatelessWidget {
 }
 
 class _BudgetEmpty extends StatelessWidget {
-  const _BudgetEmpty({required this.onCreateBudget});
+  const _BudgetEmpty({this.onCreateBudget});
 
-  final VoidCallback onCreateBudget;
+  final VoidCallback? onCreateBudget;
 
   @override
   Widget build(BuildContext context) {
@@ -197,11 +225,13 @@ class _BudgetEmpty extends StatelessWidget {
             textAlign: TextAlign.center,
             style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: onCreateBudget,
-            child: Text(context.l10n.newBudget),
-          ),
+          if (onCreateBudget != null) ...[
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onCreateBudget,
+              child: Text(context.l10n.newBudget),
+            ),
+          ],
         ],
       ),
     );
@@ -449,9 +479,14 @@ class _StatsSection extends StatelessWidget {
 // ─── Budget card ──────────────────────────────────────────────────────────────
 
 class _BudgetCard extends StatelessWidget {
-  const _BudgetCard({required this.budget, required this.selected});
+  const _BudgetCard({
+    required this.budget,
+    required this.selected,
+    required this.canManage,
+  });
   final Budget budget;
   final bool selected;
+  final bool canManage;
 
   @override
   Widget build(BuildContext context) {
@@ -517,11 +552,12 @@ class _BudgetCard extends StatelessWidget {
                       ? semantic.onWarningContainer
                       : semantic.onSuccessContainer,
             ),
-            IconButton(
-              tooltip: context.l10n.budgetActions,
-              icon: const Icon(Symbols.more_vert_rounded),
-              onPressed: () => _showActions(context),
-            ),
+            if (canManage)
+              IconButton(
+                tooltip: context.l10n.budgetActions,
+                icon: const Icon(Symbols.more_vert_rounded),
+                onPressed: () => _showActions(context),
+              ),
           ],
         ),
         const SizedBox(height: 14),
@@ -745,10 +781,11 @@ class _BudgetDialogState extends State<_BudgetDialog> {
   @override
   void initState() {
     super.initState();
-    if (widget.state.groups.length == 1) {
-      _selectedGroup = widget.state.groups.first;
+    final adminGroups = _adminGroups(widget.state.groups);
+    if (adminGroups.length == 1) {
+      _selectedGroup = adminGroups.first;
     } else if (widget.state.selectedGroupId != null) {
-      for (final group in widget.state.groups) {
+      for (final group in adminGroups) {
         if (group.id == widget.state.selectedGroupId) {
           _selectedGroup = group;
           break;
@@ -799,13 +836,13 @@ class _BudgetDialogState extends State<_BudgetDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.state.groups.length > 1) ...[
+          if (_adminGroups(widget.state.groups).length > 1) ...[
             Text(context.l10n.group, style: tt.labelLarge),
             const SizedBox(height: 6),
             DropdownButtonFormField<Group>(
               initialValue: _selectedGroup,
               hint: Text(context.l10n.chooseGroup),
-              items: widget.state.groups
+              items: _adminGroups(widget.state.groups)
                   .map((g) => DropdownMenuItem(
                         value: g,
                         child: Text(g.name),

@@ -67,7 +67,8 @@ class CardsCubit extends Cubit<CardsState> {
       );
       await load();
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
       return false;
     }
   }
@@ -77,7 +78,8 @@ class CardsCubit extends Cubit<CardsState> {
       await cardsRepository.delete(id);
       await load();
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
       return false;
     }
   }
@@ -87,7 +89,8 @@ class CardsCubit extends Cubit<CardsState> {
     if (!isClosed) emit(CardsLoaded(newOrder));
     try {
       await cardsRepository.reorder(newOrder);
-    } catch (_) {
+    } catch (e) {
+      if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
       await load();
     }
   }

@@ -155,7 +155,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
         emit(current.copyWith(categories: [...current.categories, newCat]));
       }
       return newCat;
-    } catch (_) {
+    } catch (e) {
       return null;
     }
   }
@@ -198,8 +198,8 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
 
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
-    } catch (_) {
-      if (!isClosed) emit(current);
+    } catch (e) {
+      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
       return false;
     }
   }

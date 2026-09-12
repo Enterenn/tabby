@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_group_member
+from app.core.deps import ensure_can_manage_paid, get_current_user, require_group_member
 from app.core.fcm import send_expense_notification
 from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember, User
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, ExpenseUpdate, CategoryResponse, SplitItem
@@ -196,6 +196,7 @@ async def update_expense(
     expense = expense.scalar_one_or_none()
     if expense is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
+    await ensure_can_manage_paid(db, group_id, current_user, expense.paid_by)
 
     if body.name is not None:
         expense.name = body.name.strip()
@@ -250,4 +251,5 @@ async def delete_expense(
     expense = await db.get(Expense, expense_id)
     if expense is None or expense.group_id != group_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
+    await ensure_can_manage_paid(db, group_id, current_user, expense.paid_by)
     await db.delete(expense)

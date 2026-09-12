@@ -2,11 +2,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/api/token_storage.dart';
+import '../../../core/auth/group_admin.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../features/home/cubit/home_cubit.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/recurring_expense.dart';
 import '../../../design_system/design_system.dart';
 import '../cubit/recurring_cubit.dart';
+
+String? _ownerIdFor(BuildContext context, String groupId) {
+  final home = context.read<HomeCubit>().state;
+  if (home is HomeLoaded) {
+    for (final group in home.groups) {
+      if (group.id == groupId) return group.ownerId;
+    }
+  }
+  return null;
+}
 
 class RecurringExpensesScreen extends StatelessWidget {
   const RecurringExpensesScreen({super.key});
@@ -61,16 +74,28 @@ class _RecurringView extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
                   separatorBuilder: (context, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, i) => _RecurringCard(
-                    item: items[i],
-                    onToggle: () async {
-                      final err =
-                          await context.read<RecurringCubit>().toggle(items[i]);
-                      if (!context.mounted || err == null) return;
-                      showTabbySnack(context, context.l10nError(err));
-                    },
-                    onDelete: () => _delete(context, items[i]),
-                  ),
+                  itemBuilder: (context, i) {
+                    final item = items[i];
+                    final canManage = canManagePaidRecord(
+                      userId: tokenStorage.userId,
+                      ownerId: _ownerIdFor(context, item.groupId),
+                      paidBy: item.paidBy,
+                    );
+                    return _RecurringCard(
+                      item: item,
+                      canManage: canManage,
+                      onToggle: canManage
+                          ? () async {
+                              final err = await context
+                                  .read<RecurringCubit>()
+                                  .toggle(item);
+                              if (!context.mounted || err == null) return;
+                              showTabbySnack(context, context.l10nError(err));
+                            }
+                          : null,
+                      onDelete: canManage ? () => _delete(context, item) : null,
+                    );
+                  },
                 ),
               ),
           };
@@ -83,13 +108,15 @@ class _RecurringView extends StatelessWidget {
 class _RecurringCard extends StatelessWidget {
   const _RecurringCard({
     required this.item,
+    required this.canManage,
     required this.onToggle,
     required this.onDelete,
   });
 
   final RecurringExpense item;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
+  final bool canManage;
+  final VoidCallback? onToggle;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -149,21 +176,22 @@ class _RecurringCard extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Switch(
-                value: item.active,
-                onChanged: (_) => onToggle(),
-              ),
-              IconButton(
-                icon: Icon(Symbols.delete_rounded, size: 20, color: cs.error),
-                onPressed: onDelete,
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
+          if (canManage)
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Switch(
+                  value: item.active,
+                  onChanged: onToggle == null ? null : (_) => onToggle!(),
+                ),
+                IconButton(
+                  icon: Icon(Symbols.delete_rounded, size: 20, color: cs.error),
+                  onPressed: onDelete,
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
         ],
       ),
     );
