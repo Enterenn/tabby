@@ -86,9 +86,9 @@
   "groupName": "Group name",
   "createGroupSubmit": "Create group",
   "joinGroupHeadline": "Enter the invite code",
-  "joinGroupHint": "Ask the person who created the group for the 6-digit code.",
-  "inviteCodeLabel": "6-digit code",
-  "inviteCodeRequired": "A 6-digit code is required",
+  "joinGroupHint": "Ask the person who created the group for the 8-character invite code.",
+  "inviteCodeLabel": "8-character code",
+  "inviteCodeRequired": "An 8-character code is required",
   "joinSubmit": "Join",
   "joinedGroup": "You've joined the group!",
 

@@ -91,9 +91,9 @@
   "groupName": "Nom du groupe",
   "createGroupSubmit": "Créer le groupe",
   "joinGroupHeadline": "Entrer le code d'invitation",
-  "joinGroupHint": "Demande le code à 6 chiffres à la personne qui a créé le groupe.",
-  "inviteCodeLabel": "Code à 6 chiffres",
-  "inviteCodeRequired": "Code à 6 chiffres requis",
+  "joinGroupHint": "Demande le code d'invitation à 8 caractères à la personne qui a créé le groupe.",
+  "inviteCodeLabel": "Code à 8 caractères",
+  "inviteCodeRequired": "Code à 8 caractères requis",
   "joinSubmit": "Rejoindre",
   "joinedGroup": "Tu as rejoint le groupe !",
 

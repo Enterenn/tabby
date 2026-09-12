@@ -581,19 +581,19 @@ abstract class AppLocalizations {
   /// No description provided for @joinGroupHint.
   ///
   /// In fr, this message translates to:
-  /// **'Demande le code à 6 chiffres à la personne qui a créé le groupe.'**
+  /// **'Demande le code d\'invitation à 8 caractères à la personne qui a créé le groupe.'**
   String get joinGroupHint;
 
   /// No description provided for @inviteCodeLabel.
   ///
   /// In fr, this message translates to:
-  /// **'Code à 6 chiffres'**
+  /// **'Code à 8 caractères'**
   String get inviteCodeLabel;
 
   /// No description provided for @inviteCodeRequired.
   ///
   /// In fr, this message translates to:
-  /// **'Code à 6 chiffres requis'**
+  /// **'Code à 8 caractères requis'**
   String get inviteCodeRequired;
 
   /// No description provided for @joinSubmit.

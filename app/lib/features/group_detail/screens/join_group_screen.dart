@@ -30,7 +30,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
     setState(() => _loading = true);
     try {
       await apiClient.dio.post('/groups/join', data: {
-        'code': _codeCtrl.text.trim(),
+        'code': _codeCtrl.text.trim().toUpperCase(),
       });
       if (mounted) {
         showTabbySnack(context, context.l10n.joinedGroup);
@@ -72,8 +72,9 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
               const SizedBox(height: 32),
               TextFormField(
                 controller: _codeCtrl,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 8,
                 autofocus: true,
                 textAlign: TextAlign.center,
                 style: context.tabbyType.clockDisplay.copyWith(
@@ -85,7 +86,9 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                   counterText: '',
                 ),
                 validator: (v) =>
-                    v == null || v.length != 6 ? context.l10n.inviteCodeRequired : null,
+                    v == null || v.trim().length != 8
+                        ? context.l10n.inviteCodeRequired
+                        : null,
               ),
               const SizedBox(height: 32),
               SizedBox(

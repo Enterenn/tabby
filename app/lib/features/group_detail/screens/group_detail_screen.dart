@@ -228,12 +228,13 @@ class _GroupSliverAppBar extends StatelessWidget {
           danger: true,
           onTap: () => _confirmLeave(context),
         ),
-        TabbyActionSheetItem(
-          icon: Symbols.delete_rounded,
-          label: context.l10n.deleteGroup,
-          danger: true,
-          onTap: () => _confirmDelete(context),
-        ),
+        if (tokenStorage.userId != null && tokenStorage.userId == group.ownerId)
+          TabbyActionSheetItem(
+            icon: Symbols.delete_rounded,
+            label: context.l10n.deleteGroup,
+            danger: true,
+            onTap: () => _confirmDelete(context),
+          ),
       ],
     );
   }

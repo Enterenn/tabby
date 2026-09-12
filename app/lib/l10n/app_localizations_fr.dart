@@ -267,13 +267,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get joinGroupHint =>
-      'Demande le code à 6 chiffres à la personne qui a créé le groupe.';
+      'Demande le code d\'invitation à 8 caractères à la personne qui a créé le groupe.';
 
   @override
-  String get inviteCodeLabel => 'Code à 6 chiffres';
+  String get inviteCodeLabel => 'Code à 8 caractères';
 
   @override
-  String get inviteCodeRequired => 'Code à 6 chiffres requis';
+  String get inviteCodeRequired => 'Code à 8 caractères requis';
 
   @override
   String get joinSubmit => 'Rejoindre';
