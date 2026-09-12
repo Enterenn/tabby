@@ -151,8 +151,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get loginNoAccount => 'Pas encore de compte ? S\'inscrire';
 
   @override
-  String get biometricSetting =>
-      'Connexion par biométrie (Face ID / Empreinte)';
+  String get biometricSetting => 'Connexion par biométrie';
 
   @override
   String get biometricSettingHint =>
@@ -465,7 +464,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get languageEnglish => 'English';
 
   @override
-  String get languageSystem => 'Système';
+  String get languageSystem => 'Langue de l\'appareil';
 
   @override
   String get chooseLanguage => 'Choisir la langue';

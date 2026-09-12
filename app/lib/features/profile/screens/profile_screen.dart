@@ -108,14 +108,6 @@ class ProfileScreen extends StatelessWidget {
                         context.l10n.theme,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.l10n.themeHint,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                      ),
                       const SizedBox(height: 12),
                       BlocBuilder<ThemeCubit, ThemeMode>(
                         builder: (context, mode) {
@@ -147,18 +139,15 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               BlocBuilder<LocaleCubit, Locale?>(
                 builder: (context, stored) {
-                  final effective = Localizations.localeOf(context);
                   final label = stored == null
                       ? context.l10n.languageSystem
-                      : effective.languageCode == 'fr'
+                      : stored.languageCode == 'fr'
                           ? context.l10n.languageFrench
                           : context.l10n.languageEnglish;
+                  final flag = _languageFlag(stored?.languageCode);
                   return Card(
                     child: ListTile(
-                      title: Text(context.l10n.language),
-                      subtitle: Text(
-                        '$label — ${context.l10n.languageHint}',
-                      ),
+                      title: Text(flag == null ? label : '$flag  $label'),
                       trailing: const Icon(Symbols.chevron_right_rounded),
                       shape: context.tabbyShapes.fieldShape,
                       onTap: () => _showLanguageSheet(context, stored),
@@ -193,11 +182,6 @@ class ProfileScreen extends StatelessWidget {
                     child: SwitchListTile(
                       secondary: const Icon(Symbols.fingerprint_rounded),
                       title: Text(context.l10n.biometricSetting),
-                      subtitle: Text(
-                        bio.available
-                            ? context.l10n.biometricSettingHint
-                            : context.l10n.biometricUnavailable,
-                      ),
                       value: bio.enabled,
                       shape: context.tabbyShapes.fieldShape,
                       onChanged: (value) async {
@@ -287,6 +271,7 @@ Future<void> _showLanguageSheet(BuildContext context, Locale? stored) {
               ),
               _LanguageOption(
                 label: ctx.l10n.languageFrench,
+                flag: _languageFlag('fr'),
                 selected: stored?.languageCode == 'fr',
                 onTap: () {
                   cubit.setLocale(const Locale('fr'));
@@ -295,6 +280,7 @@ Future<void> _showLanguageSheet(BuildContext context, Locale? stored) {
               ),
               _LanguageOption(
                 label: ctx.l10n.languageEnglish,
+                flag: _languageFlag('en'),
                 selected: stored?.languageCode == 'en',
                 onTap: () {
                   cubit.setLocale(const Locale('en'));
@@ -309,21 +295,29 @@ Future<void> _showLanguageSheet(BuildContext context, Locale? stored) {
   );
 }
 
+String? _languageFlag(String? languageCode) => switch (languageCode) {
+      'fr' => '🇫🇷',
+      'en' => '🇬🇧',
+      _ => null,
+    };
+
 class _LanguageOption extends StatelessWidget {
   const _LanguageOption({
     required this.label,
     required this.selected,
     required this.onTap,
+    this.flag,
   });
 
   final String label;
+  final String? flag;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      title: Text(label),
+      title: Text(flag == null ? label : '$flag  $label'),
       trailing: selected ? const Icon(Symbols.check_rounded) : null,
       selected: selected,
       shape: context.tabbyShapes.fieldShape,

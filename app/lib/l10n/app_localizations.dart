@@ -377,7 +377,7 @@ abstract class AppLocalizations {
   /// No description provided for @biometricSetting.
   ///
   /// In fr, this message translates to:
-  /// **'Connexion par biométrie (Face ID / Empreinte)'**
+  /// **'Connexion par biométrie'**
   String get biometricSetting;
 
   /// No description provided for @biometricSettingHint.
@@ -929,7 +929,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageSystem.
   ///
   /// In fr, this message translates to:
-  /// **'Système'**
+  /// **'Langue de l\'appareil'**
   String get languageSystem;
 
   /// No description provided for @chooseLanguage.
