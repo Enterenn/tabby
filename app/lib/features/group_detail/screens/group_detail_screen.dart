@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
@@ -567,7 +568,11 @@ class _MemberTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          ExpressiveAvatar(label: member.user.name, size: 40),
+          ExpressiveAvatar(
+            label: member.user.name,
+            size: 40,
+            imageUrl: resolveMediaUrl(member.user.avatarUrl),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

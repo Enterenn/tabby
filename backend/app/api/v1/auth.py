@@ -1,6 +1,9 @@
+import io
 import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,9 +16,21 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.core.uploads import (
+    ALLOWED_AVATAR_SUFFIXES,
+    ALLOWED_AVATAR_TYPES,
+    MAX_AVATAR_BYTES,
+    MAX_AVATAR_SIZE,
+    MIN_AVATAR_SIZE,
+    avatar_path,
+    avatar_public_url,
+    ensure_upload_dirs,
+)
 from app.models.models import User
 from app.schemas.auth import (
+    ChangePasswordRequest,
     LoginRequest,
+    ProfileUpdate,
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
@@ -26,14 +41,18 @@ from jose import JWTError  # noqa: F401 (used in refresh)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _user_response(user: User) -> UserResponse:
+    return UserResponse(
+        id=str(user.id),
+        name=user.name,
+        email=user.email,
+        avatar_url=avatar_public_url(str(user.id)) if user.avatar_url else None,
+    )
+
+
 @router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
-    return UserResponse(
-        id=str(current_user.id),
-        name=current_user.name,
-        email=current_user.email,
-        avatar_url=current_user.avatar_url,
-    )
+    return _user_response(current_user)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -50,7 +69,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     )
     db.add(user)
     await db.flush()
-    return UserResponse(id=str(user.id), name=user.name, email=user.email)
+    return _user_response(user)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -86,3 +105,93 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
         access_token=create_access_token(str(user.id)),
         refresh_token=create_refresh_token(str(user.id)),
     )
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_profile(
+    body: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.name is not None:
+        current_user.name = body.name
+    if body.email is not None and body.email != current_user.email:
+        existing = await db.execute(select(User).where(User.email == body.email))
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
+        current_user.email = body.email
+    await db.flush()
+    return _user_response(current_user)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not verify_password(body.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    current_user.password_hash = hash_password(body.new_password)
+    await db.flush()
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    content_type = (file.content_type or "").lower()
+    suffix = Path(file.filename or "").suffix.lower()
+    if content_type not in ALLOWED_AVATAR_TYPES and suffix not in ALLOWED_AVATAR_SUFFIXES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be JPEG or PNG",
+        )
+
+    data = await file.read()
+    if len(data) > MAX_AVATAR_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File exceeds 5 MB",
+        )
+
+    try:
+        image = Image.open(io.BytesIO(data))
+        image.load()
+    except (UnidentifiedImageError, OSError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be JPEG or PNG",
+        ) from None
+
+    width, height = image.size
+    if width < MIN_AVATAR_SIZE or height < MIN_AVATAR_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image must be at least 128x128",
+        )
+    if width > MAX_AVATAR_SIZE or height > MAX_AVATAR_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image must be at most 1024x1024",
+        )
+
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+
+    ensure_upload_dirs()
+    dest = avatar_path(str(current_user.id))
+    image.save(dest, format="JPEG", quality=88)
+
+    current_user.avatar_url = f"/uploads/avatars/{current_user.id}.jpg"
+    await db.flush()
+    return _user_response(current_user)
+

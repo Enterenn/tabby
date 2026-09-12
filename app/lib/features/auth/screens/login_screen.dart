@@ -106,8 +106,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     validator: (v) =>
-                        v == null || v.length < 6
-                            ? context.l10n.minPassword
+                        v == null || v.isEmpty
+                            ? context.l10n.requiredField
                             : null,
                   ),
 

@@ -167,8 +167,14 @@ abstract class AppLocalizations {
   /// No description provided for @minPassword.
   ///
   /// In fr, this message translates to:
-  /// **'Minimum 6 caractères'**
+  /// **'8 caractères, une lettre, un chiffre et un symbole'**
   String get minPassword;
+
+  /// No description provided for @passwordPolicy.
+  ///
+  /// In fr, this message translates to:
+  /// **'8 caractères min., une lettre, un chiffre et un symbole'**
+  String get passwordPolicy;
 
   /// No description provided for @me.
   ///
@@ -1501,6 +1507,162 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **' doit à '**
   String get owesTo;
+
+  /// No description provided for @personalInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Informations personnelles'**
+  String get personalInfo;
+
+  /// No description provided for @personalInfoHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom, e-mail et mot de passe'**
+  String get personalInfoHint;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le profil'**
+  String get editProfile;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom'**
+  String get nameLabel;
+
+  /// No description provided for @nameTooShort.
+  ///
+  /// In fr, this message translates to:
+  /// **'2 caractères minimum'**
+  String get nameTooShort;
+
+  /// No description provided for @nameTooLong.
+  ///
+  /// In fr, this message translates to:
+  /// **'50 caractères maximum'**
+  String get nameTooLong;
+
+  /// No description provided for @passwordSection.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mot de passe'**
+  String get passwordSection;
+
+  /// No description provided for @currentPassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mot de passe actuel'**
+  String get currentPassword;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau mot de passe'**
+  String get newPassword;
+
+  /// No description provided for @confirmPassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmer le mot de passe'**
+  String get confirmPassword;
+
+  /// No description provided for @passwordMin8.
+  ///
+  /// In fr, this message translates to:
+  /// **'8 caractères min., une lettre, un chiffre et un symbole'**
+  String get passwordMin8;
+
+  /// No description provided for @passwordMismatch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les mots de passe ne correspondent pas'**
+  String get passwordMismatch;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer le mot de passe'**
+  String get changePassword;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil mis à jour'**
+  String get profileSaved;
+
+  /// No description provided for @passwordChanged.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mot de passe modifié'**
+  String get passwordChanged;
+
+  /// No description provided for @changeAvatar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer la photo'**
+  String get changeAvatar;
+
+  /// No description provided for @pickGallery.
+  ///
+  /// In fr, this message translates to:
+  /// **'Galerie'**
+  String get pickGallery;
+
+  /// No description provided for @pickCamera.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appareil photo'**
+  String get pickCamera;
+
+  /// No description provided for @avatarInvalidType.
+  ///
+  /// In fr, this message translates to:
+  /// **'Utilise un fichier JPG ou PNG'**
+  String get avatarInvalidType;
+
+  /// No description provided for @avatarTooLarge.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'image ne doit pas dépasser 5 Mo'**
+  String get avatarTooLarge;
+
+  /// No description provided for @avatarTooSmall.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'image doit faire au moins 128×128 pixels'**
+  String get avatarTooSmall;
+
+  /// No description provided for @avatarTooBig.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'image ne doit pas dépasser 1024×1024 pixels'**
+  String get avatarTooBig;
+
+  /// No description provided for @avatarUploadFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'envoyer la photo'**
+  String get avatarUploadFailed;
+
+  /// No description provided for @errorWrongPassword.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mot de passe actuel incorrect'**
+  String get errorWrongPassword;
+
+  /// No description provided for @errorNameLength.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nom doit faire entre 2 et 50 caractères'**
+  String get errorNameLength;
+
+  /// No description provided for @errorPasswordLength.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le mot de passe doit faire au moins 8 caractères, avec une lettre, un chiffre et un symbole'**
+  String get errorPasswordLength;
 }
 
 class _AppLocalizationsDelegate

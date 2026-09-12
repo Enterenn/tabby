@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/auth/password_policy.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/tabby_logo.dart';
 import '../cubit/auth_cubit.dart';
@@ -19,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
   bool _obscure = true;
 
   @override
@@ -26,6 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
@@ -103,10 +106,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _submit(),
+                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: context.l10n.loginPassword,
+                      helperText: context.l10n.passwordPolicy,
+                      helperMaxLines: 2,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure
@@ -117,10 +121,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) =>
-                        v == null || v.length < 6
-                            ? context.l10n.minPassword
-                            : null,
+                    validator: (v) => validatePassword(v, context.l10n),
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _confirmCtrl,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.confirmPassword,
+                    ),
+                    validator: (v) => v != _passwordCtrl.text
+                        ? context.l10n.passwordMismatch
+                        : null,
                   ),
 
                   const SizedBox(height: 28),

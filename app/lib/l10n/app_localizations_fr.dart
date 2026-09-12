@@ -42,7 +42,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get invalidEmail => 'Email invalide';
 
   @override
-  String get minPassword => 'Minimum 6 caractères';
+  String get minPassword =>
+      '8 caractères, une lettre, un chiffre et un symbole';
+
+  @override
+  String get passwordPolicy =>
+      '8 caractères min., une lettre, un chiffre et un symbole';
 
   @override
   String get me => 'Moi';
@@ -774,4 +779,84 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get owesTo => ' doit à ';
+
+  @override
+  String get personalInfo => 'Informations personnelles';
+
+  @override
+  String get personalInfoHint => 'Nom, e-mail et mot de passe';
+
+  @override
+  String get editProfile => 'Modifier le profil';
+
+  @override
+  String get nameLabel => 'Nom';
+
+  @override
+  String get nameTooShort => '2 caractères minimum';
+
+  @override
+  String get nameTooLong => '50 caractères maximum';
+
+  @override
+  String get passwordSection => 'Mot de passe';
+
+  @override
+  String get currentPassword => 'Mot de passe actuel';
+
+  @override
+  String get newPassword => 'Nouveau mot de passe';
+
+  @override
+  String get confirmPassword => 'Confirmer le mot de passe';
+
+  @override
+  String get passwordMin8 =>
+      '8 caractères min., une lettre, un chiffre et un symbole';
+
+  @override
+  String get passwordMismatch => 'Les mots de passe ne correspondent pas';
+
+  @override
+  String get changePassword => 'Changer le mot de passe';
+
+  @override
+  String get profileSaved => 'Profil mis à jour';
+
+  @override
+  String get passwordChanged => 'Mot de passe modifié';
+
+  @override
+  String get changeAvatar => 'Changer la photo';
+
+  @override
+  String get pickGallery => 'Galerie';
+
+  @override
+  String get pickCamera => 'Appareil photo';
+
+  @override
+  String get avatarInvalidType => 'Utilise un fichier JPG ou PNG';
+
+  @override
+  String get avatarTooLarge => 'L\'image ne doit pas dépasser 5 Mo';
+
+  @override
+  String get avatarTooSmall => 'L\'image doit faire au moins 128×128 pixels';
+
+  @override
+  String get avatarTooBig => 'L\'image ne doit pas dépasser 1024×1024 pixels';
+
+  @override
+  String get avatarUploadFailed => 'Impossible d\'envoyer la photo';
+
+  @override
+  String get errorWrongPassword => 'Mot de passe actuel incorrect';
+
+  @override
+  String get errorNameLength => 'Le nom doit faire entre 2 et 50 caractères';
+
+  @override
+  String get errorPasswordLength =>
+      'Le mot de passe doit faire au moins 8 caractères, avec une lettre, un chiffre et un symbole';
 }

@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/locale/locale_cubit.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_cubit.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../auth/cubit/auth_cubit.dart';
+import 'edit_profile_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -30,11 +32,37 @@ class ProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
-                      ExpressiveAvatar(
-                        label: user?.name ?? '?',
-                        size: 56,
-                        color: cs.primaryContainer,
-                        textColor: cs.onPrimaryContainer,
+                      GestureDetector(
+                        onTap: () => pickAndUploadAvatar(context),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            ExpressiveAvatar(
+                              label: user?.name ?? '?',
+                              size: 56,
+                              color: cs.primaryContainer,
+                              textColor: cs.onPrimaryContainer,
+                              imageUrl: resolveMediaUrl(user?.avatarUrl),
+                            ),
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Material(
+                                color: cs.primary,
+                                shape: context.tabbyShapes.circle(),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(
+                                    Symbols.photo_camera_rounded,
+                                    size: 14,
+                                    color: cs.onPrimary,
+                                    fill: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -170,6 +198,12 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(context.l10n.account, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
+              _ActionTile(
+                icon: Symbols.badge_rounded,
+                label: context.l10n.personalInfo,
+                onTap: () => showEditProfileSheet(context),
+              ),
+              const SizedBox(height: 8),
               _ActionTile(
                 icon: Symbols.logout_rounded,
                 label: context.l10n.logout,

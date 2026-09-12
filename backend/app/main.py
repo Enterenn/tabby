@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.health import router as health_router
 from app.api.v1.auth import router as auth_router
@@ -21,6 +22,7 @@ from app.api.v1.recurring_expenses import (
     router as recurring_router,
 )
 from app.core.config import settings
+from app.core.uploads import UPLOADS_DIR, ensure_upload_dirs
 from app.scheduler import recurring_job_loop
 
 
@@ -63,3 +65,6 @@ app.include_router(budgets_global_router)
 app.include_router(stats_router)
 app.include_router(devices_router)
 app.include_router(loyalty_cards_router)
+
+ensure_upload_dirs()
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")

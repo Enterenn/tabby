@@ -10,6 +10,7 @@ services:
       FIREBASE_CREDENTIALS_PATH: /run/secrets/firebase.json
     volumes:
       - ./firebase.json:/run/secrets/firebase.json:ro
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -32,3 +33,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

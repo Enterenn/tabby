@@ -54,6 +54,7 @@ dependencies:
   animations: ^3.0.0
   # Harmonisation HCT des tokens success/warning. 2.x incompatible (material_ui).
   dynamic_color: 1.8.1
+  image_picker: ^1.2.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -96,3 +96,12 @@ class _AuthInterceptor extends Interceptor {
 
 /// Singleton global
 final apiClient = ApiClient();
+
+/// Résout un chemin média (`/uploads/...`) contre la base URL de l'API.
+String? resolveMediaUrl(String? path) {
+  if (path == null || path.isEmpty) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  final base = apiClient.dio.options.baseUrl.replaceAll(RegExp(r'/$'), '');
+  final relative = path.startsWith('/') ? path : '/$path';
+  return '$base$relative';
+}

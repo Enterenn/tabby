@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
@@ -84,6 +85,9 @@ class _GroupCardState extends State<GroupCard> {
                 const SizedBox(height: 14),
                 ExpressiveAvatarStack(
                   names: group.members.map((m) => m.user.name).toList(),
+                  imageUrls: group.members
+                      .map((m) => resolveMediaUrl(m.user.avatarUrl))
+                      .toList(),
                 ),
               ],
             ),

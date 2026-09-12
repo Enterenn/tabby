@@ -11,6 +11,7 @@ class ExpressiveAvatar extends StatelessWidget {
     this.color,
     this.textColor,
     this.borderColor,
+    this.imageUrl,
   });
 
   final String label;
@@ -18,6 +19,7 @@ class ExpressiveAvatar extends StatelessWidget {
   final Color? color;
   final Color? textColor;
   final Color? borderColor;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +28,18 @@ class ExpressiveAvatar extends StatelessWidget {
     final bg = color ?? cs.primary;
     final fg = textColor ?? cs.onPrimary;
     final display = label.isNotEmpty ? label[0].toUpperCase() : '?';
+
+    Widget initials() => Center(
+          child: Text(
+            display,
+            style: TabbyTypographyTokens.flex(
+              fontSize: size * 0.42,
+              wght: 800,
+              rond: 0,
+              color: fg,
+            ),
+          ),
+        );
 
     return SizedBox(
       width: size,
@@ -39,17 +53,26 @@ class ExpressiveAvatar extends StatelessWidget {
               : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
-        child: Center(
-          child: Text(
-            display,
-            style: TabbyTypographyTokens.flex(
-              fontSize: size * 0.42,
-              wght: 800,
-              rond: 0,
-              color: fg,
-            ),
-          ),
-        ),
+        child: imageUrl == null
+            ? initials()
+            : Image.network(
+                imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => initials(),
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Center(
+                    child: SizedBox(
+                      width: size * 0.35,
+                      height: size * 0.35,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: fg,
+                      ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -60,12 +83,14 @@ class ExpressiveAvatarStack extends StatelessWidget {
   const ExpressiveAvatarStack({
     super.key,
     required this.names,
+    this.imageUrls,
     this.size = 36,
     this.overlap = 10,
     this.maxDisplayed = 4,
   });
 
   final List<String> names;
+  final List<String?>? imageUrls;
   final double size;
   final double overlap;
   final int maxDisplayed;
@@ -92,6 +117,9 @@ class ExpressiveAvatarStack extends StatelessWidget {
                 size: size,
                 color: palette[e.key % palette.length],
                 borderColor: cs.surfaceContainerHighest,
+                imageUrl: imageUrls != null && e.key < imageUrls!.length
+                    ? imageUrls![e.key]
+                    : null,
               ),
             );
           }),

@@ -7,6 +7,19 @@ from jose import JWTError, jwt
 
 from app.core.config import settings
 
+PASSWORD_POLICY_ERROR = (
+    "Password must be at least 8 characters and include a letter, a number and a symbol"
+)
+
+
+def validate_password_strength(password: str) -> str:
+    has_letter = any(c.isalpha() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_symbol = any(not c.isalnum() and not c.isspace() for c in password)
+    if len(password) < 8 or not (has_letter and has_digit and has_symbol):
+        raise ValueError(PASSWORD_POLICY_ERROR)
+    return password
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()

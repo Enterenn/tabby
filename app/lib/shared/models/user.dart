@@ -27,6 +27,19 @@ class User extends Equatable {
         'avatar_url': avatarUrl,
       };
 
+  User copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? avatarUrl,
+  }) =>
+      User(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        email: email ?? this.email,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+      );
+
   @override
   List<Object?> get props => [id, name, email, avatarUrl];
 }
