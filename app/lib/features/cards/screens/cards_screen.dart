@@ -8,10 +8,13 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/loyalty_brand.dart';
+import '../../../shared/models/loyalty_brand_category.dart';
 import '../../../shared/models/loyalty_card.dart';
 import '../../../shared/models/loyalty_code_value.dart';
 import '../../../shared/models/loyalty_prefix_store.dart';
+import '../../../shared/models/loyalty_cards_view.dart';
 import '../../../shared/models/loyalty_scan.dart';
+import '../../../shared/models/loyalty_screenshot_text.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/loyalty/loyalty_card_face.dart';
 import '../../../shared/widgets/loyalty/loyalty_machine_code.dart';
@@ -36,15 +39,46 @@ class CardsScreen extends StatelessWidget {
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 
-class _CardsView extends StatelessWidget {
+class _CardsView extends StatefulWidget {
   const _CardsView();
+
+  @override
+  State<_CardsView> createState() => _CardsViewState();
+}
+
+class _CardsViewState extends State<_CardsView> {
+  LoyaltyCardsView _view = LoyaltyCardsView.wallet;
+  LoyaltyBrandCategory? _category;
+
+  @override
+  void initState() {
+    super.initState();
+    LoyaltyCardsViewStore.load().then((view) {
+      if (mounted) setState(() => _view = view);
+    });
+  }
+
+  Future<void> _setView(LoyaltyCardsView view) async {
+    setState(() => _view = view);
+    await LoyaltyCardsViewStore.save(view);
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CardsCubit, CardsState>(
       builder: (context, state) {
+        final hasCards = state is CardsLoaded && state.cards.isNotEmpty;
         return Scaffold(
-          appBar: AppBar(title: Text(context.l10n.myCards)),
+          appBar: AppBar(
+            title: Text(context.l10n.myCards),
+            actions: [
+              if (hasCards)
+                _CardsViewMenu(
+                  value: _view,
+                  onSelected: _setView,
+                ),
+            ],
+          ),
           body: switch (state) {
             CardsInitial() || CardsLoading() => const TabbyLoading(),
             CardsError(:final message) => TabbyErrorState(
@@ -57,73 +91,13 @@ class _CardsView extends StatelessWidget {
                 title: context.l10n.noCards,
                 body: context.l10n.noCardsHint,
                 actionLabel: context.l10n.addCard,
-                onAction: () => _showAddSheet(context),
+                onAction: () => _showCardSheet(context),
               ),
-            CardsLoaded(:final cards) => Column(
-                children: [
-                  Expanded(
-                    child: cards.length <= 8
-                        ? SingleChildScrollView(
-                            padding: EdgeInsets.fromLTRB(
-                              LoyaltyCardLayout.screenHorizontalInset,
-                              12,
-                              LoyaltyCardLayout.screenHorizontalInset,
-                              8,
-                            ),
-                            child: LoyaltyWalletStack(
-                              cards: cards,
-                              onTapCard: (c) => _openFullScreen(context, c),
-                              onLongPressCard: (c) =>
-                                  _showActions(context, c, cards),
-                              onReorder: (list) =>
-                                  context.read<CardsCubit>().reorder(list),
-                            ),
-                          )
-                        : ReorderableListView.builder(
-                            padding: EdgeInsets.fromLTRB(
-                              LoyaltyCardLayout.screenHorizontalInset,
-                              8,
-                              LoyaltyCardLayout.screenHorizontalInset,
-                              8,
-                            ),
-                            itemCount: cards.length,
-                            onReorderItem: (oldIndex, newIndex) {
-                              final list = List<LoyaltyCard>.from(cards);
-                              final item = list.removeAt(oldIndex);
-                              list.insert(newIndex, item);
-                              context.read<CardsCubit>().reorder(list);
-                            },
-                            itemBuilder: (context, i) => Padding(
-                              key: ValueKey(cards[i].id),
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: LoyaltyCardFace(
-                                card: cards[i],
-                                enableHero: true,
-                                onTap: () =>
-                                    _openFullScreen(context, cards[i]),
-                                onLongPress: () =>
-                                    _showActions(context, cards[i], cards),
-                                trailing: ReorderableDragStartListener(
-                                  index: i,
-                                  child: Icon(
-                                    Symbols.drag_indicator_rounded,
-                                    color: cards[i]
-                                        .brandFor(context.tabbySemantic.brandFallback)
-                                        .onPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                  ),
-                  Center(
-                    child: FilledButton(
-                      onPressed: () => _showAddSheet(context),
-                      child: Text(context.l10n.addCard),
-                    ),
-                  ),
-                  const SizedBox(height: 100),
-                ],
+            CardsLoaded(:final cards) => _CardsBody(
+                cards: cards,
+                view: _view,
+                category: _category,
+                onCategory: (category) => setState(() => _category = category),
               ),
             _ => const SizedBox.shrink(),
           },
@@ -131,9 +105,327 @@ class _CardsView extends StatelessWidget {
       },
     );
   }
+}
 
-  void _showAddSheet(BuildContext context) {
-    _showCardSheet(context);
+class _CardsViewMenu extends StatelessWidget {
+  const _CardsViewMenu({
+    required this.value,
+    required this.onSelected,
+  });
+
+  final LoyaltyCardsView value;
+  final ValueChanged<LoyaltyCardsView> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<LoyaltyCardsView>(
+      tooltip: context.l10n.cardsViewTooltip,
+      icon: Icon(_iconFor(value)),
+      onSelected: onSelected,
+      itemBuilder: (context) => [
+        for (final view in LoyaltyCardsView.values)
+          PopupMenuItem(
+            value: view,
+            child: Row(
+              children: [
+                Icon(_iconFor(view)),
+                const SizedBox(width: 12),
+                Text(_label(context, view)),
+                if (view == value) ...[
+                  const SizedBox(width: 16),
+                  Icon(
+                    Symbols.check_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  static IconData _iconFor(LoyaltyCardsView view) => switch (view) {
+        LoyaltyCardsView.wallet => Symbols.layers_rounded,
+        LoyaltyCardsView.grid => Symbols.grid_view_rounded,
+        LoyaltyCardsView.compact => Symbols.view_agenda_rounded,
+      };
+
+  static String _label(BuildContext context, LoyaltyCardsView view) =>
+      switch (view) {
+        LoyaltyCardsView.wallet => context.l10n.cardsViewWallet,
+        LoyaltyCardsView.grid => context.l10n.cardsViewGrid,
+        LoyaltyCardsView.compact => context.l10n.cardsViewCompact,
+      };
+}
+
+class _CardsBody extends StatefulWidget {
+  const _CardsBody({
+    required this.cards,
+    required this.view,
+    required this.category,
+    required this.onCategory,
+  });
+
+  final List<LoyaltyCard> cards;
+  final LoyaltyCardsView view;
+  final LoyaltyBrandCategory? category;
+  final ValueChanged<LoyaltyBrandCategory?> onCategory;
+
+  @override
+  State<_CardsBody> createState() => _CardsBodyState();
+}
+
+class _CardsBodyState extends State<_CardsBody> {
+  final _scroll = ScrollController();
+
+  @override
+  void didUpdateWidget(_CardsBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.category == widget.category &&
+        oldWidget.view == widget.view) {
+      return;
+    }
+    if (!_scroll.hasClients || _scroll.offset == 0) return;
+    _scroll.animateTo(
+      0,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  LoyaltyBrandCategory? _selectedOf(List<LoyaltyBrandCategory> present) {
+    final category = widget.category;
+    if (category != null && present.contains(category)) return category;
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final present = LoyaltyBrandCategory.presentIn(widget.cards);
+    final selected = _selectedOf(present);
+    final visible = selected == null
+        ? widget.cards
+        : widget.cards
+            .where((card) => LoyaltyBrandCategory.ofCard(card) == selected)
+            .toList();
+    final showChips = present.length >= 2;
+    final filterKey = '${widget.view.name}-${selected?.name ?? 'all'}';
+
+    return Column(
+      children: [
+        if (showChips)
+          _CategoryChips(
+            present: present,
+            selected: selected,
+            onSelected: widget.onCategory,
+          ),
+        Expanded(
+          child: SingleChildScrollView(
+            controller: _scroll,
+            padding: EdgeInsets.fromLTRB(
+              LoyaltyCardLayout.screenHorizontalInset,
+              showChips ? 4 : 12,
+              LoyaltyCardLayout.screenHorizontalInset,
+              24,
+            ),
+            child: Column(
+              children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 320),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    layoutBuilder: (current, previous) => Stack(
+                      alignment: Alignment.topCenter,
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (final child in previous)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: child,
+                          ),
+                        ?current,
+                      ],
+                    ),
+                    transitionBuilder: (child, animation) {
+                      final fade = CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                        reverseCurve: Curves.easeInCubic,
+                      );
+                      return FadeTransition(
+                        opacity: fade,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.04),
+                            end: Offset.zero,
+                          ).animate(fade),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey(filterKey),
+                      child: _cardsForView(context, visible),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => _showCardSheet(context),
+                  child: Text(context.l10n.addCard),
+                ),
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _cardsForView(BuildContext context, List<LoyaltyCard> visible) {
+    return switch (widget.view) {
+      LoyaltyCardsView.wallet => LoyaltyWalletStack(
+          cards: visible,
+          onTapCard: (c) => _openFullScreen(context, c),
+          onLongPressCard: (c) => _showActions(context, c, widget.cards),
+          onReorder: (list) => context.read<CardsCubit>().reorder(
+                LoyaltyBrandCategory.mergeVisibleOrder(widget.cards, list),
+              ),
+        ),
+      LoyaltyCardsView.grid => GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: visible.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.52,
+          ),
+          itemBuilder: (context, i) => LayoutBuilder(
+            builder: (context, constraints) => LoyaltyCardFace(
+              card: visible[i],
+              style: LoyaltyCardFaceStyle.tile,
+              height: constraints.maxHeight,
+              onTap: () => _openFullScreen(context, visible[i]),
+              onLongPress: () =>
+                  _showActions(context, visible[i], widget.cards),
+            ),
+          ),
+        ),
+      LoyaltyCardsView.compact => Column(
+          children: [
+            for (final card in visible)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: LoyaltyCardFace(
+                  card: card,
+                  style: LoyaltyCardFaceStyle.compact,
+                  height: 76,
+                  onTap: () => _openFullScreen(context, card),
+                  onLongPress: () =>
+                      _showActions(context, card, widget.cards),
+                ),
+              ),
+          ],
+        ),
+    };
+  }
+}
+
+class _CategoryChips extends StatelessWidget {
+  const _CategoryChips({
+    required this.present,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<LoyaltyBrandCategory> present;
+  final LoyaltyBrandCategory? selected;
+  final ValueChanged<LoyaltyBrandCategory?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          _chip(
+            context,
+            label: context.l10n.cardsCategoryAll,
+            selected: selected == null,
+            onTap: () => onSelected(null),
+          ),
+          for (final category in present)
+            _chip(
+              context,
+              label: _label(context, category),
+              selected: selected == category,
+              onTap: () => onSelected(category),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(
+    BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: selected ? cs.tertiaryContainer : cs.surfaceContainerHighest,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const StadiumBorder(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Text(
+              label,
+              style: tt.labelLarge?.copyWith(
+                color: selected ? cs.onTertiaryContainer : cs.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _label(BuildContext context, LoyaltyBrandCategory category) {
+    final l10n = context.l10n;
+    return switch (category) {
+      LoyaltyBrandCategory.groceries => l10n.cardsCategoryGroceries,
+      LoyaltyBrandCategory.pets => l10n.cardsCategoryPets,
+      LoyaltyBrandCategory.fashion => l10n.cardsCategoryFashion,
+      LoyaltyBrandCategory.home => l10n.cardsCategoryHome,
+      LoyaltyBrandCategory.food => l10n.cardsCategoryFood,
+      LoyaltyBrandCategory.tech => l10n.cardsCategoryTech,
+      LoyaltyBrandCategory.sport => l10n.cardsCategorySport,
+      LoyaltyBrandCategory.other => l10n.cardsCategoryOther,
+    };
   }
 }
 

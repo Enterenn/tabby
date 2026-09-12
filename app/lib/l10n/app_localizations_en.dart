@@ -857,6 +857,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletHint => 'Tap a card to bring it forward · swipe to browse';
 
   @override
+  String get cardsViewTooltip => 'Change layout';
+
+  @override
+  String get cardsViewWallet => 'Stack';
+
+  @override
+  String get cardsViewGrid => 'Grid';
+
+  @override
+  String get cardsViewCompact => 'List';
+
+  @override
+  String get cardsCategoryAll => 'All';
+
+  @override
+  String get cardsCategoryGroceries => 'Groceries';
+
+  @override
+  String get cardsCategoryPets => 'Pets';
+
+  @override
+  String get cardsCategoryFashion => 'Fashion';
+
+  @override
+  String get cardsCategoryHome => 'Home';
+
+  @override
+  String get cardsCategoryFood => 'Food';
+
+  @override
+  String get cardsCategoryTech => 'Tech';
+
+  @override
+  String get cardsCategorySport => 'Sport';
+
+  @override
+  String get cardsCategoryOther => 'Other';
+
+  @override
   String get owedToYou => 'You\'re owed';
 
   @override

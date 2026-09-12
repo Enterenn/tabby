@@ -866,6 +866,45 @@ class AppLocalizationsFr extends AppLocalizations {
       'Tape une carte pour la mettre devant · swipe pour parcourir';
 
   @override
+  String get cardsViewTooltip => 'Changer l\'affichage';
+
+  @override
+  String get cardsViewWallet => 'Pile';
+
+  @override
+  String get cardsViewGrid => 'Grille';
+
+  @override
+  String get cardsViewCompact => 'Liste';
+
+  @override
+  String get cardsCategoryAll => 'Tout';
+
+  @override
+  String get cardsCategoryGroceries => 'Courses';
+
+  @override
+  String get cardsCategoryPets => 'Animalerie';
+
+  @override
+  String get cardsCategoryFashion => 'Mode';
+
+  @override
+  String get cardsCategoryHome => 'Maison';
+
+  @override
+  String get cardsCategoryFood => 'Restos';
+
+  @override
+  String get cardsCategoryTech => 'High-tech';
+
+  @override
+  String get cardsCategorySport => 'Sport';
+
+  @override
+  String get cardsCategoryOther => 'Autre';
+
+  @override
   String get owedToYou => 'On te doit';
 
   @override

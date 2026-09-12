@@ -6,7 +6,7 @@ import '../../../l10n/l10n.dart';
 import '../../models/loyalty_card.dart';
 import 'loyalty_card_face.dart';
 
-/// Pile wallet — même largeur, peek serré, swipe de la carte avant vers l'arrière.
+/// Pile wallet — peek assez haut pour lire logo + nom, puis resserre.
 class LoyaltyWalletStack extends StatefulWidget {
   const LoyaltyWalletStack({
     super.key,
@@ -24,10 +24,9 @@ class LoyaltyWalletStack extends StatefulWidget {
   static const fullHeight = LoyaltyCardLayout.cardHeight;
 
   /// Bande visible d'une carte selon sa profondeur (1 = juste derrière l'avant).
+  /// Deux cartes lisibles (logo + nom), le reste à 20 px.
   static double peekForDepth(int depth) {
-    if (depth <= 1) return 48;
-    if (depth == 2) return 22;
-    return 16;
+    return depth <= 2 ? 64 : 20;
   }
 
   @override

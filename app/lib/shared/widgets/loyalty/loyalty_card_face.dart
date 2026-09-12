@@ -21,13 +21,15 @@ abstract final class LoyaltyCardLayout {
       MediaQuery.sizeOf(context).width - screenHorizontalInset * 2;
 }
 
+enum LoyaltyCardFaceStyle { wallet, tile, compact }
+
 /// Carte de fidélité visuelle — dégradé marque, logo, nom.
 class LoyaltyCardFace extends StatelessWidget {
   const LoyaltyCardFace({
     super.key,
     required this.card,
     this.height = LoyaltyCardLayout.cardHeight,
-    this.compact = false,
+    this.style = LoyaltyCardFaceStyle.wallet,
     this.onTap,
     this.onLongPress,
     this.trailing,
@@ -36,7 +38,7 @@ class LoyaltyCardFace extends StatelessWidget {
 
   final LoyaltyCard card;
   final double height;
-  final bool compact;
+  final LoyaltyCardFaceStyle style;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final Widget? trailing;
@@ -49,6 +51,8 @@ class LoyaltyCardFace extends StatelessWidget {
     final shapes = context.tabbyShapes;
     final brand = card.brandFor(context.tabbySemantic.brandFallback);
     final fg = brand.onPrimary;
+    final compact = style == LoyaltyCardFaceStyle.compact;
+    final tile = style == LoyaltyCardFaceStyle.tile;
 
     final face = Material(
       color: Colors.transparent,
@@ -77,89 +81,23 @@ class LoyaltyCardFace extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: compact ? 14 : 20,
-                right: compact ? 14 : 20,
-                top: compact ? 12 : 18,
-                bottom: compact ? 12 : 18,
-                child: Row(
-                  crossAxisAlignment: compact
-                      ? CrossAxisAlignment.center
-                      : CrossAxisAlignment.start,
-                  children: [
-                    _BrandLogo(brand: brand, size: compact ? 40 : 52),
-                    SizedBox(width: compact ? 12 : 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: compact
-                            ? MainAxisAlignment.center
-                            : MainAxisAlignment.start,
-                        children: [
-                          Text(
-                            card.brandName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: fg,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.2,
-                                ),
-                          ),
-                          if (!compact) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              context.l10n.loyaltyCard,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodySmall?.copyWith(color: fg),
-                            ),
-                            const Spacer(),
-                            Row(
-                              children: [
-                                Icon(
-                                  card.isBarcode
-                                      ? Symbols.barcode_rounded
-                                      : Symbols.qr_code_2_rounded,
-                                  size: 16,
-                                  color: fg,
-                                  fill: 1,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  card.isBarcode
-                                      ? context.l10n.barcode
-                                      : context.l10n.qrCode,
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(
-                                        color: fg,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                const Spacer(),
-                                Icon(
-                                  Symbols.contactless_rounded,
-                                  size: 22,
-                                  color: fg,
-                                  fill: 1,
-                                ),
-                              ],
-                            ),
-                          ] else
-                            Text(
-                              card.isBarcode
-                                  ? context.l10n.barcode
-                                  : context.l10n.qrCode,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(color: fg),
-                            ),
-                        ],
-                      ),
-                    ),
-                    ?trailing,
-                  ],
+              Positioned.fill(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    tile ? 12 : compact ? 14 : 20,
+                    tile ? 12 : compact ? 12 : 18,
+                    tile ? 12 : compact ? 14 : 20,
+                    tile ? 12 : compact ? 12 : 18,
+                  ),
+                  child: tile
+                      ? _TileBody(card: card, brand: brand, fg: fg)
+                      : _WalletBody(
+                          card: card,
+                          brand: brand,
+                          fg: fg,
+                          compact: compact,
+                          trailing: trailing,
+                        ),
                 ),
               ),
             ],
@@ -194,12 +132,140 @@ class LoyaltyCardFace extends StatelessWidget {
                 child: LoyaltyCardFace(
                   card: card,
                   height: height,
-                  compact: compact,
+                  style: style,
                 ),
               ),
             );
           },
       child: Material(color: Colors.transparent, child: heroSize),
+    );
+  }
+}
+
+class _WalletBody extends StatelessWidget {
+  const _WalletBody({
+    required this.card,
+    required this.brand,
+    required this.fg,
+    required this.compact,
+    this.trailing,
+  });
+
+  final LoyaltyCard card;
+  final LoyaltyBrand brand;
+  final Color fg;
+  final bool compact;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment:
+          compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        _BrandLogo(brand: brand, size: compact ? 40 : 52),
+        SizedBox(width: compact ? 12 : 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: compact
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            children: [
+              Text(
+                card.brandName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: fg,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.2,
+                    ),
+              ),
+              if (!compact) ...[
+                const SizedBox(height: 4),
+                Text(
+                  context.l10n.loyaltyCard,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: fg,
+                      ),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Icon(
+                      card.isBarcode
+                          ? Symbols.barcode_rounded
+                          : Symbols.qr_code_2_rounded,
+                      size: 16,
+                      color: fg,
+                      fill: 1,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      card.isBarcode
+                          ? context.l10n.barcode
+                          : context.l10n.qrCode,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: fg,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Symbols.contactless_rounded,
+                      size: 22,
+                      color: fg,
+                      fill: 1,
+                    ),
+                  ],
+                ),
+              ] else
+                Text(
+                  card.isBarcode ? context.l10n.barcode : context.l10n.qrCode,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: fg,
+                      ),
+                ),
+            ],
+          ),
+        ),
+        ?trailing,
+      ],
+    );
+  }
+}
+
+class _TileBody extends StatelessWidget {
+  const _TileBody({
+    required this.card,
+    required this.brand,
+    required this.fg,
+  });
+
+  final LoyaltyCard card;
+  final LoyaltyBrand brand;
+  final Color fg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _BrandLogo(brand: brand, size: 44),
+        const SizedBox(height: 10),
+        Text(
+          card.brandName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.15,
+              ),
+        ),
+      ],
     );
   }
 }

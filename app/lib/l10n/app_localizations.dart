@@ -1664,6 +1664,84 @@ abstract class AppLocalizations {
   /// **'Tape une carte pour la mettre devant · swipe pour parcourir'**
   String get walletHint;
 
+  /// No description provided for @cardsViewTooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer l\'affichage'**
+  String get cardsViewTooltip;
+
+  /// No description provided for @cardsViewWallet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pile'**
+  String get cardsViewWallet;
+
+  /// No description provided for @cardsViewGrid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Grille'**
+  String get cardsViewGrid;
+
+  /// No description provided for @cardsViewCompact.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste'**
+  String get cardsViewCompact;
+
+  /// No description provided for @cardsCategoryAll.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout'**
+  String get cardsCategoryAll;
+
+  /// No description provided for @cardsCategoryGroceries.
+  ///
+  /// In fr, this message translates to:
+  /// **'Courses'**
+  String get cardsCategoryGroceries;
+
+  /// No description provided for @cardsCategoryPets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Animalerie'**
+  String get cardsCategoryPets;
+
+  /// No description provided for @cardsCategoryFashion.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode'**
+  String get cardsCategoryFashion;
+
+  /// No description provided for @cardsCategoryHome.
+  ///
+  /// In fr, this message translates to:
+  /// **'Maison'**
+  String get cardsCategoryHome;
+
+  /// No description provided for @cardsCategoryFood.
+  ///
+  /// In fr, this message translates to:
+  /// **'Restos'**
+  String get cardsCategoryFood;
+
+  /// No description provided for @cardsCategoryTech.
+  ///
+  /// In fr, this message translates to:
+  /// **'High-tech'**
+  String get cardsCategoryTech;
+
+  /// No description provided for @cardsCategorySport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sport'**
+  String get cardsCategorySport;
+
+  /// No description provided for @cardsCategoryOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get cardsCategoryOther;
+
   /// No description provided for @owedToYou.
   ///
   /// In fr, this message translates to:

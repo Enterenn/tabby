@@ -121,9 +121,14 @@ class LoyaltyBrand {
       primary: Color(0xFF004E9A),
       secondary: Color(0xFFED1C24),
       monogram: 'C',
-      qrHints: ['carrefour.fr', 'carrefour.com', 'carrefour'],
-      codePrefixes: ['275090', '275091'],
-      // logoAsset: 'assets/brands/carrefour.svg',
+      qrHints: [
+        'carrefour.fr',
+        'carrefour.com',
+        'club carrefour',
+        'carrefour',
+      ],
+      // 913572 = Club / Wallet (Code 128, 19 chiffres). 275090/91 = ancien EAN-13 plastique.
+      codePrefixes: ['913572', '275090', '275091'],
     ),
     LoyaltyBrand(
       id: 'leclerc',
@@ -131,7 +136,7 @@ class LoyaltyBrand {
       primary: Color(0xFF0054A6),
       secondary: Color(0xFF003D7A),
       monogram: 'E',
-      qrHints: ['e.leclerc', 'leclerc'],
+      qrHints: ['e.leclerc', 'mon leclerc', 'leclerc'],
       codePrefixes: ['275092'],
     ),
     LoyaltyBrand(
@@ -140,7 +145,8 @@ class LoyaltyBrand {
       primary: Color(0xFFE30613),
       secondary: Color(0xFFB0040F),
       monogram: 'A',
-      qrHints: ['auchan.fr', 'auchan'],
+      qrHints: ['auchan.fr', 'auchan', 'waaoh'],
+      aliases: ['waaoh', 'auchan waaoh'],
     ),
     LoyaltyBrand(
       id: 'monoprix',
@@ -157,7 +163,7 @@ class LoyaltyBrand {
       secondary: Color(0xFFFDD900),
       monogram: 'L',
       onPrimary: Colors.white,
-      qrHints: ['lidl.fr', 'lidl.com', 'lidl'],
+      qrHints: ['lidl.fr', 'lidl.com', 'lidl plus', 'lidlplus', 'lidl'],
     ),
     LoyaltyBrand(
       id: 'decathlon',

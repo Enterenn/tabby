@@ -776,14 +776,25 @@ class _AddCardSheetState extends State<_AddCardSheet> {
     if (picked == null || !mounted) return;
     final controller = MobileScannerController();
     try {
-      final capture = await controller.analyzeImage(picked.path);
+      final results = await Future.wait([
+        controller.analyzeImage(picked.path),
+        LoyaltyScreenshotText.read(picked.path),
+      ]);
+      final capture = results[0] as BarcodeCapture?;
+      final visibleText = results[1] as String;
       final payload = _payloadFromBarcode(capture?.barcodes.firstOrNull);
       if (!mounted) return;
       if (payload == null) {
         showTabbySnack(context, context.l10n.noCodeInImage);
         return;
       }
-      _applyScan(payload);
+      _applyScan(
+        LoyaltyScanPayload(
+          value: payload.value,
+          isQrCode: payload.isQrCode,
+          visibleText: visibleText,
+        ),
+      );
     } finally {
       controller.dispose();
     }
