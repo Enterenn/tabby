@@ -28,12 +28,11 @@ String _redactLogLine(String line) {
   return out;
 }
 
-/// Base URL du backend.
-/// Prod : `flutter run --dart-define=API_BASE_URL=https://<host>:8000`
-/// Debug local : fallback HTTP LAN (cleartext autorisé uniquement en debug).
+/// Base URL du backend (HTTPS public via NPM / Cloudflare).
+/// Override LAN : `flutter run --dart-define=API_BASE_URL=http://192.168.1.31:8000`
 const String _defaultBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://192.168.1.31:8000',
+  defaultValue: 'https://tabby.landrodie.fr',
 );
 
 class ApiClient {
