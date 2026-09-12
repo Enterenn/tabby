@@ -26,14 +26,20 @@ class LoyaltyBrand {
   /// Indices dans une URL ou un QR texte (domaine, slug…).
   final List<String> qrHints;
 
-  LinearGradient get gradient => LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          primary,
-          secondary ?? Color.lerp(primary, Colors.black, 0.22)!,
-        ],
-      );
+  LinearGradient get gradient {
+    final hasDistinctSecondary =
+        secondary != null && secondary != primary;
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        primary,
+        hasDistinctSecondary
+            ? secondary!
+            : Color.lerp(primary, Colors.white, 0.16)!,
+      ],
+    );
+  }
 
   /// Catalogue Tabby — ajouter un logo : `assets/brands/{id}.svg` + `logoAsset`.
   static const List<LoyaltyBrand> catalog = [

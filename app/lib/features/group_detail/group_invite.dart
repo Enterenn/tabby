@@ -5,13 +5,14 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../l10n/l10n.dart';
+import '../../shared/widgets/tabby_sheet.dart';
 
 /// Génère un code d'invitation et affiche la boîte de dialogue de partage.
 Future<void> showGroupInviteDialog(
   BuildContext context, {
   required String groupId,
 }) async {
-  showDialog(
+  showTabbyDialog(
     context: context,
     barrierDismissible: false,
     builder: (_) => const AlertDialog(
@@ -40,7 +41,7 @@ Future<void> showGroupInviteDialog(
     return;
   }
 
-  showDialog(
+  showTabbyDialog(
     context: context,
     builder: (_) => _InviteDialog(code: code!),
   );

@@ -1,5 +1,6 @@
 import 'package:barcode_widget/barcode_widget.dart' as bw;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -197,9 +198,8 @@ void _showActions(
   List<LoyaltyCard> cards,
 ) {
   final index = cards.indexWhere((c) => c.id == card.id);
-  showModalBottomSheet(
-    context: context,
-    shape: context.tabbyShapes.modalTopShape,
+  showTabbySheet(
+    context,
     builder: (ctx) => BlocProvider.value(
       value: context.read<CardsCubit>(),
       child: Padding(
@@ -374,11 +374,27 @@ class _CardFullScreen extends StatelessWidget {
 
 // ─── Scanner widget ───────────────────────────────────────────────────────────
 
+bool _isLoyaltyQr(BarcodeFormat format) {
+  return switch (format) {
+    BarcodeFormat.qrCode ||
+    BarcodeFormat.dataMatrix ||
+    BarcodeFormat.aztec ||
+    BarcodeFormat.pdf417 =>
+      true,
+    _ => false,
+  };
+}
+
 class _ScannerView extends StatefulWidget {
-  const _ScannerView({required this.onDetected, required this.onCancel});
+  const _ScannerView({
+    required this.onDetected,
+    required this.onCancel,
+    required this.onImportScreenshot,
+  });
 
   final ValueChanged<LoyaltyScanPayload> onDetected;
   final VoidCallback onCancel;
+  final VoidCallback onImportScreenshot;
 
   @override
   State<_ScannerView> createState() => _ScannerViewState();
@@ -425,7 +441,7 @@ class _ScannerViewState extends State<_ScannerView> {
                       _detected = true;
                       widget.onDetected(LoyaltyScanPayload(
                         value: value,
-                        isQrCode: _isQrFormat(barcode!.format),
+                        isQrCode: _isLoyaltyQr(barcode!.format),
                       ));
                     }
                   },
@@ -493,6 +509,11 @@ class _ScannerViewState extends State<_ScannerView> {
         ),
         const SizedBox(height: 8),
         TextButton.icon(
+          onPressed: widget.onImportScreenshot,
+          icon: const Icon(Symbols.image_rounded, size: 16),
+          label: Text(context.l10n.scanFromScreenshot),
+        ),
+        TextButton.icon(
           onPressed: widget.onCancel,
           icon: const Icon(Symbols.close_rounded, size: 16),
           label: Text(context.l10n.cancelScan),
@@ -504,16 +525,6 @@ class _ScannerViewState extends State<_ScannerView> {
     );
   }
 
-  bool _isQrFormat(BarcodeFormat format) {
-    return switch (format) {
-      BarcodeFormat.qrCode ||
-      BarcodeFormat.dataMatrix ||
-      BarcodeFormat.aztec ||
-      BarcodeFormat.pdf417 =>
-        true,
-      _ => false,
-    };
-  }
 }
 
 // ─── Add card bottom sheet ────────────────────────────────────────────────────
@@ -691,6 +702,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     _ScannerView(
                       onDetected: _applyScan,
                       onCancel: () => setState(() => _scanning = false),
+                      onImportScreenshot: _importScreenshot,
                     )
                   else if (_codeValue.isEmpty) ...[
                     ExpressiveCtaButton(
@@ -700,6 +712,13 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                       onPressed: _startScan,
                     ),
                     const SizedBox(height: 10),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _importScreenshot,
+                        icon: const Icon(Symbols.image_rounded, size: 18),
+                        label: Text(context.l10n.scanFromScreenshot),
+                      ),
+                    ),
                     Center(
                       child: TextButton(
                         onPressed: () => _showManualInput(context),
@@ -929,9 +948,33 @@ class _AddCardSheetState extends State<_AddCardSheet> {
 
   void _startScan() => setState(() => _scanning = true);
 
+  Future<void> _importScreenshot() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null || !mounted) return;
+    final controller = MobileScannerController();
+    try {
+      final capture = await controller.analyzeImage(picked.path);
+      final barcode = capture?.barcodes.firstOrNull;
+      final value = barcode?.rawValue;
+      if (!mounted) return;
+      if (value == null || value.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.noCodeInImage)),
+        );
+        return;
+      }
+      _applyScan(LoyaltyScanPayload(
+        value: value,
+        isQrCode: _isLoyaltyQr(barcode!.format),
+      ));
+    } finally {
+      controller.dispose();
+    }
+  }
+
   void _showManualInput(BuildContext context) {
     final ctrl = TextEditingController(text: _codeValue);
-    showDialog(
+    showTabbyDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.enterCode),

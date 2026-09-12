@@ -79,7 +79,7 @@ class _BudgetView extends StatelessWidget {
   }
 
   void _showCreateDialog(BuildContext context, BudgetLoaded state) {
-    showDialog(
+    showTabbyDialog(
       context: context,
       builder: (_) => BlocProvider.value(
         value: context.read<BudgetCubit>(),
@@ -727,7 +727,7 @@ class _BudgetCard extends StatelessWidget {
   }
 
   void _showEditDialog(BuildContext context) {
-    showDialog(
+    showTabbyDialog(
       context: context,
       builder: (_) => BlocProvider.value(
         value: context.read<BudgetCubit>(),

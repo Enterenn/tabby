@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/theme_cubit.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../shared/widgets/tabby_sheet.dart';
 import '../../auth/cubit/auth_cubit.dart';
 import 'edit_profile_sheet.dart';
 
@@ -83,6 +84,11 @@ class ProfileScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                      IconButton(
+                        tooltip: context.l10n.editProfile,
+                        onPressed: () => showEditProfileSheet(context),
+                        icon: const Icon(Symbols.edit_rounded),
+                      ),
                     ],
                   ),
                 ),
@@ -138,47 +144,26 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.language,
-                        style: Theme.of(context).textTheme.titleSmall,
+              BlocBuilder<LocaleCubit, Locale?>(
+                builder: (context, stored) {
+                  final effective = Localizations.localeOf(context);
+                  final label = stored == null
+                      ? context.l10n.languageSystem
+                      : effective.languageCode == 'fr'
+                          ? context.l10n.languageFrench
+                          : context.l10n.languageEnglish;
+                  return Card(
+                    child: ListTile(
+                      title: Text(context.l10n.language),
+                      subtitle: Text(
+                        '$label — ${context.l10n.languageHint}',
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.l10n.languageHint,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 12),
-                      BlocBuilder<LocaleCubit, Locale>(
-                        builder: (context, locale) {
-                          return ExpressiveButtonGroup<Locale>(
-                            value: locale,
-                            onChanged: (next) =>
-                                context.read<LocaleCubit>().setLocale(next),
-                            segments: [
-                              ExpressiveButtonGroupSegment(
-                                value: const Locale('fr'),
-                                label: context.l10n.languageFrench,
-                              ),
-                              ExpressiveButtonGroupSegment(
-                                value: const Locale('en'),
-                                label: context.l10n.languageEnglish,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+                      trailing: const Icon(Symbols.chevron_right_rounded),
+                      shape: context.tabbyShapes.fieldShape,
+                      onTap: () => _showLanguageSheet(context, stored),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 24),
               Text(context.l10n.personalization,
@@ -199,17 +184,11 @@ class ProfileScreen extends StatelessWidget {
               Text(context.l10n.account, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               _ActionTile(
-                icon: Symbols.badge_rounded,
-                label: context.l10n.personalInfo,
-                onTap: () => showEditProfileSheet(context),
-              ),
-              const SizedBox(height: 8),
-              _ActionTile(
                 icon: Symbols.logout_rounded,
                 label: context.l10n.logout,
                 color: cs.error,
                 onTap: () async {
-                  final confirm = await showDialog<bool>(
+                  final confirm = await showTabbyDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: Text(ctx.l10n.logoutConfirm),
@@ -237,6 +216,78 @@ class ProfileScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+Future<void> _showLanguageSheet(BuildContext context, Locale? stored) {
+  return showTabbySheet<void>(
+    context,
+    builder: (ctx) {
+      final cubit = context.read<LocaleCubit>();
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                ctx.l10n.chooseLanguage,
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              _LanguageOption(
+                label: ctx.l10n.languageSystem,
+                selected: stored == null,
+                onTap: () {
+                  cubit.setLocale(null);
+                  Navigator.pop(ctx);
+                },
+              ),
+              _LanguageOption(
+                label: ctx.l10n.languageFrench,
+                selected: stored?.languageCode == 'fr',
+                onTap: () {
+                  cubit.setLocale(const Locale('fr'));
+                  Navigator.pop(ctx);
+                },
+              ),
+              _LanguageOption(
+                label: ctx.l10n.languageEnglish,
+                selected: stored?.languageCode == 'en',
+                onTap: () {
+                  cubit.setLocale(const Locale('en'));
+                  Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _LanguageOption extends StatelessWidget {
+  const _LanguageOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(label),
+      trailing: selected ? const Icon(Symbols.check_rounded) : null,
+      selected: selected,
+      shape: context.tabbyShapes.fieldShape,
+      onTap: onTap,
     );
   }
 }

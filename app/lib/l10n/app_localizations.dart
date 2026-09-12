@@ -851,7 +851,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageHint.
   ///
   /// In fr, this message translates to:
-  /// **'L\'interface passe en français ou en anglais.'**
+  /// **'Par défaut, celle du téléphone.'**
   String get languageHint;
 
   /// No description provided for @languageFrench.
@@ -865,6 +865,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'English'**
   String get languageEnglish;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Système'**
+  String get languageSystem;
+
+  /// No description provided for @chooseLanguage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir la langue'**
+  String get chooseLanguage;
+
+  /// No description provided for @scanFromScreenshot.
+  ///
+  /// In fr, this message translates to:
+  /// **'Importer un screenshot'**
+  String get scanFromScreenshot;
+
+  /// No description provided for @noCodeInImage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun code-barres ou QR trouvé sur cette image'**
+  String get noCodeInImage;
 
   /// No description provided for @personalization.
   ///
@@ -1643,13 +1667,13 @@ abstract class AppLocalizations {
   /// No description provided for @avatarInvalidType.
   ///
   /// In fr, this message translates to:
-  /// **'Utilise un fichier JPG ou PNG'**
+  /// **'Utilise un fichier JPG, PNG ou WebP'**
   String get avatarInvalidType;
 
   /// No description provided for @avatarTooLarge.
   ///
   /// In fr, this message translates to:
-  /// **'L\'image ne doit pas dépasser 5 Mo'**
+  /// **'L\'image ne doit pas dépasser 20 Mo'**
   String get avatarTooLarge;
 
   /// No description provided for @avatarTooSmall.

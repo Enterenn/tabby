@@ -40,19 +40,48 @@ class MainScaffold extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: ConnectivityBanner(child: child),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: _TabbyNavBar(
-          currentIndex: currentIndex,
-          onSelect: (i) {
-            if (_paths[i] == '/add-expense') {
-              _onAddTapped(context);
-            } else {
-              context.go(_paths[i]);
-            }
-          },
+      bottomNavigationBar: _NavFade(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          child: _TabbyNavBar(
+            currentIndex: currentIndex,
+            onSelect: (i) {
+              if (_paths[i] == '/add-expense') {
+                _onAddTapped(context);
+              } else {
+                context.go(_paths[i]);
+              }
+            },
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _NavFade extends StatelessWidget {
+  const _NavFade({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            cs.surface.withValues(alpha: 0),
+            cs.surface.withValues(alpha: 0.55),
+            cs.surface.withValues(alpha: 0.88),
+            cs.surface,
+          ],
+          stops: const [0, 0.35, 0.7, 1],
+        ),
+      ),
+      child: child,
     );
   }
 }

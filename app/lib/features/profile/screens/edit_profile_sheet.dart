@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -75,21 +74,12 @@ Future<void> pickAndUploadAvatar(BuildContext context) async {
 
 Future<String?> _validateAvatar(String path, AppLocalizations l10n) async {
   final ext = path.split('.').last.toLowerCase();
-  if (ext != 'jpg' && ext != 'jpeg' && ext != 'png') {
+  if (ext != 'jpg' && ext != 'jpeg' && ext != 'png' && ext != 'webp') {
     return l10n.avatarInvalidType;
   }
   final file = File(path);
-  if (await file.length() > 5 * 1024 * 1024) {
+  if (await file.length() > 20 * 1024 * 1024) {
     return l10n.avatarTooLarge;
-  }
-  final codec = await ui.instantiateImageCodec(await file.readAsBytes());
-  final frame = await codec.getNextFrame();
-  final image = frame.image;
-  try {
-    if (image.width < 128 || image.height < 128) return l10n.avatarTooSmall;
-    if (image.width > 1024 || image.height > 1024) return l10n.avatarTooBig;
-  } finally {
-    image.dispose();
   }
   return null;
 }

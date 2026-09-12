@@ -38,8 +38,10 @@ String localizeApiError(AppLocalizations l10n, String? raw) {
     'Group not found' => l10n.errorGroupNotFound,
     'Current password is incorrect' => l10n.errorWrongPassword,
     'Name must be 2-50 characters' => l10n.errorNameLength,
-    'File must be JPEG or PNG' => l10n.avatarInvalidType,
-    'File exceeds 5 MB' => l10n.avatarTooLarge,
+    'File must be JPEG or PNG' ||
+    'File must be JPEG, PNG or WebP' => l10n.avatarInvalidType,
+    'File exceeds 5 MB' ||
+    'File exceeds 20 MB' => l10n.avatarTooLarge,
     'Image must be at least 128x128' => l10n.avatarTooSmall,
     'Image must be at most 1024x1024' => l10n.avatarTooBig,
     'avatarUploadFailed' => l10n.avatarUploadFailed,

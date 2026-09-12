@@ -92,7 +92,7 @@ class _TabbyAppState extends State<TabbyApp> {
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
-          return BlocBuilder<LocaleCubit, Locale>(
+          return BlocBuilder<LocaleCubit, Locale?>(
             builder: (context, locale) {
               return MaterialApp.router(
                 title: 'Tabby',
@@ -101,6 +101,17 @@ class _TabbyAppState extends State<TabbyApp> {
                 themeMode: themeMode,
                 locale: locale,
                 supportedLocales: AppLocalizations.supportedLocales,
+                localeResolutionCallback: (device, supported) {
+                  if (locale != null) return locale;
+                  if (device != null) {
+                    for (final candidate in supported) {
+                      if (candidate.languageCode == device.languageCode) {
+                        return candidate;
+                      }
+                    }
+                  }
+                  return const Locale('en');
+                },
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 routerConfig: _router,
                 debugShowCheckedModeBanner: false,

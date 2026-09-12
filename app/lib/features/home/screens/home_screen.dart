@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/group.dart';
@@ -265,13 +266,54 @@ class _HomeHeroBanner extends StatelessWidget {
         groups.fold<double>(0, (sum, g) => sum + g.balance);
     final count = groups.length;
 
-    return ExpressiveHeroBanner(
-      label: context.l10n.globalBalance,
-      amount: netBalance,
-      suffix: ' €',
-      subtitle: context.l10n.activeGroups(count),
-      accentIcon: Symbols.account_balance_wallet_rounded,
-      margin: const EdgeInsets.fromLTRB(0, 8, 0, 12),
+    final cs = context.tabbyColors;
+    final tt = Theme.of(context).textTheme;
+    final color = netBalance.abs() < 0.01
+        ? cs.onSurface
+        : netBalance > 0
+            ? context.tabbySemantic.success
+            : context.tabbySemantic.danger;
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(0, 4, 0, 12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
+          children: [
+            Icon(
+              Symbols.account_balance_wallet_rounded,
+              size: 20,
+              color: cs.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.globalBalance,
+                    style: tt.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    formatMoney(context, netBalance),
+                    style: tt.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              context.l10n.activeGroups(count),
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
     )
         .animate()
         .fadeIn(duration: 350.ms, curve: Curves.easeOut)

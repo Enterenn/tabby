@@ -20,11 +20,10 @@ from app.core.uploads import (
     ALLOWED_AVATAR_SUFFIXES,
     ALLOWED_AVATAR_TYPES,
     MAX_AVATAR_BYTES,
-    MAX_AVATAR_SIZE,
     MIN_AVATAR_SIZE,
-    avatar_path,
     avatar_public_url,
-    ensure_upload_dirs,
+    process_avatar,
+    save_avatar,
 )
 from app.models.models import User
 from app.schemas.auth import (
@@ -153,14 +152,14 @@ async def upload_avatar(
     if content_type not in ALLOWED_AVATAR_TYPES and suffix not in ALLOWED_AVATAR_SUFFIXES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be JPEG or PNG",
+            detail="File must be JPEG, PNG or WebP",
         )
 
     data = await file.read()
     if len(data) > MAX_AVATAR_BYTES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File exceeds 5 MB",
+            detail="File exceeds 20 MB",
         )
 
     try:
@@ -169,7 +168,7 @@ async def upload_avatar(
     except (UnidentifiedImageError, OSError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be JPEG or PNG",
+            detail="File must be JPEG, PNG or WebP",
         ) from None
 
     width, height = image.size
@@ -178,20 +177,13 @@ async def upload_avatar(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Image must be at least 128x128",
         )
-    if width > MAX_AVATAR_SIZE or height > MAX_AVATAR_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Image must be at most 1024x1024",
-        )
 
-    if image.mode != "RGB":
-        image = image.convert("RGB")
+    processed = process_avatar(image)
+    image.close()
+    save_avatar(str(current_user.id), processed)
+    processed.close()
 
-    ensure_upload_dirs()
-    dest = avatar_path(str(current_user.id))
-    image.save(dest, format="JPEG", quality=88)
-
-    current_user.avatar_url = f"/uploads/avatars/{current_user.id}.jpg"
+    current_user.avatar_url = f"/uploads/avatars/{current_user.id}.webp"
     await db.flush()
     return _user_response(current_user)
 

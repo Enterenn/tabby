@@ -418,13 +418,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get language => 'Language';
 
   @override
-  String get languageHint => 'Switch the interface between French and English.';
+  String get languageHint => 'Defaults to your phone language.';
 
   @override
   String get languageFrench => 'Français';
 
   @override
   String get languageEnglish => 'English';
+
+  @override
+  String get languageSystem => 'System';
+
+  @override
+  String get chooseLanguage => 'Choose language';
+
+  @override
+  String get scanFromScreenshot => 'Import a screenshot';
+
+  @override
+  String get noCodeInImage => 'No barcode or QR code found in this image';
 
   @override
   String get personalization => 'Personalization';
@@ -842,10 +854,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickCamera => 'Camera';
 
   @override
-  String get avatarInvalidType => 'Use a JPG or PNG file';
+  String get avatarInvalidType => 'Use a JPG, PNG or WebP file';
 
   @override
-  String get avatarTooLarge => 'The image must be 5 MB or smaller';
+  String get avatarTooLarge => 'The image must be 20 MB or smaller';
 
   @override
   String get avatarTooSmall => 'The image must be at least 128×128 pixels';

@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
+import '../../../shared/widgets/tabby_sheet.dart';
 import '../group_invite.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
@@ -134,7 +135,7 @@ class _LoadedBody extends StatelessWidget {
                   ),
                 ),
               ],
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
           ExpressiveScreenFabMenu(
@@ -178,11 +179,26 @@ class _GroupSliverAppBar extends StatelessWidget {
       pinned: true,
       backgroundColor: cs.surfaceContainerLow,
       foregroundColor: cs.onSurface,
-      title: Text(
-        group.name,
-        style: tt.headlineSmall?.copyWith(color: cs.onSurface),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              group.name,
+              style: tt.headlineSmall?.copyWith(color: cs.onSurface),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (group.isPinned) ...[
+            const SizedBox(width: 8),
+            Icon(
+              Symbols.push_pin_rounded,
+              size: 18,
+              fill: 1,
+              color: cs.onSurfaceVariant,
+            ),
+          ],
+        ],
       ),
       actions: [
         IconButton(
@@ -198,8 +214,8 @@ class _GroupSliverAppBar extends StatelessWidget {
     final cubit = context.read<GroupDetailCubit>();
     final state = cubit.state as GroupDetailLoaded;
 
-    showModalBottomSheet(
-      context: context,
+    showTabbySheet(
+      context,
       builder: (_) => BlocProvider.value(
         value: cubit,
         // pageContext = contexte de la page (toujours vivant après la fermeture du sheet)
@@ -294,7 +310,7 @@ class _GroupActionsSheet extends StatelessWidget {
 
   void _showEditNameDialog() {
     final ctrl = TextEditingController(text: group.name);
-    showDialog(
+    showTabbyDialog(
       context: pageContext,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.editName),
@@ -323,7 +339,7 @@ class _GroupActionsSheet extends StatelessWidget {
   }
 
   void _confirmLeave() {
-    showDialog(
+    showTabbyDialog(
       context: pageContext,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.leaveGroup),
@@ -357,7 +373,7 @@ class _GroupActionsSheet extends StatelessWidget {
   }
 
   void _confirmDelete() {
-    showDialog(
+    showTabbyDialog(
       context: pageContext,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.deleteGroup),
@@ -478,7 +494,7 @@ class _BalanceTile extends StatelessWidget {
   }
 
   void _confirmSettle(BuildContext context) {
-    showDialog(
+    showTabbyDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(ctx.l10n.confirmSettle),
@@ -874,8 +890,8 @@ class _ExpenseTile extends StatelessWidget {
     final cubit = context.read<GroupDetailCubit>();
     final state = cubit.state as GroupDetailLoaded;
 
-    showModalBottomSheet(
-      context: context,
+    showTabbySheet(
+      context,
       builder: (_) => BlocProvider.value(
         value: cubit,
         child: SafeArea(
@@ -921,7 +937,7 @@ class _ExpenseTile extends StatelessWidget {
     GroupDetailLoaded state,
     GroupDetailCubit cubit,
   ) {
-    showDialog(
+    showTabbyDialog(
       context: context,
       builder: (ctx) => _EditExpenseDialog(
         expense: expense,
