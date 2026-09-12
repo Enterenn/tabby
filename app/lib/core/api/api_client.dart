@@ -1,6 +1,32 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'token_storage.dart';
+
+const _sensitiveLogKeys = {
+  'password',
+  'current_password',
+  'new_password',
+  'access_token',
+  'refresh_token',
+};
+
+String _redactLogLine(String line) {
+  var out = line.replaceAllMapped(
+    RegExp(r'(authorization)\s*[:=]\s*.+$', caseSensitive: false, multiLine: true),
+    (match) => '${match[1]}: "***"',
+  );
+  for (final key in _sensitiveLogKeys) {
+    out = out.replaceAllMapped(
+      RegExp(
+        '($key)\\s*[:=]\\s*("[^"]*"|[^,\\s}\\]]+)',
+        caseSensitive: false,
+      ),
+      (match) => '${match[1]}: "***"',
+    );
+  }
+  return out;
+}
 
 /// Base URL du backend — IP locale (même réseau) ou IP Tailscale (hors réseau).
 const String _defaultBaseUrl = 'http://192.168.1.31:8000';
@@ -17,16 +43,20 @@ class ApiClient {
       ),
     );
 
-    _dio.interceptors.addAll([
-      _AuthInterceptor(_dio),
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        error: true,
-        // ignore: avoid_print
-        logPrint: (o) => print('[Dio] $o'),
-      ),
-    ]);
+    _dio.interceptors.add(_AuthInterceptor(_dio));
+    if (!kReleaseMode) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          error: true,
+          logPrint: (o) {
+            // ignore: avoid_print
+            print('[Dio] ${_redactLogLine(o.toString())}');
+          },
+        ),
+      );
+    }
   }
 
   late final Dio _dio;
