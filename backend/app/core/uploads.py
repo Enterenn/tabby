@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 UPLOADS_DIR = Path("uploads")
 AVATARS_DIR = UPLOADS_DIR / "avatars"
@@ -34,8 +34,14 @@ def delete_avatar_files(user_id: str) -> None:
         leftover.unlink(missing_ok=True)
 
 
+def apply_exif_orientation(image: Image.Image) -> Image.Image:
+    """Les JPEG téléphone portent souvent une rotation EXIF (90° / 270°)."""
+    oriented = ImageOps.exif_transpose(image)
+    return oriented if oriented is not None else image
+
+
 def process_avatar(image: Image.Image) -> Image.Image:
-    image = image.convert("RGB")
+    image = apply_exif_orientation(image).convert("RGB")
     width, height = image.size
     side = min(width, height)
     left = (width - side) // 2

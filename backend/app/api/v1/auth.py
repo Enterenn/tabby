@@ -21,6 +21,7 @@ from app.core.uploads import (
     ALLOWED_AVATAR_TYPES,
     MAX_AVATAR_BYTES,
     MIN_AVATAR_SIZE,
+    apply_exif_orientation,
     avatar_public_url,
     process_avatar,
     save_avatar,
@@ -165,6 +166,7 @@ async def upload_avatar(
     try:
         image = Image.open(io.BytesIO(data))
         image.load()
+        image = apply_exif_orientation(image)
     except (UnidentifiedImageError, OSError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
