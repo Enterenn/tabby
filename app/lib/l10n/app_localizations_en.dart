@@ -818,7 +818,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unknownBrandHint =>
-      'The barcode does not include the store name. Search for the brand below — we will remember this code for later scans.';
+      'Search for the brand — your cards and similar codes come first. We\'ll remember this for next time.';
 
   @override
   String get brandHint => 'e.g. Animalis, Picard…';

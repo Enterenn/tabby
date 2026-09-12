@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+enum LoyaltyCodeKind { any, barcode, qrcode }
+
 /// Marque connue — couleurs et monogramme (logo asset optionnel plus tard).
 class LoyaltyBrand {
   const LoyaltyBrand({
@@ -13,6 +15,9 @@ class LoyaltyBrand {
     this.codePrefixes = const [],
     this.qrHints = const [],
     this.aliases = const [],
+    this.codeGroupSize,
+    this.codePattern,
+    this.codeKind = LoyaltyCodeKind.any,
   });
 
   final String id;
@@ -28,6 +33,12 @@ class LoyaltyBrand {
   final List<String> qrHints;
   /// Variantes de recherche (« bk », « burger king »…).
   final List<String> aliases;
+  /// Taille des blocs du code imprimé (McDo 4, BK 3). Null = pas de groupement.
+  final int? codeGroupSize;
+  /// Forme du code compact (`8DDC9YD9L`) pour reconnaître l'enseigne sans URL.
+  final String? codePattern;
+  /// Restreint [codePattern] au QR ou au code-barres.
+  final LoyaltyCodeKind codeKind;
 
   /// Halo depuis le haut — plus discret qu'un dégradé linéaire.
   Gradient get gradient => RadialGradient(
@@ -186,8 +197,17 @@ class LoyaltyBrand {
       name: 'McDonald\'s',
       primary: Color(0xFF264F36),
       monogram: 'M',
-      qrHints: ['mcdonalds.fr', 'mcdonalds.com', 'mcdo'],
+      qrHints: [
+        'mcdonalds.fr',
+        'mcdonalds.com',
+        'mcdo+',
+        'mcdoplus',
+        'mcdo',
+      ],
       aliases: ['mcdo', 'mcdonalds', 'mcdonald', 'mc donalds'],
+      codeGroupSize: 4,
+      codePattern: r'^(?=.*[A-Z])[A-Z0-9]{8}$',
+      codeKind: LoyaltyCodeKind.barcode,
     ),
     LoyaltyBrand(
       id: 'ikea',
@@ -622,8 +642,17 @@ class LoyaltyBrand {
       name: 'Burger King',
       primary: Color(0xFF502314),
       monogram: 'BK',
-      qrHints: ['burgerking.fr', 'burgerking.com', 'burgerking', 'burger king'],
+      qrHints: [
+        'burgerking.fr',
+        'burgerking.com',
+        'burgerking',
+        'burger king',
+        'kingdom',
+      ],
       aliases: ['bk', 'burger-king', 'burgerking', 'burger king'],
+      codeGroupSize: 3,
+      codePattern: r'^(?=.*[A-Z])[A-Z0-9]{9}$',
+      codeKind: LoyaltyCodeKind.qrcode,
     ),
     LoyaltyBrand(
       id: 'dominos',

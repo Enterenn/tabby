@@ -48,22 +48,7 @@ class _CardFullScreen extends StatelessWidget {
                 TabbyListCard(
                   color: cs.surfaceContainerLowest,
                   padding: const EdgeInsets.all(24),
-                  child: card.isBarcode
-                        ? bw.BarcodeWidget(
-                            barcode: bw.Barcode.code128(),
-                            data: card.codeValue,
-                            width: double.infinity,
-                            height: 100,
-                            drawText: true,
-                            style:
-                                tt.bodyMedium?.copyWith(color: cs.onSurface),
-                          )
-                        : bw.BarcodeWidget(
-                            barcode: bw.Barcode.qrCode(),
-                            data: card.codeValue,
-                            width: 220,
-                            height: 220,
-                          ),
+                  child: LoyaltyMachineCode(card: card),
                 )
                     .animate()
                     .fadeIn(delay: 160.ms, duration: 380.ms)
@@ -76,7 +61,7 @@ class _CardFullScreen extends StatelessWidget {
                     ),
                 const SizedBox(height: 20),
                 Text(
-                  card.codeValue,
+                  card.renderedCode,
                   style: tt.titleMedium?.copyWith(
                     color: cs.onSurface,
                     fontFeatures: const [FontFeature.tabularFigures()],
@@ -292,6 +277,12 @@ class _AddCardSheetState extends State<_AddCardSheet> {
 
   bool get _isEditing => widget.existing != null;
 
+  int? get _codeGroupSize =>
+      LoyaltyBrand.byId(_brandId)?.codeGroupSize;
+
+  String _groupedCode(String raw) =>
+      LoyaltyCodeValue.grouped(raw, groupSize: _codeGroupSize);
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -323,6 +314,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
       _showBrandPicker = known == null;
       _scanning = false;
       _nameCtrl.text = existing.brandName;
+      _codeValue = _groupedCode(_codeValue);
     }
   }
 
@@ -333,10 +325,43 @@ class _AddCardSheetState extends State<_AddCardSheet> {
     super.dispose();
   }
 
+  List<String> get _walletBrandIds {
+    final state = context.read<CardsCubit>().state;
+    if (state is! CardsLoaded) return const [];
+    return [
+      for (final card in state.cards)
+        if (card.brandId != null) card.brandId!,
+    ];
+  }
+
   List<LoyaltyBrand> get _filteredBrands {
-    final q = _brandSearchCtrl.text.trim().toLowerCase();
-    if (q.isEmpty) return LoyaltyBrand.catalog;
-    return LoyaltyBrand.catalog.where((b) => b.matchesQuery(q)).toList();
+    final q = _brandSearchCtrl.text.trim();
+    final base = q.isEmpty
+        ? LoyaltyBrand.catalog
+        : LoyaltyBrand.catalog.where((b) => b.matchesQuery(q)).toList();
+    if (q.isNotEmpty) return base;
+
+    final suggested = <String>{
+      ..._walletBrandIds,
+      ...LoyaltyPrefixStore.learnedBrandIds,
+      ...LoyaltyBrandDetector.suggestions(
+        LoyaltyScanPayload(
+          value: _codeValue,
+          isQrCode: _codeType == 'qrcode',
+        ),
+        knownBrandIds: _walletBrandIds,
+      ).map((b) => b.id),
+    };
+    final pinned = <LoyaltyBrand>[];
+    final rest = <LoyaltyBrand>[];
+    for (final brand in base) {
+      if (suggested.contains(brand.id)) {
+        pinned.add(brand);
+      } else {
+        rest.add(brand);
+      }
+    }
+    return [...pinned, ...rest];
   }
 
   String _colorToHex(Color c) =>
@@ -345,7 +370,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
       '${c.b.round().toRadixString(16).padLeft(2, '0')}';
 
   Future<void> _selectBrand(LoyaltyBrand brand) async {
-    if (_codeValue.isNotEmpty && _codeType == 'barcode') {
+    if (_codeValue.isNotEmpty) {
       await LoyaltyPrefixStore.learn(_codeValue, brand.id);
     }
     if (!mounted) return;
@@ -357,6 +382,10 @@ class _AddCardSheetState extends State<_AddCardSheet> {
       _brandAutoDetected = _codeValue.isNotEmpty;
       _showBrandPicker = false;
       _brandSearchCtrl.clear();
+      _codeValue = LoyaltyCodeValue.grouped(
+        _codeValue,
+        groupSize: brand.codeGroupSize,
+      );
     });
   }
 
@@ -371,9 +400,11 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   }
 
   void _applyScan(LoyaltyScanPayload scan) {
-    final brand = LoyaltyBrandDetector.identify(scan);
+    final brand = LoyaltyBrandDetector.identify(
+      scan,
+      knownBrandIds: _walletBrandIds,
+    );
     setState(() {
-      _codeValue = LoyaltyCodeValue.preserve(scan.value);
       _codeType = scan.isQrCode ? 'qrcode' : 'barcode';
       _scanning = false;
       if (brand != null) {
@@ -396,6 +427,8 @@ class _AddCardSheetState extends State<_AddCardSheet> {
         _brandSearchCtrl.clear();
         _showBrandPicker = true;
       }
+      final groupSize = brand?.codeGroupSize ?? _codeGroupSize;
+      _codeValue = LoyaltyCodeValue.grouped(scan.value, groupSize: groupSize);
     });
   }
 
@@ -419,12 +452,15 @@ class _AddCardSheetState extends State<_AddCardSheet> {
     if (name.isEmpty || _codeValue.isEmpty) return;
     setState(() => _loading = true);
     final cubit = context.read<CardsCubit>();
+    if (_brandId != null) {
+      await LoyaltyPrefixStore.learn(_codeValue, _brandId!);
+    }
     final existing = widget.existing;
     final ok = existing == null
         ? await cubit.addCard(
             brandName: name,
             codeType: _codeType,
-            codeValue: LoyaltyCodeValue.preserve(_codeValue),
+            codeValue: _groupedCode(_codeValue),
             color: _colorToHex(_selectedColor),
             brandId: _brandId,
           )
@@ -432,7 +468,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
             id: existing.id,
             brandName: name,
             codeType: _codeType,
-            codeValue: LoyaltyCodeValue.preserve(_codeValue),
+            codeValue: _groupedCode(_codeValue),
             color: _colorToHex(_selectedColor),
             brandId: _brandId,
           );
@@ -616,37 +652,35 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                               onChanged: (_) => setState(() {}),
                             ),
                             const SizedBox(height: 12),
-                            SizedBox(
-                              height: 96,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _filteredBrands.length + 1,
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(width: 10),
-                                itemBuilder: (context, i) {
-                                  if (i == _filteredBrands.length) {
-                                    return _BrandPickerTile(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 220),
+                              child: SingleChildScrollView(
+                                child: Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: [
+                                    for (final brand in _filteredBrands)
+                                      _BrandPickerTile(
+                                        label: brand.name,
+                                        monogram: brand.monogram.isEmpty
+                                            ? brand.name[0]
+                                            : brand.monogram,
+                                        color: brand.primary,
+                                        onColor: brand.onPrimary,
+                                        selected: !_customBrand &&
+                                            _brandId == brand.id,
+                                        onTap: () => _selectBrand(brand),
+                                      ),
+                                    _BrandPickerTile(
                                       label: context.l10n.other,
                                       monogram: '+',
                                       color: cs.outlineVariant,
                                       onColor: cs.onSurface,
                                       selected: _customBrand,
                                       onTap: _selectCustomBrand,
-                                    );
-                                  }
-                                  final brand = _filteredBrands[i];
-                                  return _BrandPickerTile(
-                                    label: brand.name,
-                                    monogram: brand.monogram.isEmpty
-                                        ? brand.name[0]
-                                        : brand.monogram,
-                                    color: brand.primary,
-                                    onColor: brand.onPrimary,
-                                    selected: !_customBrand &&
-                                        _brandId == brand.id,
-                                    onTap: () => _selectBrand(brand),
-                                  );
-                                },
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             if (_customBrand) ...[
@@ -892,6 +926,7 @@ class _BrandPickerTile extends StatelessWidget {
           color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(

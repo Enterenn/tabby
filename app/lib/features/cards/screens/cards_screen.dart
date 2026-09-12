@@ -1,4 +1,3 @@
-import 'package:barcode_widget/barcode_widget.dart' as bw;
 import 'package:material_ui/material_ui.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,6 +14,7 @@ import '../../../shared/models/loyalty_prefix_store.dart';
 import '../../../shared/models/loyalty_scan.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/loyalty/loyalty_card_face.dart';
+import '../../../shared/widgets/loyalty/loyalty_machine_code.dart';
 import '../../../shared/widgets/loyalty/loyalty_wallet_stack.dart';
 import '../cubit/cards_cubit.dart';
 

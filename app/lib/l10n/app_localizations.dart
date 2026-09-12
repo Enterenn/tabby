@@ -1589,7 +1589,7 @@ abstract class AppLocalizations {
   /// No description provided for @unknownBrandHint.
   ///
   /// In fr, this message translates to:
-  /// **'Le code-barres ne contient pas le nom du magasin. Cherche l\'enseigne ci-dessous — on retiendra ce code pour les prochains scans.'**
+  /// **'Cherche l\'enseigne — tes cartes et les codes du même type sont en premier. On s\'en souvient pour la suite.'**
   String get unknownBrandHint;
 
   /// No description provided for @brandHint.

@@ -826,7 +826,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get unknownBrandHint =>
-      'Le code-barres ne contient pas le nom du magasin. Cherche l\'enseigne ci-dessous — on retiendra ce code pour les prochains scans.';
+      'Cherche l\'enseigne — tes cartes et les codes du même type sont en premier. On s\'en souvient pour la suite.';
 
   @override
   String get brandHint => 'Ex. Animalis, Picard…';
