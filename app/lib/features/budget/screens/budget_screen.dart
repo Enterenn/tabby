@@ -108,7 +108,7 @@ class _BudgetContent extends StatelessWidget {
           child: ExpressiveHeroBanner(
             label: context.l10n.monthTotal,
             value: formatMoney(context, state.stats.total),
-            variant: ExpressiveTonalVariant.coral,
+            variant: ExpressiveTonalVariant.lime,
             accentIcon: Symbols.payments_rounded,
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           ),
