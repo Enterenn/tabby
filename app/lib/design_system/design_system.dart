@@ -7,7 +7,7 @@ library;
 
 export 'actions/expressive_action_button.dart';
 export 'actions/expressive_button_group.dart';
-export 'actions/expressive_cta_button.dart';
+export 'actions/tabby_button.dart';
 export 'actions/expressive_fab_menu.dart';
 export 'actions/expressive_press_scale.dart';
 export 'data/expressive_figure.dart';

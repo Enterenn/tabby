@@ -120,9 +120,12 @@ class _InviteScreenState extends State<InviteScreen> {
               ),
             ],
             const Spacer(),
-            FilledButton(
-              onPressed: () => context.go('/home'),
-              child: Text(context.l10n.backHome),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => context.go('/home'),
+                child: Text(context.l10n.backHome),
+              ),
             ),
             const SizedBox(height: 24),
           ],

@@ -170,9 +170,9 @@ class _HomeViewState extends State<_HomeView> {
                       if (!hasGroups) ...[
                         const SizedBox(height: 16),
                         Center(
-                          child: ExpressiveCtaButton(
-                            label: context.l10n.newGroup,
+                          child: FilledButton(
                             onPressed: () => showNewGroupSheet(context),
+                            child: Text(context.l10n.newGroup),
                           ),
                         ).animate(delay: 200.ms)
                           .fadeIn(duration: 400.ms)
@@ -205,9 +205,9 @@ class _HomeViewState extends State<_HomeView> {
                                 ),
                               ],
                             ),
-                            child: ExpressiveCtaButton(
-                              label: context.l10n.newGroup,
+                            child: FilledButton(
                               onPressed: () => showNewGroupSheet(context),
+                              child: Text(context.l10n.newGroup),
                             ),
                           ),
                         ),

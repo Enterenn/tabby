@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Bouton d'action circulaire — FAB nav, actions prioritaires.
+/// FAB / action ronde — [IconButton.filled] aux tokens Tabby.
 class ExpressiveActionButton extends StatelessWidget {
   const ExpressiveActionButton({
     super.key,
@@ -24,30 +24,19 @@ class ExpressiveActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
-    final shapes = context.tabbyShapes;
-    final bg = color ?? cs.primary;
-    final fg = iconColor ?? cs.onPrimary;
-    final border = shapes.circle();
 
-    final button = Material(
-      color: bg,
-      elevation: 0,
-      shape: border,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: border,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Icon(icon, color: fg, size: size * 0.52, fill: 1),
-        ),
+    return IconButton.filled(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: Icon(icon, fill: 1),
+      style: IconButton.styleFrom(
+        backgroundColor: color ?? cs.primary,
+        foregroundColor: iconColor ?? cs.onPrimary,
+        minimumSize: Size(size, size),
+        maximumSize: Size(size, size),
+        iconSize: size * 0.52,
+        padding: EdgeInsets.zero,
       ),
     );
-
-    if (tooltip != null) {
-      return Tooltip(message: tooltip!, child: button);
-    }
-    return button;
   }
 }

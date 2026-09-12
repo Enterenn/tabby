@@ -1,9 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../actions/expressive_cta_button.dart';
+import '../actions/tabby_button.dart';
 import 'tabby_sheet.dart';
 
-/// Confirmation destructive ou neutre — blur [showTabbyDialog] + CTA compact.
+/// Confirmation destructive ou neutre — blur [showTabbyDialog] + [FilledButton].
 Future<bool> showTabbyConfirm(
   BuildContext context, {
   required String title,
@@ -51,13 +51,10 @@ class TabbyConfirmDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(cancelLabel),
         ),
-        ExpressiveCtaButton(
-          label: confirmLabel,
-          compact: true,
-          variant: danger
-              ? ExpressiveCtaVariant.danger
-              : ExpressiveCtaVariant.filled,
+        FilledButton(
+          style: danger ? context.tabbyDangerFilled : null,
           onPressed: () => Navigator.pop(context, true),
+          child: Text(confirmLabel),
         ),
       ],
     );

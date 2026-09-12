@@ -153,21 +153,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          ExpressiveCtaButton(
-                            label: context.l10n.loginSubmit,
-                            expanded: true,
-                            loading: state is AuthLoading,
+                          FilledButton(
                             onPressed: busy ? null : _submit,
+                            child: state is AuthLoading
+                                ? const TabbyButtonSpinner()
+                                : Text(context.l10n.loginSubmit),
                           ),
                           if (showUnlock) ...[
                             const SizedBox(height: 12),
-                            ExpressiveCtaButton(
-                              label: context.l10n.biometricUnlock,
-                              icon: Symbols.fingerprint_rounded,
-                              expanded: true,
-                              variant: ExpressiveCtaVariant.outlined,
-                              loading: _unlocking,
+                            OutlinedButton.icon(
                               onPressed: busy ? null : _unlockWithBiometrics,
+                              icon: _unlocking
+                                  ? TabbyButtonSpinner(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                      size: 18,
+                                    )
+                                  : const Icon(Symbols.fingerprint_rounded),
+                              label: Text(context.l10n.biometricUnlock),
                             ),
                           ],
                         ],

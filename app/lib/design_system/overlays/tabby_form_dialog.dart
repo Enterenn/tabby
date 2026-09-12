@@ -1,9 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../actions/expressive_cta_button.dart';
+import '../../core/theme/app_theme.dart';
+import '../actions/tabby_button.dart';
 import 'tabby_sheet.dart';
 
-/// Dialog de formulaire — titre, contenu, Annuler + CTA compact (loading).
+/// Dialog de formulaire — titre, contenu, Annuler + [FilledButton].
 Future<T?> showTabbyFormDialog<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -35,6 +36,7 @@ class TabbyFormDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final cancel = cancelLabel ??
         MaterialLocalizations.of(context).cancelButtonLabel;
+    final cs = context.tabbyColors;
 
     return AlertDialog(
       title: Text(title),
@@ -44,14 +46,15 @@ class TabbyFormDialog extends StatelessWidget {
           onPressed: loading ? null : () => Navigator.pop(context),
           child: Text(cancel),
         ),
-        ExpressiveCtaButton(
-          label: submitLabel,
-          compact: true,
-          loading: loading,
-          variant: danger
-              ? ExpressiveCtaVariant.danger
-              : ExpressiveCtaVariant.filled,
+        FilledButton(
+          style: danger ? context.tabbyDangerFilled : null,
           onPressed: loading ? null : onSubmit,
+          child: loading
+              ? TabbyButtonSpinner(
+                  color: danger ? cs.onError : cs.onPrimary,
+                  size: 16,
+                )
+              : Text(submitLabel),
         ),
       ],
     );

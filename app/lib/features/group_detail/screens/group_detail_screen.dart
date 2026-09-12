@@ -385,11 +385,9 @@ class _BalanceTile extends StatelessWidget {
               ),
             ),
             if (isMine)
-              ExpressiveCtaButton(
-                label: context.l10n.settle,
-                compact: true,
-                variant: ExpressiveCtaVariant.tonal,
+              FilledButton.tonal(
                 onPressed: () => _confirmSettle(context),
+                child: Text(context.l10n.settle),
               ),
           ],
         ),

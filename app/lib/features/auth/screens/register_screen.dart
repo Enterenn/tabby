@@ -141,11 +141,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
-                      return ExpressiveCtaButton(
-                        label: context.l10n.registerSubmit,
-                        expanded: true,
-                        loading: state is AuthLoading,
-                        onPressed: state is AuthLoading ? null : _submit,
+                      return SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: state is AuthLoading ? null : _submit,
+                          child: state is AuthLoading
+                              ? const TabbyButtonSpinner()
+                              : Text(context.l10n.registerSubmit),
+                        ),
                       );
                     },
                   ),

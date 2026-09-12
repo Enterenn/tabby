@@ -208,10 +208,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                         v == null || !v.contains('@') ? l10n.invalidEmail : null,
                   ),
                   const SizedBox(height: 16),
-                  ExpressiveCtaButton(
-                    label: l10n.save,
-                    onPressed: _savingProfile ? null : _saveProfile,
-                    expanded: true,
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _savingProfile ? null : _saveProfile,
+                      child: _savingProfile
+                          ? const TabbyButtonSpinner()
+                          : Text(l10n.save),
+                    ),
                   ),
                 ],
               ),
@@ -270,11 +274,18 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                         v != _newCtrl.text ? l10n.passwordMismatch : null,
                   ),
                   const SizedBox(height: 16),
-                  ExpressiveCtaButton(
-                    label: l10n.changePassword,
-                    variant: ExpressiveCtaVariant.tonal,
-                    onPressed: _savingPassword ? null : _savePassword,
-                    expanded: true,
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonal(
+                      onPressed: _savingPassword ? null : _savePassword,
+                      child: _savingPassword
+                          ? TabbyButtonSpinner(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                            )
+                          : Text(l10n.changePassword),
+                    ),
                   ),
                 ],
               ),

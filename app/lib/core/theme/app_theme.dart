@@ -84,7 +84,7 @@ abstract final class AppTheme {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(64, 52),
           elevation: 0,
           shape: shapes.buttonShape,
           textStyle: TabbyTypographyTokens.flex(
@@ -99,9 +99,9 @@ abstract final class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 48),
+          minimumSize: const Size(64, 52),
           shape: shapes.buttonShape,
-          side: BorderSide(color: scheme.outlineVariant, width: 1.5),
+          side: BorderSide(color: scheme.outline, width: 1.5),
           textStyle: TabbyTypographyTokens.flex(
             fontSize: 15,
             wght: 600,

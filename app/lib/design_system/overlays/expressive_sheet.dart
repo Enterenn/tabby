@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../actions/expressive_cta_button.dart';
+import '../actions/tabby_button.dart';
 
 /// En-tête standard des bottom sheets M3 Expressive.
 class ExpressiveSheetHeader extends StatelessWidget {
@@ -112,11 +112,12 @@ class ExpressiveSheetSubmit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpressiveCtaButton(
-      label: label,
-      expanded: true,
-      loading: loading,
-      onPressed: onPressed,
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: loading ? null : onPressed,
+        child: loading ? const TabbyButtonSpinner() : Text(label),
+      ),
     );
   }
 }

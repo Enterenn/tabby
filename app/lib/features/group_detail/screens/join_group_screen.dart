@@ -92,11 +92,14 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                     v == null || v.length != 6 ? context.l10n.inviteCodeRequired : null,
               ),
               const SizedBox(height: 32),
-              ExpressiveCtaButton(
-                label: context.l10n.joinSubmit,
-                expanded: true,
-                loading: _loading,
-                onPressed: _loading ? null : _submit,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _loading ? null : _submit,
+                  child: _loading
+                      ? const TabbyButtonSpinner()
+                      : Text(context.l10n.joinSubmit),
+                ),
               ),
             ],
           ),

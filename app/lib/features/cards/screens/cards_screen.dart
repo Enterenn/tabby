@@ -79,9 +79,9 @@ class _CardsView extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
-                      ExpressiveCtaButton(
-                        label: context.l10n.addCard,
+                      FilledButton(
                         onPressed: () => _showAddSheet(context),
+                        child: Text(context.l10n.addCard),
                       ),
                     ],
                   ),
@@ -145,9 +145,9 @@ class _CardsView extends StatelessWidget {
                           ),
                   ),
                   Center(
-                    child: ExpressiveCtaButton(
-                      label: context.l10n.addCard,
+                    child: FilledButton(
                       onPressed: () => _showAddSheet(context),
+                      child: Text(context.l10n.addCard),
                     ),
                   ),
                   const SizedBox(height: 100),
@@ -696,11 +696,13 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                       onImportScreenshot: _importScreenshot,
                     )
                   else if (_codeValue.isEmpty) ...[
-                    ExpressiveCtaButton(
-                      icon: Symbols.photo_camera_rounded,
-                      label: context.l10n.scanMyCard,
-                      expanded: true,
-                      onPressed: _startScan,
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _startScan,
+                        icon: const Icon(Symbols.photo_camera_rounded),
+                        label: Text(context.l10n.scanMyCard),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Center(
@@ -759,22 +761,18 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     Row(
                       children: [
                         Expanded(
-                          child: ExpressiveCtaButton(
-                            icon: Symbols.photo_camera_rounded,
-                            label: context.l10n.rescan,
-                            variant: ExpressiveCtaVariant.tonal,
-                            expanded: true,
+                          child: FilledButton.tonalIcon(
                             onPressed: _startScan,
+                            icon: const Icon(Symbols.photo_camera_rounded),
+                            label: Text(context.l10n.rescan),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: ExpressiveCtaButton(
-                            icon: Symbols.edit_rounded,
-                            label: context.l10n.edit,
-                            variant: ExpressiveCtaVariant.tonal,
-                            expanded: true,
+                          child: FilledButton.tonalIcon(
                             onPressed: () => _showManualInput(context),
+                            icon: const Icon(Symbols.edit_rounded),
+                            label: Text(context.l10n.edit),
                           ),
                         ),
                       ],

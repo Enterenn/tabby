@@ -208,9 +208,9 @@ class _BudgetEmpty extends StatelessWidget {
             style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          ExpressiveCtaButton(
-            label: context.l10n.newBudget,
+          FilledButton(
             onPressed: onCreateBudget,
+            child: Text(context.l10n.newBudget),
           ),
         ],
       ),

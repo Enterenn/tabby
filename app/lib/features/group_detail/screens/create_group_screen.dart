@@ -85,11 +85,14 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     v == null || v.trim().isEmpty ? context.l10n.requiredField : null,
               ),
               const SizedBox(height: 32),
-              ExpressiveCtaButton(
-                label: context.l10n.createGroupSubmit,
-                expanded: true,
-                loading: _loading,
-                onPressed: _loading ? null : _submit,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _loading ? null : _submit,
+                  child: _loading
+                      ? const TabbyButtonSpinner()
+                      : Text(context.l10n.createGroupSubmit),
+                ),
               ),
             ],
           ),
