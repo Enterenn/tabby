@@ -212,6 +212,10 @@
   "monthTotal": "Total du mois",
   "monthBudgets": "Budgets du mois",
   "noBudgetThisMonth": "Aucun budget ce mois — fixe un plafond par catégorie.",
+  "noBudgetTitle": "Aucun budget",
+  "noBudgetBody": "Fixe un plafond par catégorie pour suivre tes dépenses du mois.",
+  "budgetThresholdHint": "Attention dès 75 % du plafond, dépassé à 100 %.",
+  "budgetActions": "Options du budget",
   "newBudget": "Nouveau budget",
   "allGroups": "Tous",
   "noSpendThisMonth": "Aucune dépense ce mois",
@@ -228,7 +232,7 @@
       "percent": { "type": "String" }
     }
   },
-  "budgetPerMonth": "Budget {amount} €/mois",
+  "budgetPerMonth": "Budget {amount}/mois",
   "@budgetPerMonth": {
     "placeholders": {
       "amount": { "type": "String" }
@@ -236,19 +240,19 @@
   },
   "overBudget": "Dépassé",
   "warning": "Attention",
-  "spentAmount": "{amount} € dépensés",
+  "spentAmount": "{amount} dépensés",
   "@spentAmount": {
     "placeholders": {
       "amount": { "type": "String" }
     }
   },
-  "remainingAmount": "{amount} € restants",
+  "remainingAmount": "{amount} restants",
   "@remainingAmount": {
     "placeholders": {
       "amount": { "type": "String" }
     }
   },
-  "overspendAmount": "{amount} € de dépassement",
+  "overspendAmount": "{amount} de dépassement",
   "@overspendAmount": {
     "placeholders": {
       "amount": { "type": "String" }

@@ -35,6 +35,20 @@ class Category extends Equatable {
     return Color(int.parse('FF$code', radix: 16));
   }
 
+  /// Hex DB, ou gris si le code est invalide.
+  Color get resolvedColor {
+    try {
+      return flutterColor;
+    } catch (_) {
+      return const Color(0xFF888888);
+    }
+  }
+
+  Color get onResolvedColor =>
+      resolvedColor.computeLuminance() > 0.55
+          ? const Color(0xFF1C1B1F)
+          : const Color(0xFFFFFFFF);
+
   IconData get flutterIcon => CategoryIcons.resolve(icon);
 
   Widget iconWidget({double size = 20, Color? color, double fill = 0}) {

@@ -32,6 +32,7 @@ class BudgetLoaded extends BudgetState {
     required this.selectedYear,
     required this.selectedMonth,
     this.selectedGroupId,
+    this.selectedCategoryId,
   });
 
   final List<Budget> budgets;
@@ -41,6 +42,7 @@ class BudgetLoaded extends BudgetState {
   final int selectedYear;
   final int selectedMonth;
   final String? selectedGroupId; // null = tous les groupes
+  final String? selectedCategoryId;
 
   BudgetLoaded copyWith({
     List<Budget>? budgets,
@@ -50,7 +52,9 @@ class BudgetLoaded extends BudgetState {
     int? selectedYear,
     int? selectedMonth,
     String? selectedGroupId,
+    String? selectedCategoryId,
     bool clearGroup = false,
+    bool clearCategory = false,
   }) => BudgetLoaded(
     budgets: budgets ?? this.budgets,
     groups: groups ?? this.groups,
@@ -61,16 +65,29 @@ class BudgetLoaded extends BudgetState {
     selectedGroupId: clearGroup
         ? null
         : (selectedGroupId ?? this.selectedGroupId),
+    selectedCategoryId: clearCategory
+        ? null
+        : (selectedCategoryId ?? this.selectedCategoryId),
   );
+
+  int? get selectedCategoryIndex {
+    if (selectedCategoryId == null) return null;
+    final index = stats.categories.indexWhere(
+      (c) => c.category.id == selectedCategoryId,
+    );
+    return index < 0 ? null : index;
+  }
 
   @override
   List<Object?> get props => [
     budgets,
     groups,
+    allCategories,
     stats,
     selectedYear,
     selectedMonth,
     selectedGroupId,
+    selectedCategoryId,
   ];
 }
 
@@ -103,7 +120,7 @@ class BudgetCubit extends Cubit<BudgetState> {
     // clearGroup=true → null explicite, sinon on garde l'ancienne sélection
     final targetGroup = clearGroup ? null : (groupId ?? prev?.selectedGroupId);
 
-    emit(const BudgetLoading());
+    if (prev == null) emit(const BudgetLoading());
     try {
       final queryParams = <String, dynamic>{
         'year': targetYear,
@@ -112,7 +129,7 @@ class BudgetCubit extends Cubit<BudgetState> {
       };
 
       final results = await Future.wait([
-        apiClient.dio.get('/budgets'),
+        apiClient.dio.get('/budgets', queryParameters: queryParams),
         apiClient.dio.get('/groups'),
         apiClient.dio.get('/categories'),
         apiClient.dio.get('/stats', queryParameters: queryParams),
@@ -140,6 +157,7 @@ class BudgetCubit extends Cubit<BudgetState> {
           selectedYear: targetYear,
           selectedMonth: targetMonth,
           selectedGroupId: targetGroup,
+          selectedCategoryId: prev?.selectedCategoryId,
         ),
       );
     } catch (e) {
@@ -172,6 +190,16 @@ class BudgetCubit extends Cubit<BudgetState> {
       groupId: groupId,
       clearGroup: groupId == null,
     );
+  }
+
+  void selectCategory(String? categoryId) {
+    if (state is! BudgetLoaded) return;
+    final s = state as BudgetLoaded;
+    if (categoryId == null || s.selectedCategoryId == categoryId) {
+      emit(s.copyWith(clearCategory: true));
+      return;
+    }
+    emit(s.copyWith(selectedCategoryId: categoryId));
   }
 
   Future<bool> createBudget({

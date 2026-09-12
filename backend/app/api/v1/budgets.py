@@ -3,8 +3,9 @@
 import uuid
 from datetime import date
 from decimal import Decimal
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import extract, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -29,18 +30,24 @@ def _status(percent: float) -> str:
     return "ok"
 
 
-async def _spending_this_month(
+def _target_period(year: int | None, month: int | None) -> tuple[int, int]:
+    today = date.today()
+    return year or today.year, month or today.month
+
+
+async def _spending_for_month(
     db: AsyncSession,
     group_id: uuid.UUID,
     category_id: uuid.UUID,
-    today: date,
+    year: int,
+    month: int,
 ) -> float:
     result = await db.execute(
         select(func.coalesce(func.sum(Expense.amount), 0)).where(
             Expense.group_id == group_id,
             Expense.category_id == category_id,
-            extract("year", Expense.expense_date) == today.year,
-            extract("month", Expense.expense_date) == today.month,
+            extract("year", Expense.expense_date) == year,
+            extract("month", Expense.expense_date) == month,
         )
     )
     return float(result.scalar_one())
@@ -70,10 +77,12 @@ def _to_response(b: Budget, spent: float) -> BudgetResponse:
 @router.get("/{group_id}/budgets", response_model=list[BudgetResponse])
 async def list_budgets(
     group_id: uuid.UUID,
+    year: int | None = Query(default=None),
+    month: int | None = Query(default=None, ge=1, le=12),
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
-    today = date.today()
+    target_year, target_month = _target_period(year, month)
     result = await db.execute(
         select(Budget)
         .where(Budget.group_id == group_id)
@@ -83,7 +92,9 @@ async def list_budgets(
     budgets = result.scalars().all()
     out = []
     for b in budgets:
-        spent = await _spending_this_month(db, group_id, b.category_id, today)
+        spent = await _spending_for_month(
+            db, group_id, b.category_id, target_year, target_month
+        )
         out.append(_to_response(b, spent))
     return out
 
@@ -132,8 +143,10 @@ async def create_budget(
         .options(selectinload(Budget.category))
     )
     budget = result.scalar_one()
-    today = date.today()
-    spent = await _spending_this_month(db, group_id, cat_id, today)
+    target_year, target_month = _target_period(None, None)
+    spent = await _spending_for_month(
+        db, group_id, cat_id, target_year, target_month
+    )
     return _to_response(budget, spent)
 
 
@@ -157,8 +170,10 @@ async def update_budget(
     budget.limit_amount = Decimal(str(body.limit_amount))
     await db.flush()
 
-    today = date.today()
-    spent = await _spending_this_month(db, group_id, budget.category_id, today)
+    target_year, target_month = _target_period(None, None)
+    spent = await _spending_for_month(
+        db, group_id, budget.category_id, target_year, target_month
+    )
     return _to_response(budget, spent)
 
 
@@ -187,6 +202,9 @@ async def delete_budget(
 
 @global_router.get("", response_model=list[BudgetResponse])
 async def list_all_budgets(
+    year: int | None = Query(default=None),
+    month: int | None = Query(default=None, ge=1, le=12),
+    group_id: Optional[uuid.UUID] = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -196,10 +214,14 @@ async def list_all_budgets(
         )
     )
     group_ids = [row[0] for row in memberships.all()]
+    if group_id is not None:
+        if group_id not in group_ids:
+            return []
+        group_ids = [group_id]
     if not group_ids:
         return []
 
-    today = date.today()
+    target_year, target_month = _target_period(year, month)
     result = await db.execute(
         select(Budget)
         .where(Budget.group_id.in_(group_ids))
@@ -209,6 +231,8 @@ async def list_all_budgets(
     budgets = result.scalars().all()
     out = []
     for b in budgets:
-        spent = await _spending_this_month(db, b.group_id, b.category_id, today)
+        spent = await _spending_for_month(
+            db, b.group_id, b.category_id, target_year, target_month
+        )
         out.append(_to_response(b, spent))
     return out

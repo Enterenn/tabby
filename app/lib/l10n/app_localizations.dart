@@ -1016,6 +1016,30 @@ abstract class AppLocalizations {
   /// **'Aucun budget ce mois — fixe un plafond par catégorie.'**
   String get noBudgetThisMonth;
 
+  /// No description provided for @noBudgetTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun budget'**
+  String get noBudgetTitle;
+
+  /// No description provided for @noBudgetBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fixe un plafond par catégorie pour suivre tes dépenses du mois.'**
+  String get noBudgetBody;
+
+  /// No description provided for @budgetThresholdHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Attention dès 75 % du plafond, dépassé à 100 %.'**
+  String get budgetThresholdHint;
+
+  /// No description provided for @budgetActions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Options du budget'**
+  String get budgetActions;
+
   /// No description provided for @newBudget.
   ///
   /// In fr, this message translates to:
@@ -1055,7 +1079,7 @@ abstract class AppLocalizations {
   /// No description provided for @budgetPerMonth.
   ///
   /// In fr, this message translates to:
-  /// **'Budget {amount} €/mois'**
+  /// **'Budget {amount}/mois'**
   String budgetPerMonth(String amount);
 
   /// No description provided for @overBudget.
@@ -1073,19 +1097,19 @@ abstract class AppLocalizations {
   /// No description provided for @spentAmount.
   ///
   /// In fr, this message translates to:
-  /// **'{amount} € dépensés'**
+  /// **'{amount} dépensés'**
   String spentAmount(String amount);
 
   /// No description provided for @remainingAmount.
   ///
   /// In fr, this message translates to:
-  /// **'{amount} € restants'**
+  /// **'{amount} restants'**
   String remainingAmount(String amount);
 
   /// No description provided for @overspendAmount.
   ///
   /// In fr, this message translates to:
-  /// **'{amount} € de dépassement'**
+  /// **'{amount} de dépassement'**
   String overspendAmount(String amount);
 
   /// No description provided for @editLimit.

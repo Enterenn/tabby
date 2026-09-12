@@ -513,6 +513,20 @@ class AppLocalizationsFr extends AppLocalizations {
       'Aucun budget ce mois — fixe un plafond par catégorie.';
 
   @override
+  String get noBudgetTitle => 'Aucun budget';
+
+  @override
+  String get noBudgetBody =>
+      'Fixe un plafond par catégorie pour suivre tes dépenses du mois.';
+
+  @override
+  String get budgetThresholdHint =>
+      'Attention dès 75 % du plafond, dépassé à 100 %.';
+
+  @override
+  String get budgetActions => 'Options du budget';
+
+  @override
   String get newBudget => 'Nouveau budget';
 
   @override
@@ -536,7 +550,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String budgetPerMonth(String amount) {
-    return 'Budget $amount €/mois';
+    return 'Budget $amount/mois';
   }
 
   @override
@@ -547,17 +561,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String spentAmount(String amount) {
-    return '$amount € dépensés';
+    return '$amount dépensés';
   }
 
   @override
   String remainingAmount(String amount) {
-    return '$amount € restants';
+    return '$amount restants';
   }
 
   @override
   String overspendAmount(String amount) {
-    return '$amount € de dépassement';
+    return '$amount de dépassement';
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/budget.dart';
@@ -10,6 +11,7 @@ import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/models/stats.dart';
+import '../../../shared/widgets/tabby_sheet.dart';
 import '../cubit/budget_cubit.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
@@ -36,7 +38,19 @@ class _BudgetView extends StatelessWidget {
     return BlocBuilder<BudgetCubit, BudgetState>(
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(title: Text(context.l10n.budget)),
+          appBar: AppBar(
+            centerTitle: true,
+            title: state is BudgetLoaded
+                ? _MonthNav(
+                    year: state.selectedYear,
+                    monthLabel: state.stats.monthLabel(
+                      Localizations.localeOf(context).toString(),
+                    ),
+                    isCurrentMonth: state.selectedYear == DateTime.now().year &&
+                        state.selectedMonth == DateTime.now().month,
+                  )
+                : Text(context.l10n.budget),
+          ),
           body: switch (state) {
             BudgetInitial() || BudgetLoading() =>
               const Center(child: CircularProgressIndicator()),
@@ -88,40 +102,18 @@ class _BudgetContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final isCurrentMonth = state.selectedYear == now.year &&
-        state.selectedMonth == now.month;
-
     return CustomScrollView(
       slivers: [
-        if (state.stats.total > 0)
-          SliverToBoxAdapter(
-            child: ExpressiveHeroBanner(
-              label: context.l10n.monthTotal,
-              value: state.stats.total.toStringAsFixed(2),
-              suffix: ' €',
-              subtitle: state.stats.monthLabel(
-                Localizations.localeOf(context).toString(),
-              ),
-              variant: ExpressiveTonalVariant.coral,
-              accentIcon: Symbols.payments_rounded,
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            ),
-          ),
-
-        // ── Navigation mois ────────────────────────────────────────────────
         SliverToBoxAdapter(
-          child: _MonthNav(
-            year: state.selectedYear,
-            month: state.selectedMonth,
-            monthLabel: state.stats.monthLabel(
-              Localizations.localeOf(context).toString(),
-            ),
-            isCurrentMonth: isCurrentMonth,
+          child: ExpressiveHeroBanner(
+            label: context.l10n.monthTotal,
+            value: formatMoney(context, state.stats.total),
+            variant: ExpressiveTonalVariant.coral,
+            accentIcon: Symbols.payments_rounded,
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           ),
         ),
 
-        // ── Filtre groupe ──────────────────────────────────────────────────
         if (state.groups.length > 1)
           SliverToBoxAdapter(
             child: _GroupFilter(
@@ -130,56 +122,98 @@ class _BudgetContent extends StatelessWidget {
             ),
           ),
 
-        // ── Section statistiques ───────────────────────────────────────────
         SliverToBoxAdapter(
-          child: _StatsSection(stats: state.stats),
+          child: _StatsSection(
+            stats: state.stats,
+            selectedCategoryId: state.selectedCategoryId,
+          ),
         ),
 
-        // ── Section budgets ────────────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-            child: Text(
-              context.l10n.monthBudgets,
-              style: Theme.of(context).textTheme.titleMedium,
+            padding: const EdgeInsets.fromLTRB(16, 20, 8, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.monthBudgets,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: onCreateBudget,
+                  child: Text(context.l10n.newBudget),
+                ),
+              ],
             ),
           ),
         ),
-        if (state.budgets.isNotEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) => _BudgetCard(budget: state.budgets[i]),
-                childCount: state.budgets.length,
-              ),
-            ),
-          )
-        else
+        if (state.budgets.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
               child: Text(
-                context.l10n.noBudgetThisMonth,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                context.l10n.budgetThresholdHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: context.tabbyColors.onSurfaceVariant,
                     ),
               ),
             ),
           ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-            child: Center(
-              child: ExpressiveCtaButton(
-                label: context.l10n.newBudget,
-                onPressed: onCreateBudget,
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, i) {
+                  final budget = state.budgets[i];
+                  return _BudgetCard(
+                    budget: budget,
+                    selected: state.selectedCategoryId == budget.category.id,
+                  );
+                },
+                childCount: state.budgets.length,
               ),
             ),
           ),
-        ),
+        ] else
+          SliverToBoxAdapter(
+            child: _BudgetEmpty(onCreateBudget: onCreateBudget),
+          ),
       ],
+    );
+  }
+}
+
+class _BudgetEmpty extends StatelessWidget {
+  const _BudgetEmpty({required this.onCreateBudget});
+
+  final VoidCallback onCreateBudget;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
+    final tt = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+      child: Column(
+        children: [
+          Icon(Symbols.savings_rounded, size: 48, color: cs.outlineVariant),
+          const SizedBox(height: 12),
+          Text(context.l10n.noBudgetTitle, style: tt.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            context.l10n.noBudgetBody,
+            textAlign: TextAlign.center,
+            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 16),
+          ExpressiveCtaButton(
+            label: context.l10n.newBudget,
+            onPressed: onCreateBudget,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -189,12 +223,11 @@ class _BudgetContent extends StatelessWidget {
 class _MonthNav extends StatelessWidget {
   const _MonthNav({
     required this.year,
-    required this.month,
     required this.monthLabel,
     required this.isCurrentMonth,
   });
 
-  final int year, month;
+  final int year;
   final String monthLabel;
   final bool isCurrentMonth;
 
@@ -203,39 +236,31 @@ class _MonthNav extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            icon: const Icon(Symbols.chevron_left_rounded),
-            onPressed: () => context.read<BudgetCubit>().prevMonth(),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Symbols.chevron_left_rounded),
+          onPressed: () => context.read<BudgetCubit>().prevMonth(),
+        ),
+        Flexible(
+          child: Text(
+            '$monthLabel $year',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(width: 4),
-          Column(
-            children: [
-              Text(
-                monthLabel,
-                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              Text(
-                '$year',
-                style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-              ),
-            ],
+        ),
+        IconButton(
+          icon: Icon(
+            Symbols.chevron_right_rounded,
+            color: isCurrentMonth ? cs.outlineVariant : null,
           ),
-          const SizedBox(width: 4),
-          IconButton(
-            icon: Icon(
-              Symbols.chevron_right_rounded,
-              color: isCurrentMonth ? cs.outlineVariant : null,
-            ),
-            onPressed:
-                isCurrentMonth ? null : () => context.read<BudgetCubit>().nextMonth(),
-          ),
-        ],
-      ),
+          onPressed:
+              isCurrentMonth ? null : () => context.read<BudgetCubit>().nextMonth(),
+        ),
+      ],
     );
   }
 }
@@ -339,24 +364,21 @@ class _GroupFilterChip extends StatelessWidget {
 
 // ─── Stats section (donut chart + legend cards) ───────────────────────────────
 
-class _StatsSection extends StatefulWidget {
-  const _StatsSection({required this.stats});
+class _StatsSection extends StatelessWidget {
+  const _StatsSection({
+    required this.stats,
+    required this.selectedCategoryId,
+  });
+
   final MonthStats stats;
-
-  @override
-  State<_StatsSection> createState() => _StatsSectionState();
-}
-
-class _StatsSectionState extends State<_StatsSection> {
-  int? _touchedIndex;
+  final String? selectedCategoryId;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
-    final semantic = context.tabbySemantic;
     final tt = Theme.of(context).textTheme;
     final shapes = context.tabbyShapes;
-    final stats = widget.stats;
+    final cubit = context.read<BudgetCubit>();
 
     if (stats.total == 0) {
       return Container(
@@ -377,6 +399,14 @@ class _StatsSectionState extends State<_StatsSection> {
       );
     }
 
+    final selectedIndex = selectedCategoryId == null
+        ? null
+        : stats.categories.indexWhere(
+            (c) => c.category.id == selectedCategoryId,
+          );
+    final resolvedIndex =
+        selectedIndex == null || selectedIndex < 0 ? null : selectedIndex;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -384,46 +414,35 @@ class _StatsSectionState extends State<_StatsSection> {
           ExpressiveDonutChart(
             sections: stats.categories,
             total: stats.total,
-            selectedIndex: _touchedIndex,
-            onSelectedIndexChanged: (i) => setState(() => _touchedIndex = i),
+            selectedIndex: resolvedIndex,
+            onSelectedIndexChanged: (i) {
+              if (i == null) {
+                cubit.selectCategory(null);
+                return;
+              }
+              cubit.selectCategory(stats.categories[i].category.id);
+            },
           ),
-
           const SizedBox(height: 16),
-
-          // ── Légende ────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(context.l10n.allExpenses, style: tt.bodySmall),
-                Text(
-                  context.l10n.totalAmount(stats.total.toStringAsFixed(2)),
-                  style: tt.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(context.l10n.allExpenses, style: tt.bodySmall),
           ),
           const SizedBox(height: 8),
-
           ...stats.categories.asMap().entries.map((entry) {
-            final i = entry.key;
             final cat = entry.value;
-            final catColor = semantic.chartColorFor(cat.category);
-            final isSelected = _touchedIndex == i;
+            final catColor = cat.category.resolvedColor;
+            final onCat = cat.category.onResolvedColor;
+            final isSelected = selectedCategoryId == cat.category.id;
 
             return GestureDetector(
-              onTap: () =>
-                  setState(() => _touchedIndex = isSelected ? null : i),
+              onTap: () => cubit.selectCategory(cat.category.id),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? catColor
-                      : cs.surfaceContainerLow,
+                  color: isSelected ? catColor : cs.surfaceContainerLow,
                   borderRadius: shapes.radiusLarge,
                 ),
                 child: Column(
@@ -432,37 +451,30 @@ class _StatsSectionState extends State<_StatsSection> {
                     Row(
                       children: [
                         Material(
-                          color: isSelected
-                              ? semantic.onFor(catColor, cs)
-                              : catColor,
+                          color: isSelected ? onCat : catColor,
                           shape: shapes.circle(),
                           clipBehavior: Clip.antiAlias,
                           child: SizedBox(
-                          width: 36,
-                          height: 36,
-                          child: Center(
-                            child: cat.category.iconWidget(
-                              size: 18,
-                              color: isSelected
-                                  ? catColor
-                                  : semantic.onFor(catColor, cs),
-                              fill: 1,
+                            width: 36,
+                            height: 36,
+                            child: Center(
+                              child: cat.category.iconWidget(
+                                size: 18,
+                                color: isSelected ? catColor : onCat,
+                                fill: 1,
+                              ),
                             ),
                           ),
-                        ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 cat.category.name,
                                 style: tt.titleSmall?.copyWith(
-                                  color: isSelected
-                                      ? semantic.onFor(catColor, cs)
-                                      : null,
+                                  color: isSelected ? onCat : null,
                                 ),
                               ),
                               Text(
@@ -471,7 +483,7 @@ class _StatsSectionState extends State<_StatsSection> {
                                 ),
                                 style: tt.bodySmall?.copyWith(
                                   color: isSelected
-                                      ? semantic.onFor(catColor, cs)
+                                      ? onCat
                                       : cs.onSurfaceVariant,
                                 ),
                               ),
@@ -479,17 +491,13 @@ class _StatsSectionState extends State<_StatsSection> {
                           ),
                         ),
                         ExpressiveFigure(
-                          value: cat.amount.toStringAsFixed(2),
-                          suffix: ' €',
+                          value: formatMoney(context, cat.amount),
                           size: ExpressiveFigureSize.small,
-                          color: isSelected
-                              ? semantic.onFor(catColor, cs)
-                              : null,
+                          color: isSelected ? onCat : null,
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    // Mini barre de progression colorée
                     ClipRRect(
                       borderRadius: shapes.radiusExtraSmall,
                       child: LinearProgressIndicator(
@@ -497,9 +505,7 @@ class _StatsSectionState extends State<_StatsSection> {
                         minHeight: 5,
                         backgroundColor: cs.surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          isSelected
-                              ? semantic.onFor(catColor, cs)
-                              : catColor,
+                          isSelected ? onCat : catColor,
                         ),
                       ),
                     ),
@@ -517,8 +523,9 @@ class _StatsSectionState extends State<_StatsSection> {
 // ─── Budget card ──────────────────────────────────────────────────────────────
 
 class _BudgetCard extends StatelessWidget {
-  const _BudgetCard({required this.budget});
+  const _BudgetCard({required this.budget, required this.selected});
   final Budget budget;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -527,7 +534,8 @@ class _BudgetCard extends StatelessWidget {
     final semantic = context.tabbySemantic;
     final shapes = context.tabbyShapes;
     final b = budget;
-    final catColor = semantic.chartColorFor(b.category);
+    final catColor = b.category.resolvedColor;
+    final onCat = b.category.onResolvedColor;
     final statusColor = b.statusColor(semantic);
     final clampedPercent = (b.percent / 100).clamp(0.0, 1.0);
     final isDanger = b.status == BudgetStatus.danger;
@@ -549,9 +557,7 @@ class _BudgetCard extends StatelessWidget {
                 child: Center(
                   child: b.category.iconWidget(
                     size: 22,
-                    color: isDanger
-                        ? semantic.onDanger
-                        : semantic.onFor(catColor, cs),
+                    color: isDanger ? semantic.onDanger : onCat,
                   ),
                 ),
               ),
@@ -569,7 +575,7 @@ class _BudgetCard extends StatelessWidget {
                   ),
                   Text(
                     context.l10n.budgetPerMonth(
-                      b.limitAmount.toStringAsFixed(0),
+                      formatMoney(context, b.limitAmount, decimalDigits: 0),
                     ),
                     style: tt.bodySmall?.copyWith(color: mutedColor),
                   ),
@@ -593,6 +599,11 @@ class _BudgetCard extends StatelessWidget {
                       ? semantic.onWarningContainer
                       : semantic.onSuccessContainer,
             ),
+            IconButton(
+              tooltip: context.l10n.budgetActions,
+              icon: const Icon(Symbols.more_vert_rounded),
+              onPressed: () => _showActions(context),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -612,7 +623,7 @@ class _BudgetCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              context.l10n.spentAmount(b.spentAmount.toStringAsFixed(2)),
+              context.l10n.spentAmount(formatMoney(context, b.spentAmount)),
               style: tt.bodySmall?.copyWith(
                 color: isDanger ? semantic.onDangerContainer : null,
               ),
@@ -620,10 +631,10 @@ class _BudgetCard extends StatelessWidget {
             Text(
               b.remaining >= 0
                   ? context.l10n.remainingAmount(
-                      b.remaining.toStringAsFixed(2),
+                      formatMoney(context, b.remaining),
                     )
                   : context.l10n.overspendAmount(
-                      b.remaining.abs().toStringAsFixed(2),
+                      formatMoney(context, b.remaining.abs()),
                     ),
               style: tt.bodySmall?.copyWith(
                 color: isDanger ? semantic.onDangerContainer : mutedColor,
@@ -635,27 +646,27 @@ class _BudgetCard extends StatelessWidget {
       ],
     );
 
+    void onConsult() =>
+        context.read<BudgetCubit>().selectCategory(b.category.id);
+
     if (isDanger) {
-      return GestureDetector(
-        onLongPress: () => _showActions(context),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: ExpressiveTonalCard(
-            variant: ExpressiveTonalVariant.danger,
-            padding: const EdgeInsets.all(16),
-            child: content,
-          ),
-        ),
+      return ExpressiveTonalCard(
+        variant: ExpressiveTonalVariant.danger,
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.fromLTRB(16, 16, 4, 16),
+        onTap: onConsult,
+        child: content,
       );
     }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
+      color: selected ? catColor.withValues(alpha: 0.12) : null,
       child: InkWell(
         borderRadius: shapes.radiusExtraLarge,
-        onLongPress: () => _showActions(context),
+        onTap: onConsult,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 4, 16),
           child: content,
         ),
       ),
@@ -666,27 +677,15 @@ class _BudgetCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    showModalBottomSheet(
-      context: context,
-      useSafeArea: true,
-      shape: context.tabbyShapes.modalTopShape,
+    showTabbySheet(
+      context,
       builder: (ctx) => BlocProvider.value(
         value: context.read<BudgetCubit>(),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Center(
-                child: Container(
-                  width: 32, height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: context.tabbyShapes.radiusExtraSmall,
-                  ),
-                ),
-              ),
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -694,7 +693,7 @@ class _BudgetCard extends StatelessWidget {
                   children: [
                     budget.category.iconWidget(
                       size: 20,
-                      color: context.tabbySemantic.chartColorFor(budget.category),
+                      color: budget.category.resolvedColor,
                     ),
                     const SizedBox(width: 10),
                     Text(budget.category.name, style: tt.titleMedium),
@@ -811,7 +810,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final b = widget.budget;
-    final catColor = context.tabbySemantic.chartColorFor(b.category);
+    final catColor = b.category.resolvedColor;
 
     return AlertDialog(
       title: Text(context.l10n.editBudget),
@@ -830,10 +829,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
                 child: Center(
                   child: b.category.iconWidget(
                     size: 20,
-                    color: context.tabbySemantic.onFor(
-                      catColor,
-                      Theme.of(context).colorScheme,
-                    ),
+                    color: b.category.onResolvedColor,
                   ),
                 ),
               ),
@@ -904,6 +900,13 @@ class _BudgetDialogState extends State<_BudgetDialog> {
     super.initState();
     if (widget.state.groups.length == 1) {
       _selectedGroup = widget.state.groups.first;
+    } else if (widget.state.selectedGroupId != null) {
+      for (final group in widget.state.groups) {
+        if (group.id == widget.state.selectedGroupId) {
+          _selectedGroup = group;
+          break;
+        }
+      }
     }
   }
 
@@ -937,7 +940,6 @@ class _BudgetDialogState extends State<_BudgetDialog> {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    final semantic = context.tabbySemantic;
 
     return AlertDialog(
       title: Text(context.l10n.newBudget),
@@ -977,7 +979,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                           children: [
                             c.iconWidget(
                               size: 18,
-                              color: semantic.chartColorFor(c),
+                              color: c.resolvedColor,
                             ),
                             const SizedBox(width: 8),
                             Text(c.name),

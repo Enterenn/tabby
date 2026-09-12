@@ -510,6 +510,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'No budget this month — set a cap per category.';
 
   @override
+  String get noBudgetTitle => 'No budgets yet';
+
+  @override
+  String get noBudgetBody =>
+      'Set a monthly cap per category to track this month\'s spending.';
+
+  @override
+  String get budgetThresholdHint => 'Watch from 75% of the cap, over at 100%.';
+
+  @override
+  String get budgetActions => 'Budget options';
+
+  @override
   String get newBudget => 'New budget';
 
   @override
@@ -533,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String budgetPerMonth(String amount) {
-    return 'Budget $amount €/month';
+    return 'Budget $amount/month';
   }
 
   @override
@@ -544,17 +557,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String spentAmount(String amount) {
-    return '$amount € spent';
+    return '$amount spent';
   }
 
   @override
   String remainingAmount(String amount) {
-    return '$amount € left';
+    return '$amount left';
   }
 
   @override
   String overspendAmount(String amount) {
-    return '$amount € over';
+    return '$amount over';
   }
 
   @override

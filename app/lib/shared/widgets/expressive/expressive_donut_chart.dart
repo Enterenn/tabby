@@ -29,10 +29,9 @@ class ExpressiveDonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
-    final semantic = context.tabbySemantic;
     final tt = Theme.of(context).textTheme;
     final segmentColors = [
-      for (final s in sections) semantic.chartColorFor(s.category),
+      for (final s in sections) s.category.resolvedColor,
     ];
     final touched = (selectedIndex != null && selectedIndex! < sections.length)
         ? sections[selectedIndex!]
@@ -132,28 +131,24 @@ class ExpressiveDonutChart extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Column(
+                  Semantics(
+                    label: context.l10n.totalAmount(total.toStringAsFixed(2)),
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (touched == null)
                         Icon(
                           Symbols.payments_rounded,
-                          size: 22,
+                          size: 28,
                           color: cs.onSurfaceVariant,
+                        )
+                      else
+                        ExpressiveFigure(
+                          value: touched.percent.toStringAsFixed(1),
+                          suffix: '%',
+                          size: ExpressiveFigureSize.medium,
+                          color: touchedColor,
                         ),
-                      if (touched == null) const SizedBox(height: 6),
-                      touched != null
-                          ? ExpressiveFigure(
-                              value: touched.percent.toStringAsFixed(1),
-                              suffix: '%',
-                              size: ExpressiveFigureSize.medium,
-                              color: touchedColor,
-                            )
-                          : ExpressiveFigure(
-                              value: total.toStringAsFixed(2),
-                              suffix: ' €',
-                              size: ExpressiveFigureSize.large,
-                            ),
                       const SizedBox(height: 4),
                       Text(
                         touched?.category.name ?? context.l10n.totalExpenses,
@@ -163,6 +158,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                     ],
+                  ),
                   ),
                 ],
               ),
