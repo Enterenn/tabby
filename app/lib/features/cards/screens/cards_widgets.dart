@@ -2,8 +2,9 @@ part of 'cards_screen.dart';
 // ─── Full-screen card display ─────────────────────────────────────────────────
 
 class _CardFullScreen extends StatelessWidget {
-  const _CardFullScreen({required this.card});
+  const _CardFullScreen({required this.card, this.onEdit});
   final LoyaltyCard card;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +19,14 @@ class _CardFullScreen extends StatelessWidget {
         elevation: 0,
         foregroundColor: cs.onSurface,
         title: Text(card.brandName),
+        actions: [
+          if (onEdit != null)
+            IconButton(
+              tooltip: context.l10n.edit,
+              onPressed: onEdit,
+              icon: const Icon(Symbols.edit_rounded),
+            ),
+        ],
       ),
       body: DecoratedBox(
         decoration: BoxDecoration(color: cs.surface),
@@ -70,7 +79,6 @@ class _CardFullScreen extends StatelessWidget {
                   card.codeValue,
                   style: tt.titleMedium?.copyWith(
                     color: cs.onSurface,
-                    letterSpacing: 1.5,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 )
@@ -103,6 +111,19 @@ bool _isLoyaltyQr(BarcodeFormat format) {
       true,
     _ => false,
   };
+}
+
+LoyaltyScanPayload? _payloadFromBarcode(Barcode? barcode) {
+  if (barcode == null) return null;
+  final value = LoyaltyCodeValue.fromScan(
+    rawValue: barcode.rawValue,
+    displayValue: barcode.displayValue,
+  );
+  if (value.isEmpty) return null;
+  return LoyaltyScanPayload(
+    value: value,
+    isQrCode: _isLoyaltyQr(barcode.format),
+  );
 }
 
 class _ScannerView extends StatefulWidget {
@@ -155,14 +176,11 @@ class _ScannerViewState extends State<_ScannerView> {
                   controller: _ctrl,
                   onDetect: (capture) {
                     if (_detected) return;
-                    final barcode = capture.barcodes.firstOrNull;
-                    final value = barcode?.rawValue;
-                    if (value != null && value.isNotEmpty) {
+                    final payload =
+                        _payloadFromBarcode(capture.barcodes.firstOrNull);
+                    if (payload != null) {
                       _detected = true;
-                      widget.onDetected(LoyaltyScanPayload(
-                        value: value,
-                        isQrCode: _isLoyaltyQr(barcode!.format),
-                      ));
+                      widget.onDetected(payload);
                     }
                   },
                   errorBuilder: (context, error) {
@@ -250,7 +268,9 @@ class _ScannerViewState extends State<_ScannerView> {
 // ─── Add card bottom sheet ────────────────────────────────────────────────────
 
 class _AddCardSheet extends StatefulWidget {
-  const _AddCardSheet();
+  const _AddCardSheet({this.existing});
+
+  final LoyaltyCard? existing;
 
   @override
   State<_AddCardSheet> createState() => _AddCardSheetState();
@@ -270,11 +290,18 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   bool _loading = false;
   bool _colorInitialized = false;
 
+  bool get _isEditing => widget.existing != null;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_colorInitialized) {
-      _selectedColor = context.tabbySemantic.categoryPalette[4];
+      final existing = widget.existing;
+      _selectedColor = existing != null
+          ? existing.flutterColor(
+              fallback: context.tabbySemantic.categoryPalette[4],
+            )
+          : context.tabbySemantic.categoryPalette[4];
       _colorInitialized = true;
     }
   }
@@ -283,6 +310,20 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   void initState() {
     super.initState();
     LoyaltyPrefixStore.load();
+    final existing = widget.existing;
+    if (existing != null) {
+      _codeValue = LoyaltyCodeValue.preserve(existing.codeValue);
+      _codeType = existing.codeType;
+      final known = existing.brandId == null
+          ? null
+          : LoyaltyBrand.byId(existing.brandId);
+      _brandId = known?.id;
+      _customBrand = known == null;
+      _brandAutoDetected = known != null;
+      _showBrandPicker = known == null;
+      _scanning = false;
+      _nameCtrl.text = existing.brandName;
+    }
   }
 
   @override
@@ -332,16 +373,21 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   void _applyScan(LoyaltyScanPayload scan) {
     final brand = LoyaltyBrandDetector.identify(scan);
     setState(() {
-      _codeValue = scan.value;
+      _codeValue = LoyaltyCodeValue.preserve(scan.value);
       _codeType = scan.isQrCode ? 'qrcode' : 'barcode';
       _scanning = false;
       if (brand != null) {
         _customBrand = false;
         _brandId = brand.id;
-        _nameCtrl.text = brand.name;
+        if (!_isEditing || _nameCtrl.text.trim().isEmpty) {
+          _nameCtrl.text = brand.name;
+        }
         _selectedColor = brand.primary;
         _brandAutoDetected = true;
         _showBrandPicker = false;
+      } else if (_isEditing &&
+          (_brandId != null || _nameCtrl.text.trim().isNotEmpty)) {
+        // Rescan / saisie : garder l'enseigne déjà choisie.
       } else {
         _customBrand = false;
         _brandId = null;
@@ -354,30 +400,45 @@ class _AddCardSheetState extends State<_AddCardSheet> {
   }
 
   void _applyManualCode(String value) {
-    final isQr = value.startsWith('http') || value.startsWith('{');
-    _applyScan(LoyaltyScanPayload(value: value, isQrCode: isQr));
+    final code = LoyaltyCodeValue.preserve(value);
+    final isQr = code.startsWith('http') || code.startsWith('{');
+    _applyScan(LoyaltyScanPayload(value: code, isQrCode: isQr));
   }
 
   bool get _canSubmit {
     if (_codeValue.isEmpty) return false;
-    if (_customBrand) return _nameCtrl.text.trim().isNotEmpty;
+    if (_customBrand || _isEditing) return _nameCtrl.text.trim().isNotEmpty;
     return _brandId != null;
   }
 
   Future<void> _submit() async {
-    final name = _nameCtrl.text.trim();
+    var name = _nameCtrl.text.trim();
+    if (name.isEmpty && _brandId != null) {
+      name = LoyaltyBrand.byId(_brandId)?.name ?? '';
+    }
     if (name.isEmpty || _codeValue.isEmpty) return;
     setState(() => _loading = true);
-    final ok = await context.read<CardsCubit>().addCard(
-          brandName: name,
-          codeType: _codeType,
-          codeValue: _codeValue,
-          color: _colorToHex(_selectedColor),
-          brandId: _brandId,
-        );
+    final cubit = context.read<CardsCubit>();
+    final existing = widget.existing;
+    final ok = existing == null
+        ? await cubit.addCard(
+            brandName: name,
+            codeType: _codeType,
+            codeValue: LoyaltyCodeValue.preserve(_codeValue),
+            color: _colorToHex(_selectedColor),
+            brandId: _brandId,
+          )
+        : await cubit.updateCard(
+            id: existing.id,
+            brandName: name,
+            codeType: _codeType,
+            codeValue: LoyaltyCodeValue.preserve(_codeValue),
+            color: _colorToHex(_selectedColor),
+            brandId: _brandId,
+          );
     if (mounted) {
       setState(() => _loading = false);
-      if (ok) Navigator.of(context).pop();
+      if (ok) Navigator.of(context).pop(true);
     }
   }
 
@@ -399,10 +460,14 @@ class _AddCardSheetState extends State<_AddCardSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ExpressiveSheetHeader(
-              title: context.l10n.newCard,
-              subtitle: _codeValue.isEmpty
-                  ? context.l10n.newCardScanHint
-                  : context.l10n.newCardCheckHint,
+              title: _isEditing
+                  ? context.l10n.editCard
+                  : context.l10n.newCard,
+              subtitle: _isEditing
+                  ? context.l10n.editCardHint
+                  : _codeValue.isEmpty
+                      ? context.l10n.newCardScanHint
+                      : context.l10n.newCardCheckHint,
               onClose: () => Navigator.of(context).pop(),
             ),
             Padding(
@@ -512,6 +577,17 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                               setState(() => _showBrandPicker = true),
                         ),
                       ),
+                      if (_isEditing) ...[
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _nameCtrl,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: InputDecoration(
+                            hintText: context.l10n.brandNameHint,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
                     ] else ...[
                       ExpressiveSheetSection(
                         label: _brandAutoDetected
@@ -643,7 +719,9 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                   ],
                   const SizedBox(height: 28),
                   ExpressiveSheetSubmit(
-                    label: context.l10n.addTheCard,
+                    label: _isEditing
+                        ? context.l10n.save
+                        : context.l10n.addTheCard,
                     loading: _loading,
                     onPressed: _canSubmit ? _submit : null,
                   ),
@@ -665,17 +743,13 @@ class _AddCardSheetState extends State<_AddCardSheet> {
     final controller = MobileScannerController();
     try {
       final capture = await controller.analyzeImage(picked.path);
-      final barcode = capture?.barcodes.firstOrNull;
-      final value = barcode?.rawValue;
+      final payload = _payloadFromBarcode(capture?.barcodes.firstOrNull);
       if (!mounted) return;
-      if (value == null || value.isEmpty) {
+      if (payload == null) {
         showTabbySnack(context, context.l10n.noCodeInImage);
         return;
       }
-      _applyScan(LoyaltyScanPayload(
-        value: value,
-        isQrCode: _isLoyaltyQr(barcode!.format),
-      ));
+      _applyScan(payload);
     } finally {
       controller.dispose();
     }
@@ -690,13 +764,19 @@ class _AddCardSheetState extends State<_AddCardSheet> {
         submitLabel: ctx.l10n.ok,
         cancelLabel: ctx.l10n.cancel,
         onSubmit: () {
-          final v = ctrl.text.trim();
+          final v = LoyaltyCodeValue.preserve(ctrl.text);
           if (v.isNotEmpty) _applyManualCode(v);
           Navigator.pop(ctx);
         },
         child: TextField(
           controller: ctrl,
           autofocus: true,
+          autocorrect: false,
+          enableSuggestions: false,
+          smartDashesType: SmartDashesType.disabled,
+          smartQuotesType: SmartQuotesType.disabled,
+          textCapitalization: TextCapitalization.characters,
+          keyboardType: TextInputType.visiblePassword,
           decoration: InputDecoration(
             hintText: ctx.l10n.codeExample,
           ),

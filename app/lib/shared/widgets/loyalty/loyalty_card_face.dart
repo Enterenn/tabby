@@ -97,7 +97,7 @@ class LoyaltyCardFace extends StatelessWidget {
                             : MainAxisAlignment.start,
                         children: [
                           Text(
-                            brand.name,
+                            card.brandName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleMedium

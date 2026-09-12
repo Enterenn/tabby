@@ -33,6 +33,26 @@ class CardsRepository {
     );
   }
 
+  Future<void> update({
+    required String id,
+    required String brandName,
+    required String codeType,
+    required String codeValue,
+    String? color,
+    String? brandId,
+  }) {
+    return _dio.patch(
+      '/loyalty-cards/$id',
+      data: {
+        'brand_name': brandName,
+        'code_type': codeType,
+        'code_value': codeValue,
+        'color': color,
+        'brand_id': brandId,
+      },
+    );
+  }
+
   Future<void> delete(String id) => _dio.delete('/loyalty-cards/$id');
 
   Future<void> reorder(List<LoyaltyCard> cards) {

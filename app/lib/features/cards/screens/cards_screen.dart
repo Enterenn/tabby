@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/loyalty_brand.dart';
 import '../../../shared/models/loyalty_card.dart';
+import '../../../shared/models/loyalty_code_value.dart';
 import '../../../shared/models/loyalty_prefix_store.dart';
 import '../../../shared/models/loyalty_scan.dart';
 import '../../../design_system/design_system.dart';
@@ -132,15 +133,19 @@ class _CardsView extends StatelessWidget {
   }
 
   void _showAddSheet(BuildContext context) {
-    showTabbySheet(
-      context,
-      isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<CardsCubit>(),
-        child: const _AddCardSheet(),
-      ),
-    );
+    _showCardSheet(context);
   }
+}
+
+void _showCardSheet(BuildContext context, {LoyaltyCard? existing}) {
+  showTabbySheet<bool>(
+    context,
+    isScrollControlled: true,
+    builder: (_) => BlocProvider.value(
+      value: context.read<CardsCubit>(),
+      child: _AddCardSheet(existing: existing),
+    ),
+  );
 }
 
 void _openFullScreen(BuildContext context, LoyaltyCard card) {
@@ -148,8 +153,18 @@ void _openFullScreen(BuildContext context, LoyaltyCard card) {
     PageRouteBuilder<void>(
       transitionDuration: const Duration(milliseconds: 420),
       reverseTransitionDuration: const Duration(milliseconds: 340),
-      pageBuilder: (context, animation, secondaryAnimation) =>
-          _CardFullScreen(card: card),
+      pageBuilder: (routeContext, animation, secondaryAnimation) =>
+          _CardFullScreen(
+            card: card,
+            onEdit: () {
+              Navigator.of(routeContext).pop();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  _showCardSheet(context, existing: card);
+                }
+              });
+            },
+          ),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,
@@ -176,6 +191,11 @@ void _showActions(
         label: context.l10n.showCard,
         icon: Symbols.fullscreen_rounded,
         onTap: () => _openFullScreen(context, card),
+      ),
+      TabbyActionSheetItem(
+        label: context.l10n.edit,
+        icon: Symbols.edit_rounded,
+        onTap: () => _showCardSheet(context, existing: card),
       ),
       if (index > 0)
         TabbyActionSheetItem(

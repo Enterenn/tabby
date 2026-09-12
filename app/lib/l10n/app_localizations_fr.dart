@@ -847,10 +847,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addTheCard => 'Ajouter la carte';
 
   @override
+  String get editCard => 'Modifier la carte';
+
+  @override
+  String get editCardHint => 'Change le nom ou mets à jour le code';
+
+  @override
   String get enterCode => 'Saisir le code';
 
   @override
-  String get codeExample => 'Ex: 1234567890123';
+  String get codeExample => 'Ex: 8DD C9Y D9L';
 
   @override
   String get recognizedAuto => 'Reconnue automatiquement';

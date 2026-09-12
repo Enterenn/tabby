@@ -1628,6 +1628,18 @@ abstract class AppLocalizations {
   /// **'Ajouter la carte'**
   String get addTheCard;
 
+  /// No description provided for @editCard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la carte'**
+  String get editCard;
+
+  /// No description provided for @editCardHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Change le nom ou mets à jour le code'**
+  String get editCardHint;
+
   /// No description provided for @enterCode.
   ///
   /// In fr, this message translates to:
@@ -1637,7 +1649,7 @@ abstract class AppLocalizations {
   /// No description provided for @codeExample.
   ///
   /// In fr, this message translates to:
-  /// **'Ex: 1234567890123'**
+  /// **'Ex: 8DD C9Y D9L'**
   String get codeExample;
 
   /// No description provided for @recognizedAuto.

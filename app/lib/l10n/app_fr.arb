@@ -356,8 +356,10 @@
   "preview": "Aperçu",
   "myCard": "Ma carte",
   "addTheCard": "Ajouter la carte",
+  "editCard": "Modifier la carte",
+  "editCardHint": "Change le nom ou mets à jour le code",
   "enterCode": "Saisir le code",
-  "codeExample": "Ex: 1234567890123",
+  "codeExample": "Ex: 8DD C9Y D9L",
   "recognizedAuto": "Reconnue automatiquement",
   "walletHint": "Tape une carte pour la mettre devant · swipe pour parcourir",
 

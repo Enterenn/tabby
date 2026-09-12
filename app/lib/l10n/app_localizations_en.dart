@@ -839,10 +839,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addTheCard => 'Add card';
 
   @override
+  String get editCard => 'Edit card';
+
+  @override
+  String get editCardHint => 'Change the name or update the code';
+
+  @override
   String get enterCode => 'Enter the code';
 
   @override
-  String get codeExample => 'e.g. 1234567890123';
+  String get codeExample => 'e.g. 8DD C9Y D9L';
 
   @override
   String get recognizedAuto => 'Recognized automatically';

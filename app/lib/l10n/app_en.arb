@@ -269,8 +269,10 @@
   "preview": "Preview",
   "myCard": "My card",
   "addTheCard": "Add card",
+  "editCard": "Edit card",
+  "editCardHint": "Change the name or update the code",
   "enterCode": "Enter the code",
-  "codeExample": "e.g. 1234567890123",
+  "codeExample": "e.g. 8DD C9Y D9L",
   "recognizedAuto": "Recognized automatically",
   "walletHint": "Tap a card to bring it forward · swipe to browse",
 

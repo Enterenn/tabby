@@ -73,6 +73,31 @@ class CardsCubit extends Cubit<CardsState> {
     }
   }
 
+  Future<bool> updateCard({
+    required String id,
+    required String brandName,
+    required String codeType,
+    required String codeValue,
+    String? color,
+    String? brandId,
+  }) async {
+    try {
+      await cardsRepository.update(
+        id: id,
+        brandName: brandName,
+        codeType: codeType,
+        codeValue: codeValue,
+        color: color,
+        brandId: brandId,
+      );
+      await load();
+      return true;
+    } catch (e) {
+      if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
+      return false;
+    }
+  }
+
   Future<bool> deleteCard(String id) async {
     try {
       await cardsRepository.delete(id);

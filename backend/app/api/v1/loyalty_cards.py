@@ -29,6 +29,8 @@ class LoyaltyCardUpdate(BaseModel):
     brand_name: Optional[str] = None
     brand_id: Optional[str] = None
     color: Optional[str] = None
+    code_type: Optional[str] = None
+    code_value: Optional[str] = None
 
 
 class LoyaltyCardResponse(BaseModel):
@@ -102,6 +104,8 @@ async def create_card(
         brand_name=body.brand_name.strip(),
         brand_id=body.brand_id,
         code_type=body.code_type,
+        # strip() retire seulement les bords — les espaces internes
+        # (BK / McDo : « 8DD C9Y D9L ») font partie du code.
         code_value=body.code_value.strip(),
         color=body.color,
         sort_order=sort_order,
@@ -121,12 +125,22 @@ async def update_card(
     card = await db.get(LoyaltyCard, card_id)
     if card is None or card.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Card not found")
-    if body.brand_name is not None:
+    fields = body.model_fields_set
+    if "brand_name" in fields and body.brand_name is not None:
         card.brand_name = body.brand_name.strip()
-    if body.brand_id is not None:
+    if "brand_id" in fields:
         card.brand_id = body.brand_id
-    if body.color is not None:
+    if "color" in fields:
         card.color = body.color
+    if "code_type" in fields and body.code_type is not None:
+        if body.code_type not in ("barcode", "qrcode"):
+            raise HTTPException(
+                status_code=400, detail="code_type must be 'barcode' or 'qrcode'"
+            )
+        card.code_type = body.code_type
+    if "code_value" in fields and body.code_value is not None:
+        # Espaces internes conservés (BK / McDo).
+        card.code_value = body.code_value.strip()
     await db.flush()
     return _to_response(card)
 
