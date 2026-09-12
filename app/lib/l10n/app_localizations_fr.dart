@@ -57,6 +57,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get you => 'Vous';
 
   @override
+  String get admin => 'Admin';
+
+  @override
   String get ok => 'OK';
 
   @override

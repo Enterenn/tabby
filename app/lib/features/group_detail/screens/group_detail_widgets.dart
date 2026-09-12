@@ -111,11 +111,11 @@ class _MemberTile extends StatelessWidget {
     super.key,
     required this.member,
     required this.balances,
-    required this.currentUserId,
+    required this.ownerId,
   });
   final GroupMember member;
   final List<BalanceEntry> balances;
-  final String currentUserId;
+  final String? ownerId;
 
   double get _memberBalance {
     double b = 0;
@@ -131,7 +131,7 @@ class _MemberTile extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final balance = _memberBalance;
-    final isMe = member.user.id == currentUserId;
+    final isAdmin = isGroupAdmin(userId: member.user.id, ownerId: ownerId);
 
     final semantic = context.tabbySemantic;
     Color balColor;
@@ -174,9 +174,9 @@ class _MemberTile extends StatelessWidget {
                         height: 1.2,
                       ),
                     ),
-                    if (isMe)
+                    if (isAdmin)
                       ExpressiveBadge(
-                        label: context.l10n.me,
+                        label: context.l10n.admin,
                         color: cs.primaryContainer,
                         textColor: cs.onPrimaryContainer,
                         padding: const EdgeInsets.symmetric(
@@ -276,7 +276,7 @@ class _GroupDetailSheet extends StatelessWidget {
                 key: ValueKey(group.members[i].user.id),
                 member: group.members[i],
                 balances: balances,
-                currentUserId: currentUserId,
+                ownerId: group.ownerId,
               ),
             ),
             const SizedBox(height: 16),

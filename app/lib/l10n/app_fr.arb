@@ -17,6 +17,7 @@
   "passwordPolicy": "8 caractères min., une majuscule, un chiffre et un symbole",
   "me": "Moi",
   "you": "Vous",
+  "admin": "Admin",
   "ok": "OK",
   "errorGeneric": "Erreur",
   "errorNetwork": "Erreur réseau",

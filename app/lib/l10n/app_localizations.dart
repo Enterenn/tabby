@@ -188,6 +188,12 @@ abstract class AppLocalizations {
   /// **'Vous'**
   String get you;
 
+  /// No description provided for @admin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Admin'**
+  String get admin;
+
   /// No description provided for @ok.
   ///
   /// In fr, this message translates to:

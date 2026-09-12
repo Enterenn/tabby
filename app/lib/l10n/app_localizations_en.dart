@@ -57,6 +57,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get you => 'You';
 
   @override
+  String get admin => 'Admin';
+
+  @override
   String get ok => 'OK';
 
   @override
