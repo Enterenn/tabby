@@ -118,7 +118,9 @@ async def update_profile(
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")
 async def change_password(
+    request: Request,
     body: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -134,7 +136,9 @@ async def change_password(
 
 
 @router.post("/me/avatar", response_model=UserResponse)
+@limiter.limit("10/minute")
 async def upload_avatar(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

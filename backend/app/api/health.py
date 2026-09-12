@@ -10,11 +10,13 @@ router = APIRouter()
 
 @router.get("/health")
 async def health_check(db: AsyncSession = Depends(get_db)):
-    """Health check endpoint — used by the Flutter app to validate connectivity."""
+    """Liveness + DB ping. Production returns a minimal payload."""
     await db.execute(text("SELECT 1"))
-    return {
-        "status": "ok",
-        "app": settings.app_name,
-        "version": settings.version,
-        "database": "connected",
-    }
+    if settings.debug:
+        return {
+            "status": "ok",
+            "app": settings.app_name,
+            "version": settings.version,
+            "database": "connected",
+        }
+    return {"status": "ok"}

@@ -9,9 +9,11 @@ const _sensitiveLogKeys = {
   'new_password',
   'access_token',
   'refresh_token',
+  'token',
 };
 
-String _redactLogLine(String line) {
+/// Redacts secrets from Dio debug logs (JSON `"key":"value"` and `key: value`).
+String redactLogLine(String line) {
   var out = line.replaceAllMapped(
     RegExp(r'(authorization)\s*[:=]\s*.+$', caseSensitive: false, multiLine: true),
     (match) => '${match[1]}: "***"',
@@ -19,13 +21,16 @@ String _redactLogLine(String line) {
   for (final key in _sensitiveLogKeys) {
     out = out.replaceAllMapped(
       RegExp(
-        '($key)\\s*[:=]\\s*("[^"]*"|[^,\\s}\\]]+)',
+        '"?($key)"?\\s*[:=]\\s*("[^"]*"|[^,\\s}\\]]+)',
         caseSensitive: false,
       ),
       (match) => '${match[1]}: "***"',
     );
   }
-  return out;
+  return out.replaceAllMapped(
+    RegExp(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'),
+    (_) => '***',
+  );
 }
 
 /// Base URL du backend (HTTPS public via NPM / Cloudflare).
@@ -56,7 +61,7 @@ class ApiClient {
           error: true,
           logPrint: (o) {
             // ignore: avoid_print
-            print('[Dio] ${_redactLogLine(o.toString())}');
+            print('[Dio] ${redactLogLine(o.toString())}');
           },
         ),
       );
