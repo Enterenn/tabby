@@ -83,9 +83,7 @@ class _CategoryManagementScreenState
       });
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorDelete)),
-        );
+        showTabbySnack(context, context.l10n.errorDelete);
       }
     }
   }

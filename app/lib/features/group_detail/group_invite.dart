@@ -32,9 +32,7 @@ Future<void> showGroupInviteDialog(
   Navigator.of(context).pop();
 
   if (code == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.inviteGenerateFailed)),
-    );
+    showTabbySnack(context, context.l10n.inviteGenerateFailed);
     return;
   }
 

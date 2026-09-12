@@ -52,9 +52,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       });
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorUpdate)),
-        );
+        showTabbySnack(context, context.l10n.errorUpdate);
       }
     }
   }
@@ -76,9 +74,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       setState(() => _items!.removeWhere((e) => e.id == item.id));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorDelete)),
-        );
+        showTabbySnack(context, context.l10n.errorDelete);
       }
     }
   }

@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  bool _obscure = true;
   bool _unlocking = false;
   bool _autoPrompted = false;
 
@@ -72,9 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10nError(state.message))),
-            );
+            showTabbySnack(context, context.l10nError(state.message));
           }
           if (state is AuthBiometricRequired && !_autoPrompted) {
             _autoPrompted = true;
@@ -121,23 +118,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         v == null || !v.contains('@') ? context.l10n.invalidEmail : null,
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
+                  TabbyPasswordField(
                     controller: _passwordCtrl,
-                    obscureText: _obscure,
+                    label: context.l10n.loginPassword,
                     textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.password],
                     onFieldSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      labelText: context.l10n.loginPassword,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscure
-                              ? Symbols.visibility_off_rounded
-                              : Symbols.visibility_rounded,
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscure = !_obscure),
-                      ),
-                    ),
                     validator: (v) =>
                         v == null || v.isEmpty
                             ? context.l10n.requiredField

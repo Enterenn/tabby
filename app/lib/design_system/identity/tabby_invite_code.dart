@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../feedback/tabby_snack.dart';
 
 enum TabbyInviteCodeSize { compact, large }
 
@@ -22,9 +23,7 @@ class TabbyInviteCode extends StatelessWidget {
   Future<void> _copy(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(copiedLabel)),
-    );
+    showTabbySnack(context, copiedLabel);
   }
 
   @override

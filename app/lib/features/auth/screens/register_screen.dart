@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/auth/password_policy.dart';
 import '../../../l10n/l10n.dart';
@@ -21,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  bool _obscure = true;
 
   @override
   void dispose() {
@@ -49,9 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10nError(state.message))),
-            );
+            showTabbySnack(context, context.l10nError(state.message));
           }
         },
         child: SafeArea(
@@ -103,35 +99,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         v == null || !v.contains('@') ? context.l10n.invalidEmail : null,
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
+                  TabbyPasswordField(
                     controller: _passwordCtrl,
-                    obscureText: _obscure,
+                    label: context.l10n.loginPassword,
+                    helperText: context.l10n.passwordPolicy,
+                    helperMaxLines: 2,
                     textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.loginPassword,
-                      helperText: context.l10n.passwordPolicy,
-                      helperMaxLines: 2,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscure
-                              ? Symbols.visibility_off_rounded
-                              : Symbols.visibility_rounded,
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscure = !_obscure),
-                      ),
-                    ),
+                    autofillHints: const [AutofillHints.newPassword],
                     validator: (v) => validatePassword(v, context.l10n),
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
+                  TabbyPasswordField(
                     controller: _confirmCtrl,
-                    obscureText: _obscure,
+                    label: context.l10n.confirmPassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(
-                      labelText: context.l10n.confirmPassword,
-                    ),
                     validator: (v) => v != _passwordCtrl.text
                         ? context.l10n.passwordMismatch
                         : null,

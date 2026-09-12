@@ -41,14 +41,11 @@ class _GroupDetailView extends StatelessWidget {
           context.pop();
         }
         if (state is GroupDetailError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10nError(state.message)),
-              action: SnackBarAction(
-                label: context.l10n.retry,
-                onPressed: () => context.read<GroupDetailCubit>().load(),
-              ),
-            ),
+          showTabbySnack(
+            context,
+            context.l10nError(state.message),
+            actionLabel: context.l10n.retry,
+            onAction: () => context.read<GroupDetailCubit>().load(),
           );
         }
       },
@@ -215,9 +212,7 @@ class _GroupSliverAppBar extends StatelessWidget {
           onTap: () async {
             final err = await cubit.setPinned(!group.isPinned);
             if (err != null && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10nError(err))),
-              );
+              showTabbySnack(context, context.l10nError(err));
             }
           },
         ),
@@ -279,9 +274,7 @@ class _GroupSliverAppBar extends StatelessWidget {
     if (!ok || !context.mounted) return;
     final err = await context.read<GroupDetailCubit>().leaveGroup();
     if (err != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10nError(err))),
-      );
+      showTabbySnack(context, context.l10nError(err));
     }
   }
 
@@ -297,9 +290,7 @@ class _GroupSliverAppBar extends StatelessWidget {
     if (!ok || !context.mounted) return;
     final err = await context.read<GroupDetailCubit>().deleteGroup();
     if (err != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10nError(err))),
-      );
+      showTabbySnack(context, context.l10nError(err));
     }
   }
 }
@@ -402,12 +393,9 @@ class _BalanceTile extends StatelessWidget {
           amount: entry.amount,
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          err != null ? context.l10nError(err) : context.l10n.settleSaved,
-        ),
-      ),
+    showTabbySnack(
+      context,
+      err != null ? context.l10nError(err) : context.l10n.settleSaved,
     );
   }
 }
@@ -777,9 +765,7 @@ class _ExpenseTile extends StatelessWidget {
             final err = await cubit.deleteExpense(expense.id);
             if (!context.mounted) return;
             if (err != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10nError(err))),
-              );
+              showTabbySnack(context, context.l10nError(err));
             }
           },
         ),
@@ -901,15 +887,9 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
               decoration: InputDecoration(labelText: context.l10n.name),
             ),
             const SizedBox(height: 12),
-            TextField(
+            TabbyAmountField(
               controller: _amountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                labelText: context.l10n.amount,
-                suffixText: '€',
-              ),
+              label: context.l10n.amount,
             ),
             const SizedBox(height: 12),
             Text(context.l10n.paidBy, style: tt.labelMedium),
@@ -963,7 +943,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
 
   Future<void> _submit() async {
     final name = _nameCtrl.text.trim();
-    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
+    final amount = TabbyAmountField.parse(_amountCtrl.text);
     if (name.isEmpty || amount == null || amount <= 0) return;
 
     setState(() => _loading = true);
@@ -977,9 +957,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10nError(err))),
-      );
+      showTabbySnack(context, context.l10nError(err));
     } else {
       Navigator.pop(context);
     }

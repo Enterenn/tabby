@@ -877,9 +877,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
       final value = barcode?.rawValue;
       if (!mounted) return;
       if (value == null || value.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.noCodeInImage)),
-        );
+        showTabbySnack(context, context.l10n.noCodeInImage);
         return;
       }
       _applyScan(LoyaltyScanPayload(

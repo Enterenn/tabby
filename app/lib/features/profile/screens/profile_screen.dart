@@ -190,10 +190,9 @@ class ProfileScreen extends StatelessWidget {
                           context.l10n.biometricLockReason,
                         );
                         if (!ok && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(context.l10n.biometricFailed),
-                            ),
+                          showTabbySnack(
+                            context,
+                            context.l10n.biometricFailed,
                           );
                         }
                       },

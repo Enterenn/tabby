@@ -37,12 +37,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       }
     } on DioException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              context.l10nError(e.response?.data?['detail']?.toString()),
-            ),
-          ),
+        showTabbySnack(
+          context,
+          context.l10nError(e.response?.data?['detail']?.toString()),
         );
       }
     } finally {

@@ -111,28 +111,20 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     if (!_formKey.currentState!.validate()) return;
     final ready = _lastReady;
     if (ready?.group == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.chooseAGroup)),
-      );
+      showTabbySnack(context, context.l10n.chooseAGroup);
       return;
     }
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.chooseACategory)),
-      );
+      showTabbySnack(context, context.l10n.chooseACategory);
       return;
     }
-    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
+    final amount = TabbyAmountField.parse(_amountCtrl.text);
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.invalidAmount)),
-      );
+      showTabbySnack(context, context.l10n.invalidAmount);
       return;
     }
     if (_customSplit && !_recurring && !_splitsValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.splitsMustMatch)),
-      );
+      showTabbySnack(context, context.l10n.splitsMustMatch);
       return;
     }
 
@@ -184,9 +176,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         child: BlocConsumer<AddExpenseCubit, AddExpenseState>(
           listener: (context, state) {
             if (state is AddExpenseError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(context.l10nError(state.message))),
-              );
+              showTabbySnack(context, context.l10nError(state.message));
             }
           },
           builder: (context, state) {
@@ -561,35 +551,14 @@ class _CustomSplitSection extends StatelessWidget {
                     ),
                     SizedBox(
                       width: 100,
-                      child: TextFormField(
+                      child: TabbyAmountField(
                         controller: ctrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                        dense: true,
                         textAlign: TextAlign.right,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
-                        ],
                         onChanged: (_) => onChanged(),
-                        decoration: InputDecoration(
-                          suffixText: '€',
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 10),
-                          filled: true,
-                          fillColor: cs.surfaceContainerHighest,
-                          border: OutlineInputBorder(
-                            borderRadius: context.tabbyShapes.radiusMedium,
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: context.tabbyShapes.radiusMedium,
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: context.tabbyShapes.radiusMedium,
-                            borderSide:
-                                BorderSide(color: cs.primary, width: 2),
-                          ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
                         ),
                       ),
                     ),
@@ -960,9 +929,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
         widget.onCreated(cat);
         Navigator.of(context).pop();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorCreate)),
-        );
+        showTabbySnack(context, context.l10n.errorCreate);
       }
     }
   }

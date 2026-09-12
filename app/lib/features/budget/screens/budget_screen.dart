@@ -1,5 +1,4 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -662,7 +661,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
   }
 
   Future<void> _save() async {
-    final amount = double.tryParse(_ctrl.text.replaceAll(',', '.'));
+    final amount = TabbyAmountField.parse(_ctrl.text);
     if (amount == null || amount <= 0) return;
     setState(() => _loading = true);
     final ok = await context.read<BudgetCubit>().updateBudget(
@@ -708,15 +707,9 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
           const SizedBox(height: 20),
           Text(context.l10n.monthlyLimit, style: tt.labelLarge),
           const SizedBox(height: 6),
-          TextField(
+          TabbyAmountField(
             controller: _ctrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
-            ],
             autofocus: true,
-            decoration: const InputDecoration(suffixText: '€'),
           ),
         ],
       ),
@@ -772,7 +765,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
 
   Future<void> _submit() async {
     final amount =
-        double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
+        TabbyAmountField.parse(_amountCtrl.text);
     if (_selectedGroup == null ||
         _selectedCategory == null ||
         amount == null ||
@@ -852,15 +845,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
           const SizedBox(height: 16),
           Text(context.l10n.monthlyLimit, style: tt.labelLarge),
           const SizedBox(height: 6),
-          TextField(
-            controller: _amountCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
-            ],
-            decoration: const InputDecoration(suffixText: '€'),
-          ),
+          TabbyAmountField(controller: _amountCtrl),
         ],
       ),
     );

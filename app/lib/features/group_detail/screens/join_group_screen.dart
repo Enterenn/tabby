@@ -33,17 +33,13 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
         'code': _codeCtrl.text.trim(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.joinedGroup)),
-        );
+        showTabbySnack(context, context.l10n.joinedGroup);
         context.go('/home');
       }
     } on DioException catch (e) {
       if (mounted) {
         final detail = e.response?.data?['detail']?.toString();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10nError(detail))),
-        );
+        showTabbySnack(context, context.l10nError(detail));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

@@ -58,7 +58,7 @@ Future<void> pickAndUploadAvatar(BuildContext context) async {
   final error = await _validateAvatar(picked.path, l10n);
   if (!context.mounted) return;
   if (error != null) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    showTabbySnack(context, error);
     return;
   }
 
@@ -66,8 +66,7 @@ Future<void> pickAndUploadAvatar(BuildContext context) async {
       await context.read<AuthCubit>().uploadAvatar(picked.path);
   if (!context.mounted) return;
   if (uploadError != null) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10nError(uploadError))));
+    showTabbySnack(context, context.l10nError(uploadError));
   }
 }
 
@@ -100,8 +99,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   final _confirmCtrl = TextEditingController();
   bool _savingProfile = false;
   bool _savingPassword = false;
-  bool _obscureCurrent = true;
-  bool _obscureNew = true;
 
   @override
   void initState() {
@@ -136,12 +133,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     if (!mounted) return;
     setState(() => _savingProfile = false);
     if (err != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(context.l10nError(err))));
+      showTabbySnack(context, context.l10nError(err));
       return;
     }
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10n.profileSaved)));
+    showTabbySnack(context, context.l10n.profileSaved);
   }
 
   Future<void> _savePassword() async {
@@ -154,15 +149,13 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     if (!mounted) return;
     setState(() => _savingPassword = false);
     if (err != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(context.l10nError(err))));
+      showTabbySnack(context, context.l10nError(err));
       return;
     }
     _currentCtrl.clear();
     _newCtrl.clear();
     _confirmCtrl.clear();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10n.passwordChanged)));
+    showTabbySnack(context, context.l10n.passwordChanged);
   }
 
   @override
@@ -227,49 +220,26 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               key: _passwordKey,
               child: Column(
                 children: [
-                  TextFormField(
+                  TabbyPasswordField(
                     controller: _currentCtrl,
-                    obscureText: _obscureCurrent,
-                    decoration: InputDecoration(
-                      labelText: l10n.currentPassword,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureCurrent
-                              ? Symbols.visibility_off_rounded
-                              : Symbols.visibility_rounded,
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscureCurrent = !_obscureCurrent),
-                      ),
-                    ),
+                    label: l10n.currentPassword,
+                    autofillHints: const [AutofillHints.password],
                     validator: (v) =>
                         v == null || v.isEmpty ? l10n.requiredField : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  TabbyPasswordField(
                     controller: _newCtrl,
-                    obscureText: _obscureNew,
-                    decoration: InputDecoration(
-                      labelText: l10n.newPassword,
-                      helperText: l10n.passwordPolicy,
-                      helperMaxLines: 2,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureNew
-                              ? Symbols.visibility_off_rounded
-                              : Symbols.visibility_rounded,
-                        ),
-                        onPressed: () =>
-                            setState(() => _obscureNew = !_obscureNew),
-                      ),
-                    ),
+                    label: l10n.newPassword,
+                    helperText: l10n.passwordPolicy,
+                    helperMaxLines: 2,
+                    autofillHints: const [AutofillHints.newPassword],
                     validator: (v) => validatePassword(v, l10n),
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
+                  TabbyPasswordField(
                     controller: _confirmCtrl,
-                    obscureText: _obscureNew,
-                    decoration: InputDecoration(labelText: l10n.confirmPassword),
+                    label: l10n.confirmPassword,
                     validator: (v) =>
                         v != _newCtrl.text ? l10n.passwordMismatch : null,
                   ),
