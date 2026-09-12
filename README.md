@@ -51,14 +51,16 @@ La réponse attendue :
 
 La documentation Swagger est accessible sur `http://localhost:8000/docs` **uniquement si `DEBUG=true`** dans le `.env`.
 
-### Déploiement sur home server (LXC Proxmox via Tailscale)
+### Déploiement sur home server (LXC Proxmox)
 
 1. Créer un conteneur LXC sur Proxmox, installer Docker.
 2. Cloner le repo sur le LXC et aller dans `backend/`.
-3. Configurer le `.env` : `SECRET_KEY` obligatoire (32+ caractères, générée).
-   `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+3. Configurer le `.env` : `SECRET_KEY` et `POSTGRES_PASSWORD` obligatoires.
+   `python -c "import secrets; print(secrets.token_urlsafe(48)); print(secrets.token_urlsafe(24))"`
 4. `docker compose up -d` puis `docker compose exec api alembic upgrade head`.
-5. L'API est accessible sur `http://<ip-tailscale>:8000`.
+5. LAN : `http://<ip-lan>:8000`. Hors maison : Proxy Host NPM vers ce port 8000
+   (comme Jellyfin), puis `https://tabby.<ton-domaine>`.
+   Ne jamais ouvrir le port 8000 sur la box. Détail : `docs/tabby-tutoriel-deploiement.md` partie 11.
 
 ---
 
@@ -77,7 +79,7 @@ cd app
 flutter pub get
 
 # Adapter l'URL du serveur si besoin
-# flutter run --dart-define=API_BASE_URL=https://<host>:8000
+# flutter run --dart-define=API_BASE_URL=https://<domaine>
 
 # Lancer sur un appareil connecté
 flutter run

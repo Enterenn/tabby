@@ -81,17 +81,24 @@ cd tabby/backend
 ```bash
 cp .env.example .env
 ```
-*Ça duplique le fichier d'exemple. Pas besoin de le modifier pour un premier test — les valeurs par défaut (`tabby`/`tabby`) correspondent déjà à ce que `docker-compose.yml` attend.*
+*Ça duplique le fichier d'exemple. Ensuite il faut remplir `SECRET_KEY` et `POSTGRES_PASSWORD` — sans ça l'API refuse de démarrer.*
 
-Optionnel mais recommandé — génère une vraie clé secrète aléatoire plutôt que la valeur par défaut :
 ```bash
-openssl rand -hex 32
+python3 -c "import secrets; print(secrets.token_urlsafe(48)); print(secrets.token_urlsafe(24))"
 ```
-*Copie le résultat affiché, puis :*
+*La première ligne est `SECRET_KEY`, la seconde `POSTGRES_PASSWORD`.*
+
 ```bash
 nano .env
 ```
-*Remplace la valeur après `SECRET_KEY=` par ce que tu viens de copier. Sauvegarde avec `Ctrl+O` puis Entrée, quitte avec `Ctrl+X`.*
+*Colle les deux valeurs. Sauvegarde avec `Ctrl+O` puis Entrée, quitte avec `Ctrl+X`.*
+
+**Base déjà existante** (volume Docker créé avec l'ancien mot de passe `tabby`) : Postgres n'applique `POSTGRES_PASSWORD` qu'à la première création. Change le mot de passe dans le volume, puis mets la même valeur dans `.env` :
+
+```bash
+docker compose exec db psql -U tabby -d tabby -c "ALTER USER tabby WITH PASSWORD '<POSTGRES_PASSWORD>'"
+docker compose up -d
+```
 
 ---
 
@@ -142,13 +149,13 @@ Sur ton PC (pas dans le conteneur), ouvre dans Cursor le fichier :
 app/lib/core/api/api_client.dart
 ```
 
-Cherche la ligne qui contient `_defaultBaseUrl` et remplace la valeur existante par :
-```
-http://192.168.1.XX:8000
-```
-*(remplace `XX` par l'IP réelle notée à l'étape précédente — le port `8000` est celui défini dans le `Dockerfile`, ne le change pas)*
+En debug sur le wifi de la maison, l'app utilise encore `http://192.168.1.XX:8000`. Pour l'accès **hors maison en HTTPS**, ne touche plus ce fichier : lance plutôt :
 
-Sauvegarde le fichier.
+```
+flutter run --dart-define=API_BASE_URL=https://<TON_DOMAINE>
+```
+
+*(voir la partie 11 pour le domaine)*
 
 ---
 
@@ -159,6 +166,51 @@ Sauvegarde le fichier.
 3. Regarde la pastille sur l'écran Home :
    - **Verte** → tout fonctionne, le Lot 0 est validé.
    - **Rouge** → vérifie dans l'ordre : le téléphone est bien sur le même wifi, l'IP dans `api_client.dart` est correcte, `docker compose ps` montre bien `api` en `running`.
+
+---
+
+## Partie 11 — Accès hors maison (HTTPS via Nginx Proxy Manager)
+
+Même principe que Jellyfin. **Pas de Caddy** : NPM gère déjà les certificats et les ports 80/443 de la box.
+
+### 1. DNS
+
+Chez ton registrar, reproduis exactement ce que tu as pour `jellyfin.landrodie.fr` :
+
+- soit un enregistrement **A** `tabby` → la même IP publique,
+- soit un **CNAME** / wildcard `*.landrodie.fr` déjà en place (rien à ajouter).
+
+### 2. Proxy Host dans NPM
+
+| Champ | Valeur |
+|---|---|
+| Domain Names | `tabby.landrodie.fr` |
+| Scheme | `http` |
+| Forward Hostname / IP | IP LAN du LXC `tabby-backend` |
+| Forward Port | `8000` |
+| SSL | certificat Let's Encrypt, **Force SSL** coché |
+
+Aucun port forwarding supplémentaire sur la box.
+
+### 3. `.env` du backend
+
+```
+PUBLIC_ORIGIN=https://tabby.landrodie.fr
+```
+
+Puis `docker compose up -d` (sans profil https).
+
+Vérifie : `curl https://tabby.landrodie.fr/health`
+
+### 4. App Flutter
+
+```
+flutter run --dart-define=API_BASE_URL=https://tabby.landrodie.fr
+```
+
+Pour un APK release, le même `--dart-define` est obligatoire (le binaire refuse le HTTP).
+
+Le port `8000` reste utile en wifi maison pour le debug. **Ne le forward jamais** sur la box : seul NPM doit y accéder en LAN.
 
 ---
 

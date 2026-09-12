@@ -23,6 +23,12 @@ async def list_categories(
     Catégories globales par défaut + catégories custom du groupe (si group_id fourni).
     """
     if group_id:
+        membership = await db.get(GroupMember, (group_id, current_user.id))
+        if membership is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not a member of this group",
+            )
         q = select(Category).where(
             (Category.group_id.is_(None) & Category.is_default.is_(True))
             | (Category.group_id == group_id)
