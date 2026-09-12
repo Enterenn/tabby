@@ -1,4 +1,3 @@
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 
@@ -8,13 +7,9 @@ import 'app_tokens.dart';
 export 'app_tokens.dart';
 
 abstract final class AppTheme {
-  /// [dynamicScheme] : palette système (fond d'écran Android, accent Windows…).
-  /// Absent → seed logo Tabby.
-  static ThemeData light([ColorScheme? dynamicScheme]) =>
-      _build(Brightness.light, dynamicScheme);
+  static ThemeData get light => _build(Brightness.light);
 
-  static ThemeData dark([ColorScheme? dynamicScheme]) =>
-      _build(Brightness.dark, dynamicScheme);
+  static ThemeData get dark => _build(Brightness.dark);
 
   static void configureSymbols() {
     MaterialSymbolsBase.setRoundedVariationDefaults(
@@ -25,16 +20,20 @@ abstract final class AppTheme {
     );
   }
 
-  static ThemeData _build(Brightness brightness, ColorScheme? dynamicScheme) {
+  static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final grad = isDark ? -25.0 : 0.0;
     final shapes = TabbyShapeTokens.standard;
 
-    final scheme = ColorScheme.fromSeed(
-      seedColor: dynamicScheme?.primary ?? AppColors.seed,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.expressive,
-    ).harmonized();
+    // `vibrant` garde le cobalt en primary. Citron / vermillon sont
+    // injectés ensuite — fromSeed les remplacerait par des cousins bleus.
+    final scheme = _polaAccents(
+      ColorScheme.fromSeed(
+        seedColor: AppColors.seed,
+        brightness: brightness,
+        dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
+      ),
+    );
     final semantic = TabbySemanticColors.fromScheme(scheme);
 
     final typography = TabbyTypographyTokens.create(scheme: scheme, grad: grad);
@@ -156,7 +155,7 @@ abstract final class AppTheme {
           wght: 600,
           rond: 0,
           grad: grad,
-          color: scheme.secondary,
+          color: scheme.primary,
         ),
       ),
 
@@ -191,14 +190,14 @@ abstract final class AppTheme {
 
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surfaceContainer,
-        indicatorColor: scheme.secondaryContainer,
+        indicatorColor: scheme.primaryContainer,
         indicatorShape: RoundedRectangleBorder(
           borderRadius: shapes.radiusLarge,
         ),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return IconThemeData(
-              color: scheme.onSecondaryContainer,
+              color: scheme.onPrimaryContainer,
               fill: 1,
               weight: 600,
             );
@@ -217,7 +216,7 @@ abstract final class AppTheme {
             rond: 0,
             grad: grad,
             color: selected
-                ? scheme.onSecondaryContainer
+                ? scheme.onPrimaryContainer
                 : scheme.onSurfaceVariant,
           );
         }),
@@ -260,6 +259,26 @@ abstract final class AppTheme {
         color: scheme.outlineVariant,
         thickness: 1,
       ),
+    );
+  }
+
+  /// Citron (tertiary) et vermillon (secondary) — hex POLA, non harmonisés.
+  static ColorScheme _polaAccents(ColorScheme base) {
+    final dark = base.brightness == Brightness.dark;
+    return base.copyWith(
+      secondary: AppColors.vermillion,
+      onSecondary: AppColors.onVermillion,
+      secondaryContainer: dark
+          ? AppColors.vermillionContainerDark
+          : AppColors.vermillionContainerLight,
+      onSecondaryContainer: dark
+          ? AppColors.onVermillionContainerDark
+          : AppColors.onVermillionContainerLight,
+      tertiary: dark ? AppColors.lemon : AppColors.lemonInk,
+      onTertiary: dark ? AppColors.onLemon : AppColors.lemon,
+      tertiaryContainer: dark ? AppColors.lemonContainerDark : AppColors.lemon,
+      onTertiaryContainer:
+          dark ? AppColors.onLemonContainerDark : AppColors.onLemon,
     );
   }
 

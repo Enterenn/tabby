@@ -81,7 +81,7 @@ class _ExpressiveButtonGroupItem extends StatelessWidget {
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
-        color: selected ? cs.secondaryContainer : Colors.transparent,
+        color: selected ? cs.primaryContainer : Colors.transparent,
         borderRadius: shapes.radiusFull,
       ),
       child: Material(
@@ -99,7 +99,7 @@ class _ExpressiveButtonGroupItem extends StatelessWidget {
               style: tt.labelLarge?.copyWith(
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: selected
-                    ? cs.onSecondaryContainer
+                    ? cs.onPrimaryContainer
                     : cs.onSurfaceVariant,
               ),
             ),

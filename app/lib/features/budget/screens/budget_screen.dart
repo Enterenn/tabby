@@ -294,7 +294,7 @@ class _GroupFilterChip extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return Material(
-      color: selected ? cs.secondaryContainer : cs.surfaceContainerLow,
+      color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
       elevation: 0,
       shape: shapes.pill(),
       clipBehavior: Clip.antiAlias,
@@ -310,7 +310,7 @@ class _GroupFilterChip extends StatelessWidget {
                 Icon(
                   Symbols.check_rounded,
                   size: 16,
-                  color: cs.onSecondaryContainer,
+                  color: cs.onPrimaryContainer,
                   fill: 1,
                 ),
                 const SizedBox(width: 4),
@@ -319,7 +319,7 @@ class _GroupFilterChip extends StatelessWidget {
                 label,
                 style: tt.labelLarge?.copyWith(
                   color: selected
-                      ? cs.onSecondaryContainer
+                      ? cs.onPrimaryContainer
                       : cs.onSurfaceVariant,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),

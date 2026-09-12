@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
 
-/// Seed de secours + tokens métier (success / warning).
+/// Triade POLA + tokens métier (success / warning).
 ///
-/// En priorité, le [ColorScheme] vient de Dynamic Color (système).
-/// [seed] n'est utilisée que si la plateforme n'en fournit pas.
+/// Primary = cobalt ([seed]). Secondary = vermillon. Tertiary = citron.
 abstract final class AppColors {
-  /// Seed de secours (logo Tabby) — utilisée seulement si le système
-  /// n'expose pas de Dynamic Color (Android 12+, accent Windows/macOS…).
-  static const Color seed = Color(0xFFFFDB5A);
+  /// POLA Cobalt — seed du [ColorScheme] (primary).
+  static const Color seed = Color(0xFF0053E1);
+
+  /// POLA citron — [ColorScheme.tertiary].
+  static const Color lemon = Color(0xFFFEF335);
+  static const Color onLemon = Color(0xFF1D1D1D);
+  static const Color lemonInk = Color(0xFF8F8500);
+  static const Color lemonContainerDark = Color(0xFF3D3800);
+  static const Color onLemonContainerDark = Color(0xFFFEF335);
+
+  /// POLA vermillon — [ColorScheme.secondary].
+  static const Color vermillion = Color(0xFFFF4617);
+  static const Color onVermillion = Color(0xFFFFFFFF);
+  static const Color vermillionContainerLight = Color(0xFFFFDAD4);
+  static const Color onVermillionContainerLight = Color(0xFF3B0900);
+  static const Color vermillionContainerDark = Color(0xFF6B1600);
+  static const Color onVermillionContainerDark = Color(0xFFFFDAD4);
 
   static const Color success = Color(0xFF2EAA6B);
   static const Color onSuccessLight = Color(0xFFFFFFFF);

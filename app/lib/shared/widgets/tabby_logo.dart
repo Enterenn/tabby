@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// Wordmark Tabby — SVG monochrome teinté par le [ColorScheme].
 ///
-/// Par défaut [ColorScheme.primary] (Dynamic Color / seed).
+/// Par défaut [ColorScheme.primary] (seed de marque).
 class TabbyLogo extends StatelessWidget {
   const TabbyLogo({
     super.key,

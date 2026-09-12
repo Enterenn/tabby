@@ -27,8 +27,8 @@ class ExpressiveBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
-    final bg = color ?? cs.secondaryContainer;
-    final fg = textColor ?? cs.onSecondaryContainer;
+    final bg = color ?? cs.primaryContainer;
+    final fg = textColor ?? cs.onPrimaryContainer;
 
     return Material(
       color: bg,

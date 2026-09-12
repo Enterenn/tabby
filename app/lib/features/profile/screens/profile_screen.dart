@@ -73,8 +73,8 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Clair / sombre suit le système. Les couleurs viennent '
-                        'du fond d\'écran (Android) ou de l\'accent Windows / macOS.',
+                        'Clair / sombre au choix. Les couleurs suivent '
+                        'la palette Tabby.',
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall

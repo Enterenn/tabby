@@ -30,8 +30,8 @@ class ExpressiveCtaButton extends StatelessWidget {
     final (bg, fg) = switch (variant) {
       ExpressiveCtaVariant.filled => (cs.primary, cs.onPrimary),
       ExpressiveCtaVariant.tonal => (
-          cs.secondaryContainer,
-          cs.onSecondaryContainer,
+          cs.primaryContainer,
+          cs.onPrimaryContainer,
         ),
     };
 

@@ -81,7 +81,7 @@ class ExpressiveSheetSection extends StatelessWidget {
               child: Text(
                 label.toUpperCase(),
                 style: tt.labelMedium?.copyWith(
-                  color: cs.secondary,
+                  color: cs.tertiary,
                   letterSpacing: 1.8,
                   fontWeight: FontWeight.w700,
                 ),

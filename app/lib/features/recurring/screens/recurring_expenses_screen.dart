@@ -228,7 +228,7 @@ class _RecurringCard extends StatelessWidget {
                         suffix: ' €',
                         size: ExpressiveFigureSize.small,
                         color: item.active
-                            ? cs.tertiary
+                            ? cs.secondary
                             : cs.onSurfaceVariant,
                       ),
                       Text(

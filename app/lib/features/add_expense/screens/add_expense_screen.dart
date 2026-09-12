@@ -246,7 +246,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       children: [
                         ExpressiveTonalCard(
-                          variant: ExpressiveTonalVariant.violet,
+                          variant: ExpressiveTonalVariant.lime,
                           margin: EdgeInsets.zero,
                           padding: const EdgeInsets.symmetric(vertical: 20),
                           child: Center(
@@ -258,7 +258,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                         decimal: true),
                                 textAlign: TextAlign.center,
                                 style: type.figureHero.copyWith(
-                                  color: cs.onSecondaryContainer,
+                                  color: cs.onTertiaryContainer,
                                 ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
@@ -276,7 +276,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                   ),
                                   suffixText: '€',
                                   suffixStyle: type.figureMedium.copyWith(
-                                    color: cs.onSecondaryContainer,
+                                    color: cs.onTertiaryContainer,
                                   ),
                                 ),
                                 validator: (v) {

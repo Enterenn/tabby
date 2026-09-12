@@ -23,8 +23,8 @@ class ExpressiveAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
-    final bg = color ?? cs.secondary;
-    final fg = textColor ?? cs.onSecondary;
+    final bg = color ?? cs.primary;
+    final fg = textColor ?? cs.onPrimary;
     final display = label.isNotEmpty ? label[0].toUpperCase() : '?';
 
     return SizedBox(

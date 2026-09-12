@@ -1,4 +1,3 @@
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -84,19 +83,15 @@ class _TabbyAppState extends State<TabbyApp> {
         BlocProvider.value(value: _authCubit),
         BlocProvider.value(value: _themeCubit),
       ],
-      child: DynamicColorBuilder(
-        builder: (lightDynamic, darkDynamic) {
-          return BlocBuilder<ThemeCubit, ThemeMode>(
-            builder: (context, themeMode) {
-              return MaterialApp.router(
-                title: 'Tabby',
-                theme: AppTheme.light(lightDynamic),
-                darkTheme: AppTheme.dark(darkDynamic),
-                themeMode: themeMode,
-                routerConfig: _router,
-                debugShowCheckedModeBanner: false,
-              );
-            },
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp.router(
+            title: 'Tabby',
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeMode,
+            routerConfig: _router,
+            debugShowCheckedModeBanner: false,
           );
         },
       ),

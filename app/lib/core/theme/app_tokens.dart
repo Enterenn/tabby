@@ -408,7 +408,7 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
   final Color dangerContainer;
   final Color onDangerContainer;
 
-  /// Fallback cartes fidélité hors catalogue — [ColorScheme.secondary].
+  /// Fallback cartes fidélité hors catalogue — [ColorScheme.primary].
   final Color brandFallback;
 
   final List<Color> categoryPalette;
@@ -439,28 +439,28 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
       onDanger: scheme.onError,
       dangerContainer: scheme.errorContainer,
       onDangerContainer: scheme.onErrorContainer,
-      brandFallback: scheme.secondary,
+      brandFallback: scheme.primary,
       categoryPalette: _paletteFrom(scheme),
       chartPalette: _paletteFrom(scheme),
       avatarPalette: [
+        scheme.primary,
         scheme.secondary,
         scheme.tertiary,
-        scheme.primary,
-        scheme.error,
         scheme.primaryContainer,
+        scheme.secondaryContainer,
       ],
     );
   }
 
   static List<Color> _paletteFrom(ColorScheme s) => [
+        s.primary,
         s.secondary,
         s.tertiary,
-        s.primary,
-        s.error,
+        s.primaryContainer,
         s.secondaryContainer,
         s.tertiaryContainer,
-        s.primaryContainer,
         s.inversePrimary,
+        s.error,
       ];
 
   /// Couleur de segment / icône harmonisée au thème (indépendante du hex DB).

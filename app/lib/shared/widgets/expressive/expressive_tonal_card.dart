@@ -35,16 +35,16 @@ class ExpressiveTonalCard extends StatelessWidget {
     final s = context.tabbySemantic;
     return switch (variant) {
       ExpressiveTonalVariant.violet => (
+          cs.primaryContainer,
+          cs.onPrimaryContainer,
+        ),
+      ExpressiveTonalVariant.coral => (
           cs.secondaryContainer,
           cs.onSecondaryContainer,
         ),
-      ExpressiveTonalVariant.coral => (
+      ExpressiveTonalVariant.lime => (
           cs.tertiaryContainer,
           cs.onTertiaryContainer,
-        ),
-      ExpressiveTonalVariant.lime => (
-          cs.primaryContainer,
-          cs.onPrimaryContainer,
         ),
       ExpressiveTonalVariant.neutral => (
           cs.surfaceContainerLow,

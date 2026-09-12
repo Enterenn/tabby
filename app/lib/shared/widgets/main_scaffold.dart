@@ -108,7 +108,7 @@ class _TabbyNavBar extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: selected
-                              ? cs.secondaryContainer
+                              ? cs.primaryContainer
                               : Colors.transparent,
                           borderRadius: shapes.radiusFull,
                         ),
@@ -117,7 +117,7 @@ class _TabbyNavBar extends StatelessWidget {
                           size: 24,
                           fill: selected ? 1 : 0,
                           color: selected
-                              ? cs.onSecondaryContainer
+                              ? cs.onPrimaryContainer
                               : cs.onSurfaceVariant,
                         ),
                       ),
@@ -126,7 +126,7 @@ class _TabbyNavBar extends StatelessWidget {
                         MainScaffold._labels[i],
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: selected
-                                  ? cs.onSecondaryContainer
+                                  ? cs.onPrimaryContainer
                                   : cs.onSurfaceVariant,
                               fontWeight:
                                   selected ? FontWeight.w700 : FontWeight.w500,

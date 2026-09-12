@@ -201,7 +201,7 @@ class _FabMenuItemPill extends StatelessWidget {
     const height = 56.0;
 
     return Material(
-      color: cs.secondaryContainer,
+      color: cs.primaryContainer,
       elevation: 0,
       shape: shapes.pill(),
       clipBehavior: Clip.antiAlias,
@@ -219,13 +219,13 @@ class _FabMenuItemPill extends StatelessWidget {
                   action.icon,
                   size: 24,
                   fill: 1,
-                  color: cs.onSecondaryContainer,
+                  color: cs.onPrimaryContainer,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   action.label,
                   style: tt.labelLarge?.copyWith(
-                    color: cs.onSecondaryContainer,
+                    color: cs.onPrimaryContainer,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
