@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
+import '../../home/cubit/home_cubit.dart';
 
 // ─── States ──────────────────────────────────────────────────────────────────
 
@@ -189,6 +190,28 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
       emit((state as GroupDetailLoaded).copyWith(balances: balances));
       return null;
     } catch (e) {
+      return _errorMessage(e);
+    }
+  }
+
+  Future<String?> setPinned(bool isPinned) async {
+    final prev = state as GroupDetailLoaded?;
+    if (prev == null) return null;
+    emit(prev.copyWith(group: prev.group.copyWith(isPinned: isPinned)));
+    try {
+      final res = await _dio.patch(
+        '/groups/$_groupId/pin',
+        data: {'is_pinned': isPinned},
+      );
+      final updated = Group.fromJson(res.data as Map<String, dynamic>);
+      final current = state as GroupDetailLoaded?;
+      if (current != null) {
+        emit(current.copyWith(group: updated));
+      }
+      HomeCubit.refreshIfActive();
+      return null;
+    } catch (e) {
+      emit(prev);
       return _errorMessage(e);
     }
   }

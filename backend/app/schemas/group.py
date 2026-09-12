@@ -15,6 +15,10 @@ class GroupUpdate(BaseModel):
     name: str
 
 
+class GroupPinUpdate(BaseModel):
+    is_pinned: bool
+
+
 class MemberResponse(BaseModel):
     user: UserResponse
     joined_at: datetime
@@ -29,6 +33,8 @@ class GroupResponse(BaseModel):
     members: list[MemberResponse] = []
     # Solde du groupe depuis le point de vue de l'utilisateur courant (calculé)
     balance: float = 0.0
+    # Pin de l'utilisateur courant (group_member.is_pinned)
+    is_pinned: bool = False
 
     model_config = {"from_attributes": True}
 

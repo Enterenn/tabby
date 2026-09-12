@@ -27,10 +27,16 @@ class HomeCubit extends Cubit<HomeState> {
       final response = await apiClient.dio.get('/groups');
       final groups = (response.data as List)
           .map((g) => Group.fromJson(g as Map<String, dynamic>))
-          .toList();
+          .toList()
+        ..sort(_compareGroups);
       emit(HomeLoaded(groups));
     } on DioException catch (e) {
       emit(HomeError(e.response?.data?['detail']?.toString() ?? 'Erreur réseau'));
     }
+  }
+
+  static int _compareGroups(Group a, Group b) {
+    if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+    return b.createdAt.compareTo(a.createdAt);
   }
 }

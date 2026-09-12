@@ -15,6 +15,7 @@ from app.models.models import Expense, ExpenseSplit, Group, GroupInvite, GroupMe
 from app.schemas.group import (
     BalanceEntry,
     GroupCreate,
+    GroupPinUpdate,
     GroupResponse,
     GroupUpdate,
     InviteResponse,
@@ -60,6 +61,7 @@ async def _load_group_with_balance(
     ]
     debts = compute_balances(records)
     balance = user_balance(str(current_user_id), debts)
+    membership = next((m for m in members if m.user_id == current_user_id), None)
 
     return GroupResponse(
         id=str(group.id),
@@ -78,6 +80,7 @@ async def _load_group_with_balance(
             for m in members
         ],
         balance=balance,
+        is_pinned=membership.is_pinned if membership else False,
     )
 
 
@@ -90,6 +93,7 @@ async def list_groups(
         select(Group)
         .join(GroupMember, GroupMember.group_id == Group.id)
         .where(GroupMember.user_id == current_user.id)
+        .order_by(GroupMember.is_pinned.desc(), Group.created_at.desc())
     )
     groups = result.scalars().all()
     return [await _load_group_with_balance(g, current_user.id, db) for g in groups]
@@ -118,6 +122,24 @@ async def get_group(
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
+    group = await db.get(Group, group_id)
+    if group is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+    return await _load_group_with_balance(group, current_user.id, db)
+
+
+@router.patch("/{group_id}/pin", response_model=GroupResponse)
+async def set_group_pin(
+    group_id: uuid.UUID,
+    body: GroupPinUpdate,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+):
+    membership = await db.get(GroupMember, (group_id, current_user.id))
+    if membership is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member not found")
+    membership.is_pinned = body.is_pinned
+    await db.flush()
     group = await db.get(Group, group_id)
     if group is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")

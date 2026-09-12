@@ -234,6 +234,28 @@ class _GroupActionsSheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ListTile(
+            leading: Icon(
+              group.isPinned
+                  ? Symbols.keep_off_rounded
+                  : Symbols.push_pin_rounded,
+            ),
+            title: Text(
+              group.isPinned
+                  ? 'Désépingler de l\'accueil'
+                  : 'Épingler sur l\'accueil',
+            ),
+            onTap: () async {
+              Navigator.pop(context);
+              final err = await pageContext
+                  .read<GroupDetailCubit>()
+                  .setPinned(!group.isPinned);
+              if (err != null && pageContext.mounted) {
+                ScaffoldMessenger.of(pageContext)
+                    .showSnackBar(SnackBar(content: Text(err)));
+              }
+            },
+          ),
+          ListTile(
             leading: const Icon(Symbols.edit_rounded),
             title: const Text('Modifier le nom'),
             onTap: () {

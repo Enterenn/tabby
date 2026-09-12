@@ -50,6 +50,7 @@ class Group extends Equatable {
     required this.createdAt,
     required this.members,
     required this.balance,
+    this.isPinned = false,
   });
 
   final String id;
@@ -59,6 +60,8 @@ class Group extends Equatable {
   /// Solde de l'utilisateur courant dans ce groupe.
   /// Positif = on lui doit. Négatif = il doit.
   final double balance;
+  /// Pin de l'utilisateur courant — indépendant des autres membres.
+  final bool isPinned;
 
   factory Group.fromJson(Map<String, dynamic> json) => Group(
         id: json['id'] as String,
@@ -68,8 +71,26 @@ class Group extends Equatable {
             .map((m) => GroupMember.fromJson(m as Map<String, dynamic>))
             .toList(),
         balance: (json['balance'] as num).toDouble(),
+        isPinned: json['is_pinned'] as bool? ?? false,
+      );
+
+  Group copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+    List<GroupMember>? members,
+    double? balance,
+    bool? isPinned,
+  }) =>
+      Group(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        createdAt: createdAt ?? this.createdAt,
+        members: members ?? this.members,
+        balance: balance ?? this.balance,
+        isPinned: isPinned ?? this.isPinned,
       );
 
   @override
-  List<Object?> get props => [id, name, createdAt, members, balance];
+  List<Object?> get props => [id, name, createdAt, members, balance, isPinned];
 }

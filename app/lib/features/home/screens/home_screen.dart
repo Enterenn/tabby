@@ -68,8 +68,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeView extends StatelessWidget {
+class _HomeView extends StatefulWidget {
   const _HomeView();
+
+  @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  final _scrollController = ScrollController();
+  final _headerLinkKey = GlobalKey();
+  bool _headerLinkVisible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_updateHeaderLinkVisibility);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_updateHeaderLinkVisibility);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateHeaderLinkVisibility() {
+    final headerContext = _headerLinkKey.currentContext;
+    if (headerContext == null) return;
+    final box = headerContext.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    final scrollable = Scrollable.maybeOf(headerContext);
+    final viewport = scrollable?.context.findRenderObject() as RenderBox?;
+    if (viewport == null || !viewport.hasSize) return;
+
+    final headerTop = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
+    final visible = headerTop + box.size.height > 0;
+    if (visible != _headerLinkVisible) {
+      setState(() => _headerLinkVisible = visible);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,46 +137,115 @@ class _HomeView extends StatelessWidget {
             );
           }
           if (state is HomeLoaded) {
-            return RefreshIndicator(
-              onRefresh: () => context.read<HomeCubit>().loadGroups(),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                children: [
-                  if (state.groups.isEmpty)
-                    _HomeHeader(isEmpty: true)
-                  else ...[
-                    _HomeHeroBanner(groups: state.groups),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                      child: Text(
-                        'Tes groupes',
-                        style: context.tabbyType.displayEditorial,
+            final hasGroups = state.groups.isNotEmpty;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _updateHeaderLinkVisibility();
+            });
+            return Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: () => context.read<HomeCubit>().loadGroups(),
+                  child: ListView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    children: [
+                      if (!hasGroups)
+                        _HomeHeader(isEmpty: true)
+                      else ...[
+                        _HomeHeroBanner(groups: state.groups),
+                        const SizedBox(height: 4),
+                        _GroupsSectionHeader(
+                          key: _headerLinkKey,
+                          onNewGroup: () => showNewGroupSheet(context),
+                        ),
+                      ],
+                      if (!hasGroups)
+                        _EmptyState().animate(delay: 100.ms)
+                            .fadeIn(duration: 500.ms)
+                            .slideY(begin: 0.06, end: 0, duration: 500.ms, curve: Curves.easeOut)
+                      else
+                        ...state.groups.asMap().entries.map((e) =>
+                          GroupCard(group: e.value, index: e.key)),
+                      if (!hasGroups) ...[
+                        const SizedBox(height: 16),
+                        Center(
+                          child: ExpressiveCtaButton(
+                            label: 'Nouveau groupe',
+                            onPressed: () => showNewGroupSheet(context),
+                          ),
+                        ).animate(delay: 200.ms)
+                          .fadeIn(duration: 400.ms)
+                          .slideY(begin: 0.05, end: 0, duration: 400.ms),
+                      ],
+                    ],
+                  ),
+                ),
+                if (hasGroups)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 100,
+                    child: IgnorePointer(
+                      ignoring: _headerLinkVisible,
+                      child: AnimatedOpacity(
+                        opacity: _headerLinkVisible ? 0 : 1,
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOut,
+                        child: Center(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: context.tabbyShapes.radiusFull,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: context.tabbyColors.shadow
+                                      .withValues(alpha: 0.18),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: ExpressiveCtaButton(
+                              label: 'Nouveau groupe',
+                              onPressed: () => showNewGroupSheet(context),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                  if (state.groups.isEmpty)
-                    _EmptyState().animate(delay: 100.ms)
-                        .fadeIn(duration: 500.ms)
-                        .slideY(begin: 0.06, end: 0, duration: 500.ms, curve: Curves.easeOut)
-                  else
-                    ...state.groups.asMap().entries.map((e) =>
-                      GroupCard(group: e.value, index: e.key)),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: ExpressiveCtaButton(
-                      label: 'Nouveau groupe',
-                      onPressed: () => showNewGroupSheet(context),
-                    ),
-                  ).animate(delay: 200.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.05, end: 0, duration: 400.ms),
-                ],
-              ),
+                  ),
+              ],
             );
           }
           return const SizedBox();
         },
+      ),
+    );
+  }
+}
+
+class _GroupsSectionHeader extends StatelessWidget {
+  const _GroupsSectionHeader({super.key, required this.onNewGroup});
+
+  final VoidCallback onNewGroup;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Tes groupes',
+              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: onNewGroup,
+            child: const Text('Nouveau groupe'),
+          ),
+        ],
       ),
     );
   }

@@ -15,6 +15,8 @@ class ExpressiveButtonGroupSegment<T> {
 
 /// Groupe de boutons connectés M3 Expressive — sélection unique, une ligne.
 ///
+/// La pilule active glisse vers le segment choisi ([AnimatedAlign]).
+///
 /// Réf. [Button groups](https://m3.material.io/components/button-groups/overview)
 class ExpressiveButtonGroup<T> extends StatelessWidget {
   const ExpressiveButtonGroup({
@@ -32,6 +34,8 @@ class ExpressiveButtonGroup<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
+    final selectedIndex = segments.indexWhere((s) => s.value == value);
+    final count = segments.length;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -43,16 +47,41 @@ class ExpressiveButtonGroup<T> extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(3),
-        child: Row(
+        child: Stack(
           children: [
-            for (final segment in segments)
-              Expanded(
-                child: _ExpressiveButtonGroupItem(
-                  label: segment.label,
-                  selected: value == segment.value,
-                  onTap: () => onChanged(segment.value),
+            if (count > 0 && selectedIndex >= 0)
+              Positioned.fill(
+                child: AnimatedAlign(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment(
+                    count == 1 ? 0 : -1 + (2 * selectedIndex / (count - 1)),
+                    0,
+                  ),
+                  child: FractionallySizedBox(
+                    widthFactor: 1 / count,
+                    heightFactor: 1,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: shapes.radiusFull,
+                      ),
+                    ),
+                  ),
                 ),
               ),
+            Row(
+              children: [
+                for (final segment in segments)
+                  Expanded(
+                    child: _ExpressiveButtonGroupItem(
+                      label: segment.label,
+                      selected: value == segment.value,
+                      onTap: () => onChanged(segment.value),
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -77,31 +106,25 @@ class _ExpressiveButtonGroupItem extends StatelessWidget {
     final shapes = context.tabbyShapes;
     final tt = Theme.of(context).textTheme;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: selected ? cs.primaryContainer : Colors.transparent,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: shapes.radiusFull,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: shapes.radiusFull,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            style: (tt.labelLarge ?? const TextStyle()).copyWith(
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+            ),
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: tt.labelLarge?.copyWith(
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected
-                    ? cs.onPrimaryContainer
-                    : cs.onSurfaceVariant,
-              ),
             ),
           ),
         ),
