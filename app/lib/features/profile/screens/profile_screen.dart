@@ -6,11 +6,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/locale/locale_cubit.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/theme/theme_cubit.dart';
 import '../../../l10n/l10n.dart';
 import '../../../design_system/design_system.dart';
 import '../../auth/cubit/auth_cubit.dart';
 import '../../auth/cubit/biometric_cubit.dart';
+import '../widgets/theme_selector.dart';
 import 'edit_profile_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -31,105 +31,83 @@ class ProfileScreen extends StatelessWidget {
               TabbyListCard(
                 padding: const EdgeInsets.all(20),
                 child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => pickAndUploadAvatar(context),
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            ExpressiveAvatar(
-                              label: user?.name ?? '?',
-                              size: 56,
-                              color: cs.primaryContainer,
-                              textColor: cs.onPrimaryContainer,
-                              imageUrl: resolveMediaUrl(user?.avatarUrl),
-                            ),
-                            Positioned(
-                              right: -2,
-                              bottom: -2,
-                              child: Material(
-                                color: cs.primary,
-                                shape: context.tabbyShapes.circle(),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Icon(
-                                    Symbols.photo_camera_rounded,
-                                    size: 14,
-                                    color: cs.onPrimary,
-                                    fill: 1,
-                                  ),
+                  children: [
+                    GestureDetector(
+                      onTap: () => pickAndUploadAvatar(context),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          ExpressiveAvatar(
+                            label: user?.name ?? '?',
+                            size: 56,
+                            color: cs.primaryContainer,
+                            textColor: cs.onPrimaryContainer,
+                            imageUrl: resolveMediaUrl(user?.avatarUrl),
+                          ),
+                          Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: Material(
+                              color: cs.primary,
+                              shape: context.tabbyShapes.circle(),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(
+                                  Symbols.photo_camera_rounded,
+                                  size: 14,
+                                  color: cs.onPrimary,
+                                  fill: 1,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user?.name ?? '',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            Text(
-                              user?.email ?? '',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: cs.onSurfaceVariant),
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.name ?? '',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          Text(
+                            user?.email ?? '',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: cs.onSurfaceVariant),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        tooltip: context.l10n.editProfile,
-                        onPressed: () => showEditProfileSheet(context),
-                        icon: const Icon(Symbols.edit_rounded),
-                      ),
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      tooltip: context.l10n.editProfile,
+                      onPressed: () => showEditProfileSheet(context),
+                      icon: const Icon(Symbols.edit_rounded),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
-              Text(context.l10n.appearance,
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.l10n.appearance,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               TabbyListCard(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.theme,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 12),
-                      BlocBuilder<ThemeCubit, ThemeMode>(
-                        builder: (context, mode) {
-                          return ExpressiveButtonGroup<ThemeMode>(
-                            value: mode,
-                            onChanged: (next) =>
-                                context.read<ThemeCubit>().setThemeMode(next),
-                            segments: [
-                              ExpressiveButtonGroupSegment(
-                                value: ThemeMode.system,
-                                label: context.l10n.themeSystem,
-                              ),
-                              ExpressiveButtonGroupSegment(
-                                value: ThemeMode.light,
-                                label: context.l10n.themeLight,
-                              ),
-                              ExpressiveButtonGroupSegment(
-                                value: ThemeMode.dark,
-                                label: context.l10n.themeDark,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.theme,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 12),
+                    const ThemeSelector(),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               BlocBuilder<LocaleCubit, Locale?>(
@@ -137,8 +115,8 @@ class ProfileScreen extends StatelessWidget {
                   final label = stored == null
                       ? context.l10n.languageSystem
                       : stored.languageCode == 'fr'
-                          ? context.l10n.languageFrench
-                          : context.l10n.languageEnglish;
+                      ? context.l10n.languageFrench
+                      : context.l10n.languageEnglish;
                   final flag = _languageFlag(stored?.languageCode);
                   return TabbyListCard(
                     child: ListTile(
@@ -151,8 +129,10 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 24),
-              Text(context.l10n.personalization,
-                  style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.l10n.personalization,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               _ActionTile(
                 icon: Symbols.repeat_rounded,
@@ -166,7 +146,10 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () => context.push('/profile/categories'),
               ),
               const SizedBox(height: 24),
-              Text(context.l10n.account, style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.l10n.account,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               BlocBuilder<BiometricCubit, BiometricState>(
                 builder: (context, bio) {
@@ -190,10 +173,7 @@ class ProfileScreen extends StatelessWidget {
                           context.l10n.biometricLockReason,
                         );
                         if (!ok && context.mounted) {
-                          showTabbySnack(
-                            context,
-                            context.l10n.biometricFailed,
-                          );
+                          showTabbySnack(context, context.l10n.biometricFailed);
                         }
                       },
                     ),
@@ -277,10 +257,10 @@ Future<void> _showLanguageSheet(BuildContext context, Locale? stored) {
 }
 
 String? _languageFlag(String? languageCode) => switch (languageCode) {
-      'fr' => '🇫🇷',
-      'en' => '🇬🇧',
-      _ => null,
-    };
+  'fr' => '🇫🇷',
+  'en' => '🇬🇧',
+  _ => null,
+};
 
 class _LanguageOption extends StatelessWidget {
   const _LanguageOption({
@@ -329,8 +309,11 @@ class _ActionTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon, color: color ?? cs.onSurface, size: 20),
         title: Text(label, style: TextStyle(color: color ?? cs.onSurface)),
-        trailing: Icon(Symbols.chevron_right_rounded,
-            color: cs.onSurfaceVariant, size: 20),
+        trailing: Icon(
+          Symbols.chevron_right_rounded,
+          color: cs.onSurfaceVariant,
+          size: 20,
+        ),
         onTap: onTap,
         shape: context.tabbyShapes.fieldShape,
       ),

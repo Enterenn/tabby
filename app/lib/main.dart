@@ -34,11 +34,20 @@ void main() async {
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   Animate.restartOnHotReload = true;
-  runApp(const TabbyApp());
+  final themePrefs = ThemePrefs();
+  final initialTheme = await themePrefs.getThemeMode();
+  runApp(TabbyApp(initialTheme: initialTheme, themePrefs: themePrefs));
 }
 
 class TabbyApp extends StatefulWidget {
-  const TabbyApp({super.key});
+  const TabbyApp({
+    super.key,
+    required this.initialTheme,
+    required this.themePrefs,
+  });
+
+  final AppThemePreference initialTheme;
+  final ThemePrefs themePrefs;
 
   @override
   State<TabbyApp> createState() => _TabbyAppState();
@@ -55,7 +64,10 @@ class _TabbyAppState extends State<TabbyApp> {
   void initState() {
     super.initState();
     _authCubit = AuthCubit()..checkAuth();
-    _themeCubit = ThemeCubit();
+    _themeCubit = ThemeCubit(
+      prefs: widget.themePrefs,
+      initial: widget.initialTheme,
+    );
     _localeCubit = LocaleCubit();
     _biometricCubit = BiometricCubit();
     _router = buildRouter(_authCubit);
@@ -100,15 +112,16 @@ class _TabbyAppState extends State<TabbyApp> {
         BlocProvider.value(value: _localeCubit),
         BlocProvider.value(value: _biometricCubit),
       ],
-      child: BlocBuilder<ThemeCubit, ThemeMode>(
-        builder: (context, themeMode) {
+      child: BlocBuilder<ThemeCubit, ThemeState>(
+        builder: (context, themeState) {
           return BlocBuilder<LocaleCubit, Locale?>(
             builder: (context, locale) {
               return MaterialApp.router(
                 title: 'Tabby',
                 theme: AppTheme.light,
                 darkTheme: AppTheme.dark,
-                themeMode: themeMode,
+                themeMode: themeState.materialThemeMode,
+                themeAnimationDuration: const Duration(milliseconds: 120),
                 locale: locale,
                 supportedLocales: AppLocalizations.supportedLocales,
                 localeResolutionCallback: (device, supported) {
@@ -129,7 +142,8 @@ class _TabbyAppState extends State<TabbyApp> {
                 builder: (context, child) {
                   // Pont officiel le temps que go_router / animations /
                   // flutter_animate lisent encore flutter/material.dart.
-                  return MaterialUiCompatibilityBridge( // ignore: deprecated_member_use
+                  return MaterialUiCompatibilityBridge(
+                    // ignore: deprecated_member_use
                     child: BiometricOfferListener(
                       child: child ?? const SizedBox.shrink(),
                     ),

@@ -908,6 +908,30 @@ abstract class AppLocalizations {
   /// **'Sombre'**
   String get themeDark;
 
+  /// No description provided for @themeSaveFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'enregistrer le thème.'**
+  String get themeSaveFailed;
+
+  /// No description provided for @themeAppearanceSystem.
+  ///
+  /// In fr, this message translates to:
+  /// **'Apparence système'**
+  String get themeAppearanceSystem;
+
+  /// No description provided for @themeAppearanceLight.
+  ///
+  /// In fr, this message translates to:
+  /// **'Apparence claire'**
+  String get themeAppearanceLight;
+
+  /// No description provided for @themeAppearanceDark.
+  ///
+  /// In fr, this message translates to:
+  /// **'Apparence sombre'**
+  String get themeAppearanceDark;
+
   /// No description provided for @language.
   ///
   /// In fr, this message translates to:
