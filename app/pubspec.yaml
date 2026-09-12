@@ -55,6 +55,7 @@ dependencies:
   material_color_utilities: ^0.13.0
   image_picker: ^1.2.0
   material_ui: ^1.2.0
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:

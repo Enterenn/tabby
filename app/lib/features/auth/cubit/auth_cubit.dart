@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/token_storage.dart';
+import '../../../core/auth/biometric_settings.dart';
 import '../../../core/services/fcm_service.dart';
 import '../../../shared/models/user.dart';
 
@@ -11,15 +12,35 @@ part 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
 
-  /// Appelé au démarrage — vérifie si un token existe déjà.
+  bool _offerBiometrics = false;
+
+  bool consumeBiometricOffer() {
+    final offer = _offerBiometrics;
+    _offerBiometrics = false;
+    return offer;
+  }
+
+  /// Appelé au démarrage — JWT + éventuellement le verrou biométrique.
   Future<void> checkAuth() async {
+    if (!tokenStorage.hasTokens) {
+      emit(AuthUnauthenticated());
+      return;
+    }
+    if (biometricSettings.enabled) {
+      emit(AuthBiometricRequired());
+      return;
+    }
+    await resumeSession();
+  }
+
+  /// Après empreinte / Face ID réussi, ou auto-login sans biométrie.
+  Future<void> resumeSession() async {
     if (!tokenStorage.hasTokens) {
       emit(AuthUnauthenticated());
       return;
     }
     emit(AuthLoading());
     try {
-      // Utilise le token stocké pour récupérer le profil
       final response = await apiClient.dio.get('/auth/me');
       final user = User.fromJson(response.data as Map<String, dynamic>);
       if (tokenStorage.userId == null) {
@@ -73,6 +94,7 @@ class AuthCubit extends Cubit<AuthState> {
       final profileResponse = await apiClient.dio.get('/auth/me');
       final user = User.fromJson(profileResponse.data as Map<String, dynamic>);
       await tokenStorage.save(access: access, refresh: refresh, userId: user.id);
+      _offerBiometrics = !biometricSettings.enabled && !biometricSettings.prompted;
       emit(AuthAuthenticated(user));
       FcmService.instance.init();
     } on DioException catch (e) {

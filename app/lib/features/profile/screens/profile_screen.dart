@@ -11,6 +11,7 @@ import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/widgets/tabby_sheet.dart';
 import '../../auth/cubit/auth_cubit.dart';
+import '../../auth/cubit/biometric_cubit.dart';
 import 'edit_profile_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -183,6 +184,45 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 24),
               Text(context.l10n.account, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
+              BlocBuilder<BiometricCubit, BiometricState>(
+                builder: (context, bio) {
+                  if (!bio.available && !bio.enabled) {
+                    return const SizedBox.shrink();
+                  }
+                  return Card(
+                    child: SwitchListTile(
+                      secondary: const Icon(Symbols.fingerprint_rounded),
+                      title: Text(context.l10n.biometricSetting),
+                      subtitle: Text(
+                        bio.available
+                            ? context.l10n.biometricSettingHint
+                            : context.l10n.biometricUnavailable,
+                      ),
+                      value: bio.enabled,
+                      shape: context.tabbyShapes.fieldShape,
+                      onChanged: (value) async {
+                        final cubit = context.read<BiometricCubit>();
+                        if (!value) {
+                          await cubit.disable();
+                          return;
+                        }
+                        if (!bio.available) return;
+                        final ok = await cubit.enable(
+                          context.l10n.biometricLockReason,
+                        );
+                        if (!ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(context.l10n.biometricFailed),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
               _ActionTile(
                 icon: Symbols.logout_rounded,
                 label: context.l10n.logout,

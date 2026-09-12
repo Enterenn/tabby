@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -148,6 +149,40 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get loginNoAccount => 'Pas encore de compte ? S\'inscrire';
+
+  @override
+  String get biometricSetting =>
+      'Connexion par biométrie (Face ID / Empreinte)';
+
+  @override
+  String get biometricSettingHint =>
+      'Déverrouille Tabby au lancement, sans retaper le mot de passe.';
+
+  @override
+  String get biometricEnableTitle => 'Activer la connexion biométrique ?';
+
+  @override
+  String get biometricEnableBody =>
+      'Utilise ton empreinte ou Face ID pour ouvrir Tabby. Le jeton reste chiffré sur l\'appareil.';
+
+  @override
+  String get biometricEnableConfirm => 'Activer';
+
+  @override
+  String get biometricNotNow => 'Plus tard';
+
+  @override
+  String get biometricLockReason => 'Déverrouille Tabby';
+
+  @override
+  String get biometricUnlock => 'Déverrouiller';
+
+  @override
+  String get biometricFailed => 'Authentification biométrique échouée';
+
+  @override
+  String get biometricUnavailable =>
+      'Aucune biométrie n\'est configurée sur cet appareil';
 
   @override
   String get registerTitle => 'Créer un compte';

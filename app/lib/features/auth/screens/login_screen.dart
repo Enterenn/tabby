@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/tabby_logo.dart';
 import '../cubit/auth_cubit.dart';
+import '../cubit/biometric_cubit.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +20,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
+  bool _unlocking = false;
+  bool _autoPrompted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (context.read<AuthCubit>().state is AuthBiometricRequired &&
+          !_autoPrompted) {
+        _autoPrompted = true;
+        _unlockWithBiometrics();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -35,6 +51,19 @@ class _LoginScreenState extends State<LoginScreen> {
         );
   }
 
+  Future<void> _unlockWithBiometrics() async {
+    if (_unlocking) return;
+    setState(() => _unlocking = true);
+    final ok = await context.read<BiometricCubit>().authenticate(
+          context.l10n.biometricLockReason,
+        );
+    if (!mounted) return;
+    if (ok) {
+      await context.read<AuthCubit>().resumeSession();
+    }
+    if (mounted) setState(() => _unlocking = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -46,6 +75,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(context.l10nError(state.message))),
             );
+          }
+          if (state is AuthBiometricRequired && !_autoPrompted) {
+            _autoPrompted = true;
+            _unlockWithBiometrics();
           }
         },
         child: SafeArea(
@@ -115,16 +148,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   BlocBuilder<AuthCubit, AuthState>(
                     builder: (context, state) {
-                      return FilledButton(
-                        onPressed: state is AuthLoading ? null : _submit,
-                        child: state is AuthLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(context.l10n.loginSubmit),
+                      final busy = state is AuthLoading || _unlocking;
+                      final showUnlock = state is AuthBiometricRequired;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          FilledButton(
+                            onPressed: busy ? null : _submit,
+                            child: state is AuthLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(context.l10n.loginSubmit),
+                          ),
+                          if (showUnlock) ...[
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: busy ? null : _unlockWithBiometrics,
+                              icon: _unlocking
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Symbols.fingerprint_rounded),
+                              label: Text(context.l10n.biometricUnlock),
+                            ),
+                          ],
+                        ],
                       );
                     },
                   ),

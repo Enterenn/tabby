@@ -12,6 +12,9 @@ class AuthAuthenticated extends AuthState {
 
 class AuthUnauthenticated extends AuthState {}
 
+/// JWT présent, en attente du prompt empreinte / Face ID.
+class AuthBiometricRequired extends AuthState {}
+
 class AuthError extends AuthState {
   AuthError(this.message);
   final String message;

@@ -374,6 +374,66 @@ abstract class AppLocalizations {
   /// **'Pas encore de compte ? S\'inscrire'**
   String get loginNoAccount;
 
+  /// No description provided for @biometricSetting.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion par biométrie (Face ID / Empreinte)'**
+  String get biometricSetting;
+
+  /// No description provided for @biometricSettingHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouille Tabby au lancement, sans retaper le mot de passe.'**
+  String get biometricSettingHint;
+
+  /// No description provided for @biometricEnableTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activer la connexion biométrique ?'**
+  String get biometricEnableTitle;
+
+  /// No description provided for @biometricEnableBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'Utilise ton empreinte ou Face ID pour ouvrir Tabby. Le jeton reste chiffré sur l\'appareil.'**
+  String get biometricEnableBody;
+
+  /// No description provided for @biometricEnableConfirm.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activer'**
+  String get biometricEnableConfirm;
+
+  /// No description provided for @biometricNotNow.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plus tard'**
+  String get biometricNotNow;
+
+  /// No description provided for @biometricLockReason.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouille Tabby'**
+  String get biometricLockReason;
+
+  /// No description provided for @biometricUnlock.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déverrouiller'**
+  String get biometricUnlock;
+
+  /// No description provided for @biometricFailed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Authentification biométrique échouée'**
+  String get biometricFailed;
+
+  /// No description provided for @biometricUnavailable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune biométrie n\'est configurée sur cet appareil'**
+  String get biometricUnavailable;
+
   /// No description provided for @registerTitle.
   ///
   /// In fr, this message translates to:

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api/token_storage.dart';
+import 'core/auth/biometric_settings.dart';
 import 'core/locale/locale_cubit.dart';
 import 'shared/models/loyalty_prefix_store.dart';
 import 'core/router/app_router.dart';
@@ -15,6 +16,8 @@ import 'core/services/fcm_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'features/auth/cubit/auth_cubit.dart';
+import 'features/auth/cubit/biometric_cubit.dart';
+import 'features/auth/widgets/biometric_offer_listener.dart';
 import 'l10n/l10n.dart';
 
 void main() async {
@@ -24,6 +27,7 @@ void main() async {
   await initializeDateFormatting('fr');
   await initializeDateFormatting('en');
   await initTokenStorage();
+  await initBiometricSettings();
   await LoyaltyPrefixStore.load();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
@@ -42,6 +46,7 @@ class _TabbyAppState extends State<TabbyApp> {
   late final AuthCubit _authCubit;
   late final ThemeCubit _themeCubit;
   late final LocaleCubit _localeCubit;
+  late final BiometricCubit _biometricCubit;
   late final GoRouter _router;
 
   @override
@@ -50,6 +55,7 @@ class _TabbyAppState extends State<TabbyApp> {
     _authCubit = AuthCubit()..checkAuth();
     _themeCubit = ThemeCubit();
     _localeCubit = LocaleCubit();
+    _biometricCubit = BiometricCubit();
     _router = buildRouter(_authCubit);
     _setupNotificationHandlers();
   }
@@ -79,6 +85,7 @@ class _TabbyAppState extends State<TabbyApp> {
     _authCubit.close();
     _themeCubit.close();
     _localeCubit.close();
+    _biometricCubit.close();
     super.dispose();
   }
 
@@ -89,6 +96,7 @@ class _TabbyAppState extends State<TabbyApp> {
         BlocProvider.value(value: _authCubit),
         BlocProvider.value(value: _themeCubit),
         BlocProvider.value(value: _localeCubit),
+        BlocProvider.value(value: _biometricCubit),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
@@ -120,7 +128,9 @@ class _TabbyAppState extends State<TabbyApp> {
                   // Pont officiel le temps que go_router / animations /
                   // flutter_animate lisent encore flutter/material.dart.
                   return MaterialUiCompatibilityBridge( // ignore: deprecated_member_use
-                    child: child ?? const SizedBox.shrink(),
+                    child: BiometricOfferListener(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   );
                 },
                 routerConfig: _router,
