@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/models/category.dart';
@@ -35,7 +36,7 @@ class _BudgetView extends StatelessWidget {
     return BlocBuilder<BudgetCubit, BudgetState>(
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Budget')),
+          appBar: AppBar(title: Text(context.l10n.budget)),
           body: switch (state) {
             BudgetInitial() || BudgetLoading() =>
               const Center(child: CircularProgressIndicator()),
@@ -43,11 +44,11 @@ class _BudgetView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(message, textAlign: TextAlign.center),
+                    Text(context.l10nError(message), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     FilledButton.tonal(
                       onPressed: () => context.read<BudgetCubit>().load(),
-                      child: const Text('Réessayer'),
+                      child: Text(context.l10n.retry),
                     ),
                   ],
                 ),
@@ -96,10 +97,12 @@ class _BudgetContent extends StatelessWidget {
         if (state.stats.total > 0)
           SliverToBoxAdapter(
             child: ExpressiveHeroBanner(
-              label: 'Total du mois',
+              label: context.l10n.monthTotal,
               value: state.stats.total.toStringAsFixed(2),
               suffix: ' €',
-              subtitle: state.stats.monthLabel,
+              subtitle: state.stats.monthLabel(
+                Localizations.localeOf(context).toString(),
+              ),
               variant: ExpressiveTonalVariant.coral,
               accentIcon: Symbols.payments_rounded,
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -111,7 +114,9 @@ class _BudgetContent extends StatelessWidget {
           child: _MonthNav(
             year: state.selectedYear,
             month: state.selectedMonth,
-            monthLabel: state.stats.monthLabel,
+            monthLabel: state.stats.monthLabel(
+              Localizations.localeOf(context).toString(),
+            ),
             isCurrentMonth: isCurrentMonth,
           ),
         ),
@@ -135,7 +140,7 @@ class _BudgetContent extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
-              'Budgets du mois',
+              context.l10n.monthBudgets,
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
@@ -155,7 +160,7 @@ class _BudgetContent extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Text(
-                'Aucun budget ce mois — fixe un plafond par catégorie.',
+                context.l10n.noBudgetThisMonth,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: context.tabbyColors.onSurfaceVariant,
@@ -168,7 +173,7 @@ class _BudgetContent extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Center(
               child: ExpressiveCtaButton(
-                label: 'Nouveau budget',
+                label: context.l10n.newBudget,
                 onPressed: onCreateBudget,
               ),
             ),
@@ -255,7 +260,7 @@ class _GroupFilter extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: _GroupFilterChip(
-              label: 'Tous',
+              label: context.l10n.allGroups,
               selected: selectedGroupId == null,
               onTap: () => cubit.selectGroup(null),
             ),
@@ -364,7 +369,7 @@ class _StatsSectionState extends State<_StatsSection> {
                 size: 48, color: cs.outlineVariant),
             const SizedBox(height: 8),
             Text(
-              'Aucune dépense ce mois',
+              context.l10n.noSpendThisMonth,
               style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
           ],
@@ -391,9 +396,9 @@ class _StatsSectionState extends State<_StatsSection> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Toutes les dépenses', style: tt.bodySmall),
+                Text(context.l10n.allExpenses, style: tt.bodySmall),
                 Text(
-                  'Total ${stats.total.toStringAsFixed(2)} €',
+                  context.l10n.totalAmount(stats.total.toStringAsFixed(2)),
                   style: tt.bodySmall
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
@@ -461,7 +466,9 @@ class _StatsSectionState extends State<_StatsSection> {
                                 ),
                               ),
                               Text(
-                                '${cat.percent.toStringAsFixed(1)}% du total',
+                                context.l10n.percentOfTotal(
+                                  cat.percent.toStringAsFixed(1),
+                                ),
                                 style: tt.bodySmall?.copyWith(
                                   color: isSelected
                                       ? semantic.onFor(catColor, cs)
@@ -561,7 +568,9 @@ class _BudgetCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Budget ${b.limitAmount.toStringAsFixed(0)} €/mois',
+                    context.l10n.budgetPerMonth(
+                      b.limitAmount.toStringAsFixed(0),
+                    ),
                     style: tt.bodySmall?.copyWith(color: mutedColor),
                   ),
                 ],
@@ -569,10 +578,10 @@ class _BudgetCard extends StatelessWidget {
             ),
             ExpressiveBadge(
               label: b.status == BudgetStatus.danger
-                  ? 'Dépassé'
+                  ? context.l10n.overBudget
                   : b.status == BudgetStatus.warning
-                      ? 'Attention'
-                      : 'OK',
+                      ? context.l10n.warning
+                      : context.l10n.ok,
               color: isDanger
                   ? semantic.danger
                   : b.status == BudgetStatus.warning
@@ -603,15 +612,19 @@ class _BudgetCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${b.spentAmount.toStringAsFixed(2)} € dépensés',
+              context.l10n.spentAmount(b.spentAmount.toStringAsFixed(2)),
               style: tt.bodySmall?.copyWith(
                 color: isDanger ? semantic.onDangerContainer : null,
               ),
             ),
             Text(
               b.remaining >= 0
-                  ? '${b.remaining.toStringAsFixed(2)} € restants'
-                  : '${b.remaining.abs().toStringAsFixed(2)} € de dépassement',
+                  ? context.l10n.remainingAmount(
+                      b.remaining.toStringAsFixed(2),
+                    )
+                  : context.l10n.overspendAmount(
+                      b.remaining.abs().toStringAsFixed(2),
+                    ),
               style: tt.bodySmall?.copyWith(
                 color: isDanger ? semantic.onDangerContainer : mutedColor,
                 fontWeight: isDanger ? FontWeight.w700 : null,
@@ -691,7 +704,7 @@ class _BudgetCard extends StatelessWidget {
               const SizedBox(height: 8),
               ListTile(
                 leading: const Icon(Symbols.edit_rounded),
-                title: const Text('Modifier le plafond'),
+                title: Text(context.l10n.editLimit),
                 shape: context.tabbyShapes.fieldShape,
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -700,7 +713,7 @@ class _BudgetCard extends StatelessWidget {
               ),
               ListTile(
                 leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                title: Text(context.l10n.delete, style: TextStyle(color: cs.error)),
                 shape: context.tabbyShapes.fieldShape,
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -728,16 +741,15 @@ class _BudgetCard extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer ce budget ?'),
-        content: Text(
-            'Le budget "${budget.category.name}" sera supprimé.'),
+        title: Text(ctx.l10n.deleteBudgetTitle),
+        content: Text(ctx.l10n.deleteBudgetBody(budget.category.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Annuler')),
+              child: Text(ctx.l10n.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Supprimer',
+            child: Text(ctx.l10n.delete,
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.error)),
           ),
@@ -802,7 +814,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
     final catColor = context.tabbySemantic.chartColorFor(b.category);
 
     return AlertDialog(
-      title: const Text('Modifier le budget'),
+      title: Text(context.l10n.editBudget),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -830,7 +842,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
             ],
           ),
           const SizedBox(height: 20),
-          Text('Plafond mensuel', style: tt.labelLarge),
+          Text(context.l10n.monthlyLimit, style: tt.labelLarge),
           const SizedBox(height: 6),
           TextField(
             controller: _ctrl,
@@ -847,7 +859,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _loading ? null : _save,
@@ -855,7 +867,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
               ? const SizedBox(
                   height: 16, width: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Enregistrer'),
+              : Text(context.l10n.save),
         ),
       ],
     );
@@ -928,18 +940,18 @@ class _BudgetDialogState extends State<_BudgetDialog> {
     final semantic = context.tabbySemantic;
 
     return AlertDialog(
-      title: const Text('Nouveau budget'),
+      title: Text(context.l10n.newBudget),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (widget.state.groups.length > 1) ...[
-              Text('Groupe', style: tt.labelLarge),
+              Text(context.l10n.group, style: tt.labelLarge),
               const SizedBox(height: 6),
               DropdownButtonFormField<Group>(
                 initialValue: _selectedGroup,
-                hint: const Text('Choisir un groupe'),
+                hint: Text(context.l10n.chooseGroup),
                 items: widget.state.groups
                     .map((g) => DropdownMenuItem(
                           value: g,
@@ -953,11 +965,11 @@ class _BudgetDialogState extends State<_BudgetDialog> {
               ),
               const SizedBox(height: 16),
             ],
-            Text('Catégorie', style: tt.labelLarge),
+            Text(context.l10n.category, style: tt.labelLarge),
             const SizedBox(height: 6),
             DropdownButtonFormField<Category>(
               initialValue: _selectedCategory,
-              hint: const Text('Choisir une catégorie'),
+              hint: Text(context.l10n.chooseCategory),
               items: _availableCategories
                   .map((c) => DropdownMenuItem(
                         value: c,
@@ -978,7 +990,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                   : (c) => setState(() => _selectedCategory = c),
             ),
             const SizedBox(height: 16),
-            Text('Plafond mensuel', style: tt.labelLarge),
+            Text(context.l10n.monthlyLimit, style: tt.labelLarge),
             const SizedBox(height: 6),
             TextField(
               controller: _amountCtrl,
@@ -995,7 +1007,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _loading ? null : _submit,
@@ -1003,7 +1015,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
               ? const SizedBox(
                   height: 16, width: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Créer'),
+              : Text(context.l10n.create),
         ),
       ],
     );

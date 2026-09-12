@@ -103,7 +103,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
         groupLocked: lockGroup && groupId != null,
       ));
     } catch (e) {
-      emit(AddExpenseError(e.toString()));
+      emit(const AddExpenseError('errorNetwork'));
     }
   }
 
@@ -114,7 +114,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       final data = await _fetchGroupData(groupId);
       emit(current.copyWith(group: data.group, categories: data.categories));
     } catch (e) {
-      emit(AddExpenseError(e.toString()));
+      emit(const AddExpenseError('errorNetwork'));
     }
   }
 

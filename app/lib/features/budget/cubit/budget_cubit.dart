@@ -143,7 +143,7 @@ class BudgetCubit extends Cubit<BudgetState> {
         ),
       );
     } catch (e) {
-      emit(BudgetError(e.toString()));
+      emit(const BudgetError('errorNetwork'));
     }
   }
 

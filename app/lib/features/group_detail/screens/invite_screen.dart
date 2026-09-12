@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.groupId});
@@ -40,7 +41,8 @@ class _InviteScreenState extends State<InviteScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content:
-                  Text(e.response?.data?['detail']?.toString() ?? 'Erreur')),
+                  Text(context.l10nError(
+                      e.response?.data?['detail']?.toString()))),
         );
         setState(() => _loading = false);
       }
@@ -52,18 +54,18 @@ class _InviteScreenState extends State<InviteScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inviter un membre')),
+      appBar: AppBar(title: Text(context.l10n.inviteMember)),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 32),
-            Text('Code d\'invitation',
+            Text(context.l10n.inviteCodeTitle,
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              'Partage ce code avec la personne à inviter. Il est valable 24h.',
+              context.l10n.inviteCodeShare,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
@@ -77,7 +79,7 @@ class _InviteScreenState extends State<InviteScreen> {
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: _code!));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Code copié !')),
+                      SnackBar(content: Text(context.l10n.codeCopied)),
                     );
                   },
                   child: Container(
@@ -102,7 +104,7 @@ class _InviteScreenState extends State<InviteScreen> {
               const SizedBox(height: 16),
               Center(
                 child: Text(
-                  'Tap pour copier',
+                  context.l10n.tapToCopy,
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
@@ -114,14 +116,14 @@ class _InviteScreenState extends State<InviteScreen> {
                 child: TextButton.icon(
                   onPressed: _generateCode,
                   icon: const Icon(Symbols.refresh_rounded, size: 18),
-                  label: const Text('Générer un nouveau code'),
+                  label: Text(context.l10n.generateNewCode),
                 ),
               ),
             ],
             const Spacer(),
             FilledButton(
               onPressed: () => context.go('/home'),
-              child: const Text('Retour à l\'accueil'),
+              child: Text(context.l10n.backHome),
             ),
             const SizedBox(height: 24),
           ],

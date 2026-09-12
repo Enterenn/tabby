@@ -46,18 +46,18 @@ class RecurringExpense extends Equatable {
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
-  String get frequencyLabel {
+  String frequencyLabel(String monthly, String yearly) {
     return switch (frequency) {
-      'monthly' => 'Mensuelle',
-      'yearly' => 'Annuelle',
+      'monthly' => monthly,
+      'yearly' => yearly,
       _ => frequency,
     };
   }
 
-  String get dayLabel {
+  String dayLabel(String firstOfMonth, String Function(int day) nthOfMonth) {
     return switch (dayOfPeriod) {
-      1 => '1er du mois',
-      _ => '${dayOfPeriod}e du mois',
+      1 => firstOfMonth,
+      _ => nthOfMonth(dayOfPeriod),
     };
   }
 

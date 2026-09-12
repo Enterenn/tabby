@@ -3,13 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/tabby_sheet.dart';
 
 /// Ouvre le choix créer / rejoindre un groupe.
 Future<void> showNewGroupSheet(BuildContext context) {
   return showTabbySheet<void>(
     context,
-    builder: (_) => const _NewGroupSheet(),
+    builder: (_) => _NewGroupSheet(),
   );
 }
 
@@ -27,17 +28,17 @@ class _NewGroupSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Nouveau groupe', style: tt.titleLarge),
+          Text(context.l10n.newGroup, style: tt.titleLarge),
           const SizedBox(height: 4),
           Text(
-            'Crée un groupe ou rejoins-en un avec un code d\'invitation.',
+            context.l10n.newGroupSheetSubtitle,
             style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           _OptionTile(
             icon: Symbols.add_rounded,
-            title: 'Créer un groupe',
-            subtitle: 'Lance un groupe et invite tes proches',
+            title: context.l10n.createGroup,
+            subtitle: context.l10n.createGroupSubtitle,
             color: cs.primaryContainer,
             iconColor: cs.onPrimaryContainer,
             onTap: () {
@@ -48,8 +49,8 @@ class _NewGroupSheet extends StatelessWidget {
           const SizedBox(height: 10),
           _OptionTile(
             icon: Symbols.group_add_rounded,
-            title: 'Rejoindre un groupe',
-            subtitle: 'Entre le code partagé par un ami',
+            title: context.l10n.joinGroup,
+            subtitle: context.l10n.joinGroupSubtitle,
             color: cs.secondaryContainer,
             iconColor: cs.onSecondaryContainer,
             onTap: () {

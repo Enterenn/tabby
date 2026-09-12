@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Bandeau rouge en haut quand le réseau est absent.
 /// À placer dans le Scaffold body ou dans la Column au-dessus du child.
 class ConnectivityBanner extends StatefulWidget {
@@ -76,7 +78,7 @@ class _OfflineBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            'Pas de connexion réseau',
+            context.l10n.offlineBanner,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onErrorContainer,
                   fontWeight: FontWeight.w600,

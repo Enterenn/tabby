@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/recurring_expense.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 
@@ -52,7 +53,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la mise à jour')),
+          SnackBar(content: Text(context.l10n.errorUpdate)),
         );
       }
     }
@@ -62,20 +63,17 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer la récurrence ?'),
-        content: Text(
-          '"${item.name}" ne sera plus générée les prochains mois. '
-          'Les dépenses déjà créées ne sont pas supprimées.',
-        ),
+        title: Text(ctx.l10n.deleteRecurringTitle),
+        content: Text(ctx.l10n.deleteRecurringBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              'Supprimer',
+              ctx.l10n.delete,
               style: TextStyle(
                   color: Theme.of(context).colorScheme.error),
             ),
@@ -93,7 +91,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la suppression')),
+          SnackBar(content: Text(context.l10n.errorDelete)),
         );
       }
     }
@@ -105,16 +103,16 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dépenses récurrentes')),
+      appBar: AppBar(title: Text(context.l10n.recurringTitle)),
       body: _error != null
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_error!, textAlign: TextAlign.center),
+                  Text(context.l10nError(_error), textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   FilledButton.tonal(
-                      onPressed: _load, child: const Text('Réessayer')),
+                      onPressed: _load, child: Text(context.l10n.retry)),
                 ],
               ),
             )
@@ -128,11 +126,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                           Icon(Symbols.repeat_rounded,
                               size: 56, color: cs.outlineVariant),
                           const SizedBox(height: 16),
-                          Text('Aucune dépense récurrente',
+                          Text(context.l10n.noRecurring,
                               style: tt.headlineSmall),
                           const SizedBox(height: 8),
                           Text(
-                            'Active "Répéter chaque mois" lors de\nl\'ajout d\'une dépense',
+                            context.l10n.noRecurringHint,
                             style: tt.bodyMedium
                                 ?.copyWith(color: cs.onSurfaceVariant),
                             textAlign: TextAlign.center,
@@ -232,7 +230,7 @@ class _RecurringCard extends StatelessWidget {
                             : cs.onSurfaceVariant,
                       ),
                       Text(
-                        ' · ${item.dayLabel}',
+                        ' · ${item.dayLabel(context.l10n.recurringFirstOfMonth, context.l10n.recurringNthOfMonth)}',
                         style: tt.bodySmall
                             ?.copyWith(color: cs.onSurfaceVariant),
                       ),

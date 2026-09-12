@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../l10n/l10n.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});
@@ -36,7 +37,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     } on DioException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.response?.data?['detail']?.toString() ?? 'Erreur')),
+          SnackBar(
+            content: Text(
+              context.l10nError(e.response?.data?['detail']?.toString()),
+            ),
+          ),
         );
       }
     } finally {
@@ -49,7 +54,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nouveau groupe')),
+      appBar: AppBar(title: Text(context.l10n.newGroup)),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Form(
@@ -58,11 +63,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              Text('Donne un nom à ton groupe',
+              Text(context.l10n.createGroupHeadline,
                   style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
-                'Ex. Couple, Vacances été, Coloc…',
+                context.l10n.createGroupHint,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
@@ -74,9 +79,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 autofocus: true,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
-                decoration: const InputDecoration(labelText: 'Nom du groupe'),
+                decoration: InputDecoration(labelText: context.l10n.groupName),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Champ requis' : null,
+                    v == null || v.trim().isEmpty ? context.l10n.requiredField : null,
               ),
               const SizedBox(height: 32),
               FilledButton(
@@ -87,7 +92,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Créer le groupe'),
+                    : Text(context.l10n.createGroupSubmit),
               ),
             ],
           ),

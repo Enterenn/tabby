@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../models/loyalty_card.dart';
 import 'loyalty_card_face.dart';
 
@@ -41,7 +42,7 @@ class LoyaltyWalletStack extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Text(
-              'Tape une carte pour la mettre devant · swipe pour parcourir',
+              context.l10n.walletHint,
               style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),

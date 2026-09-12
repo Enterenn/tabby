@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import 'expressive_action_button.dart';
 
 /// Action du menu FAB M3 — icône + libellé.
@@ -177,7 +178,7 @@ class _FabMenuTrigger extends StatelessWidget {
       size: size,
       color: open ? cs.surfaceContainerHighest : cs.primary,
       iconColor: open ? cs.onSurface : cs.onPrimary,
-      tooltip: open ? 'Fermer' : 'Actions',
+      tooltip: open ? context.l10n.fabClose : context.l10n.fabActions,
       onPressed: onPressed,
     );
   }

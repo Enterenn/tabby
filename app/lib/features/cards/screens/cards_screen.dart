@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/loyalty_brand.dart';
 import '../../../shared/models/loyalty_card.dart';
 import '../../../shared/models/loyalty_prefix_store.dart';
@@ -43,7 +44,7 @@ class _CardsView extends StatelessWidget {
     return BlocBuilder<CardsCubit, CardsState>(
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Mes cartes')),
+          appBar: AppBar(title: Text(context.l10n.myCards)),
           body: switch (state) {
             CardsInitial() || CardsLoading() =>
               const Center(child: CircularProgressIndicator()),
@@ -51,11 +52,11 @@ class _CardsView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(message, textAlign: TextAlign.center),
+                    Text(context.l10nError(message), textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     FilledButton.tonal(
                       onPressed: () => context.read<CardsCubit>().load(),
-                      child: const Text('Réessayer'),
+                      child: Text(context.l10n.retry),
                     ),
                   ],
                 ),
@@ -69,17 +70,17 @@ class _CardsView extends StatelessWidget {
                       Icon(Symbols.credit_card_rounded,
                           size: 56, color: cs.outlineVariant),
                       const SizedBox(height: 16),
-                      Text('Aucune carte', style: tt.headlineSmall),
+                      Text(context.l10n.noCards, style: tt.headlineSmall),
                       const SizedBox(height: 8),
                       Text(
-                        'Ajoute ta première carte de fidélité\navec le bouton ci-dessous',
+                        context.l10n.noCardsHint,
                         style: tt.bodyMedium
                             ?.copyWith(color: cs.onSurfaceVariant),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
                       ExpressiveCtaButton(
-                        label: 'Ajouter une carte',
+                        label: context.l10n.addCard,
                         onPressed: () => _showAddSheet(context),
                       ),
                     ],
@@ -145,7 +146,7 @@ class _CardsView extends StatelessWidget {
                   ),
                   Center(
                     child: ExpressiveCtaButton(
-                      label: 'Ajouter une carte',
+                      label: context.l10n.addCard,
                       onPressed: () => _showAddSheet(context),
                     ),
                   ),
@@ -222,7 +223,7 @@ void _showActions(
               ),
               ListTile(
                 leading: const Icon(Symbols.fullscreen_rounded),
-                title: const Text('Afficher la carte'),
+                title: Text(context.l10n.showCard),
                 shape: context.tabbyShapes.fieldShape,
                 onTap: () {
                   Navigator.pop(ctx);
@@ -232,7 +233,7 @@ void _showActions(
               if (index > 0)
                 ListTile(
                   leading: const Icon(Symbols.arrow_upward_rounded),
-                  title: const Text('Monter'),
+                  title: Text(context.l10n.moveUp),
                   shape: context.tabbyShapes.fieldShape,
                   onTap: () {
                     Navigator.pop(ctx);
@@ -245,7 +246,7 @@ void _showActions(
               if (index >= 0 && index < cards.length - 1)
                 ListTile(
                   leading: const Icon(Symbols.arrow_downward_rounded),
-                  title: const Text('Descendre'),
+                  title: Text(context.l10n.moveDown),
                   shape: context.tabbyShapes.fieldShape,
                   onTap: () {
                     Navigator.pop(ctx);
@@ -257,7 +258,7 @@ void _showActions(
                 ),
               ListTile(
                 leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                title: Text(context.l10n.delete, style: TextStyle(color: cs.error)),
                 shape: context.tabbyShapes.fieldShape,
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -357,7 +358,7 @@ class _CardFullScreen extends StatelessWidget {
                     .fadeIn(delay: 260.ms, duration: 320.ms),
                 const SizedBox(height: 6),
                 Text(
-                  card.isBarcode ? 'Code-barres' : 'QR Code',
+                  card.isBarcode ? context.l10n.barcode : context.l10n.qrCode,
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 )
                     .animate()
@@ -440,7 +441,7 @@ class _ScannerViewState extends State<_ScannerView> {
                                 size: 40, color: cs.onSurfaceVariant),
                             const SizedBox(height: 12),
                             Text(
-                              'Accès à la caméra refusé',
+                              context.l10n.cameraDenied,
                               style: tt.bodyMedium,
                               textAlign: TextAlign.center,
                             ),
@@ -450,7 +451,7 @@ class _ScannerViewState extends State<_ScannerView> {
                                 await _ctrl.stop();
                                 await _ctrl.start();
                               },
-                              child: const Text('Réessayer'),
+                              child: Text(context.l10n.retry),
                             ),
                           ],
                         ),
@@ -477,7 +478,7 @@ class _ScannerViewState extends State<_ScannerView> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Centrez le code dans le cadre',
+                          context.l10n.centerCode,
                           style: tt.bodySmall?.copyWith(
                             color: cs.onPrimary,
                           ),
@@ -494,7 +495,7 @@ class _ScannerViewState extends State<_ScannerView> {
         TextButton.icon(
           onPressed: widget.onCancel,
           icon: const Icon(Symbols.close_rounded, size: 16),
-          label: const Text('Annuler le scan'),
+          label: Text(context.l10n.cancelScan),
           style: TextButton.styleFrom(
             foregroundColor: cs.onSurfaceVariant,
           ),
@@ -674,10 +675,10 @@ class _AddCardSheetState extends State<_AddCardSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ExpressiveSheetHeader(
-              title: 'Nouvelle carte',
+              title: context.l10n.newCard,
               subtitle: _codeValue.isEmpty
-                  ? 'Scanne le code-barres ou QR de ta carte'
-                  : 'Vérifie l\'enseigne détectée',
+                  ? context.l10n.newCardScanHint
+                  : context.l10n.newCardCheckHint,
               onClose: () => Navigator.of(context).pop(),
             ),
             Padding(
@@ -694,7 +695,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                   else if (_codeValue.isEmpty) ...[
                     ExpressiveCtaButton(
                       icon: Symbols.photo_camera_rounded,
-                      label: 'Scanner ma carte',
+                      label: context.l10n.scanMyCard,
                       expanded: true,
                       onPressed: _startScan,
                     ),
@@ -702,7 +703,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     Center(
                       child: TextButton(
                         onPressed: () => _showManualInput(context),
-                        child: const Text('Saisir le code manuellement'),
+                        child: Text(context.l10n.enterCodeManually),
                       ),
                     ),
                   ] else ...[
@@ -732,8 +733,8 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                                 ),
                                 Text(
                                   _codeType == 'barcode'
-                                      ? 'Code-barres'
-                                      : 'QR Code',
+                                      ? context.l10n.barcode
+                                      : context.l10n.qrCode,
                                   style: tt.labelSmall?.copyWith(
                                     color: cs.onSurfaceVariant,
                                   ),
@@ -750,7 +751,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                         Expanded(
                           child: ExpressiveCtaButton(
                             icon: Symbols.photo_camera_rounded,
-                            label: 'Rescanner',
+                            label: context.l10n.rescan,
                             variant: ExpressiveCtaVariant.tonal,
                             expanded: true,
                             onPressed: _startScan,
@@ -760,7 +761,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                         Expanded(
                           child: ExpressiveCtaButton(
                             icon: Symbols.edit_rounded,
-                            label: 'Modifier',
+                            label: context.l10n.edit,
                             variant: ExpressiveCtaVariant.tonal,
                             expanded: true,
                             onPressed: () => _showManualInput(context),
@@ -774,7 +775,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     const SizedBox(height: 24),
                     if (_brandAutoDetected && !_showBrandPicker) ...[
                       ExpressiveSheetSection(
-                        label: 'Enseigne détectée',
+                        label: context.l10n.detectedBrand,
                         child: _DetectedBrandBanner(
                           brand: LoyaltyBrand.byId(_brandId)!,
                           onChange: () =>
@@ -784,15 +785,13 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     ] else ...[
                       ExpressiveSheetSection(
                         label: _brandAutoDetected
-                            ? 'Enseigne'
-                            : 'Enseigne non reconnue',
+                            ? context.l10n.brand
+                            : context.l10n.unknownBrand,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Le code-barres ne contient pas le nom du magasin. '
-                              'Cherche l\'enseigne ci-dessous — on retiendra ce code '
-                              'pour les prochains scans.',
+                              context.l10n.unknownBrandHint,
                               style: tt.bodySmall?.copyWith(
                                 color: cs.onSurfaceVariant,
                               ),
@@ -802,7 +801,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                               controller: _brandSearchCtrl,
                               textCapitalization: TextCapitalization.words,
                               decoration: InputDecoration(
-                                hintText: 'Ex. Animalis, Picard…',
+                                hintText: context.l10n.brandHint,
                                 prefixIcon: Icon(
                                   Symbols.search_rounded,
                                   color: cs.onSurfaceVariant,
@@ -821,7 +820,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                                 itemBuilder: (context, i) {
                                   if (i == _filteredBrands.length) {
                                     return _BrandPickerTile(
-                                      label: 'Autre',
+                                      label: context.l10n.other,
                                       monogram: '+',
                                       color: cs.outlineVariant,
                                       onColor: cs.onSurface,
@@ -849,8 +848,8 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                               TextField(
                                 controller: _nameCtrl,
                                 textCapitalization: TextCapitalization.words,
-                                decoration: const InputDecoration(
-                                  hintText: 'Nom de l\'enseigne',
+                                decoration: InputDecoration(
+                                  hintText: context.l10n.brandNameHint,
                                 ),
                                 onChanged: (_) => setState(() {}),
                               ),
@@ -862,7 +861,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     if (_customBrand) ...[
                       const SizedBox(height: 24),
                       ExpressiveSheetSection(
-                        label: 'Couleur',
+                        label: context.l10n.color,
                         child: Wrap(
                           spacing: 10,
                           children: palette.map((color) {
@@ -894,12 +893,12 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                     if (_canSubmit) ...[
                       const SizedBox(height: 24),
                       ExpressiveSheetSection(
-                        label: 'Aperçu',
+                        label: context.l10n.preview,
                         child: LoyaltyCardFace(
                           card: LoyaltyCard(
                             id: 'preview',
                             brandName: _nameCtrl.text.trim().isEmpty
-                                ? 'Ma carte'
+                                ? context.l10n.myCard
                                 : _nameCtrl.text.trim(),
                             codeType: _codeType,
                             codeValue: _codeValue,
@@ -914,7 +913,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
                   ],
                   const SizedBox(height: 28),
                   ExpressiveSheetSubmit(
-                    label: 'Ajouter la carte',
+                    label: context.l10n.addTheCard,
                     loading: _loading,
                     onPressed: _canSubmit ? _submit : null,
                   ),
@@ -935,18 +934,18 @@ class _AddCardSheetState extends State<_AddCardSheet> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Saisir le code'),
+        title: Text(ctx.l10n.enterCode),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Ex: 1234567890123',
+          decoration: InputDecoration(
+            hintText: ctx.l10n.codeExample,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -954,7 +953,7 @@ class _AddCardSheetState extends State<_AddCardSheet> {
               if (v.isNotEmpty) _applyManualCode(v);
               Navigator.pop(ctx);
             },
-            child: const Text('OK'),
+            child: Text(ctx.l10n.ok),
           ),
         ],
       ),
@@ -1013,7 +1012,7 @@ class _DetectedBrandBanner extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Reconnue automatiquement',
+                  context.l10n.recognizedAuto,
                   style: tt.bodySmall?.copyWith(color: fg),
                 ),
               ],
@@ -1022,7 +1021,7 @@ class _DetectedBrandBanner extends StatelessWidget {
           TextButton(
             onPressed: onChange,
             style: TextButton.styleFrom(foregroundColor: fg),
-            child: const Text('Modifier'),
+            child: Text(context.l10n.edit),
           ),
         ],
       ),

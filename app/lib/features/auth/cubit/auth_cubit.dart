@@ -51,9 +51,9 @@ class AuthCubit extends Cubit<AuthState> {
       });
       await login(email: email, password: password);
     } on DioException catch (e) {
-      emit(AuthError(_extractDetail(e, 'Erreur lors de l\'inscription')));
+      emit(AuthError(_extractDetail(e, 'errorRegister')));
     } catch (e) {
-      emit(AuthError('Erreur inattendue : $e'));
+      emit(AuthError('errorUnexpected'));
     }
   }
 
@@ -76,9 +76,9 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthAuthenticated(user));
       FcmService.instance.init();
     } on DioException catch (e) {
-      emit(AuthError(_extractDetail(e, 'Email ou mot de passe incorrect')));
+      emit(AuthError(_extractDetail(e, 'errorInvalidCredentials')));
     } catch (e) {
-      emit(AuthError('Erreur inattendue : $e'));
+      emit(AuthError('errorUnexpected'));
     }
   }
 

@@ -8,6 +8,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../group_invite.dart';
 import '../../../shared/models/expense.dart';
@@ -42,9 +43,9 @@ class _GroupDetailView extends StatelessWidget {
         if (state is GroupDetailError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text(context.l10nError(state.message)),
               action: SnackBarAction(
-                label: 'Réessayer',
+                label: context.l10n.retry,
                 onPressed: () => context.read<GroupDetailCubit>().load(),
               ),
             ),
@@ -65,11 +66,11 @@ class _GroupDetailView extends StatelessWidget {
                 children: [
                   const Icon(Symbols.error_outline_rounded, size: 48),
                   const SizedBox(height: 16),
-                  Text(message, textAlign: TextAlign.center),
+                  Text(context.l10nError(message), textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () => context.read<GroupDetailCubit>().load(),
-                    child: const Text('Réessayer'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -119,7 +120,7 @@ class _LoadedBody extends StatelessWidget {
               // ── 3. À régler ──────────────────────────────────────────────────
               if (balances.isNotEmpty) ...[
                 _SectionHeader(
-                  title: 'À régler',
+                  title: context.l10n.toSettle,
                   icon: Symbols.payments_rounded,
                 ),
                 SliverPadding(
@@ -139,7 +140,7 @@ class _LoadedBody extends StatelessWidget {
             actions: [
               ExpressiveFabMenuAction(
                 icon: Symbols.receipt_long_rounded,
-                label: 'Ajouter une dépense',
+                label: context.l10n.addExpense,
                 onSelected: () async {
                   await showAddExpenseSheet(context, groupId: group.id);
                   if (context.mounted) {
@@ -149,7 +150,7 @@ class _LoadedBody extends StatelessWidget {
               ),
               ExpressiveFabMenuAction(
                 icon: Symbols.person_add_rounded,
-                label: 'Inviter quelqu\'un',
+                label: context.l10n.inviteSomeone,
                 onSelected: () =>
                     showGroupInviteDialog(context, groupId: group.id),
               ),
@@ -185,7 +186,7 @@ class _GroupSliverAppBar extends StatelessWidget {
       actions: [
         IconButton(
           icon: const Icon(Symbols.more_vert_rounded),
-          tooltip: 'Options du groupe',
+          tooltip: context.l10n.groupOptions,
           onPressed: () => _showGroupActions(context),
         ),
       ],
@@ -241,8 +242,8 @@ class _GroupActionsSheet extends StatelessWidget {
             ),
             title: Text(
               group.isPinned
-                  ? 'Désépingler de l\'accueil'
-                  : 'Épingler sur l\'accueil',
+                  ? context.l10n.unpinGroup
+                  : context.l10n.pinGroup,
             ),
             onTap: () async {
               Navigator.pop(context);
@@ -250,14 +251,15 @@ class _GroupActionsSheet extends StatelessWidget {
                   .read<GroupDetailCubit>()
                   .setPinned(!group.isPinned);
               if (err != null && pageContext.mounted) {
-                ScaffoldMessenger.of(pageContext)
-                    .showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(pageContext).showSnackBar(
+                  SnackBar(content: Text(pageContext.l10nError(err))),
+                );
               }
             },
           ),
           ListTile(
             leading: const Icon(Symbols.edit_rounded),
-            title: const Text('Modifier le nom'),
+            title: Text(context.l10n.editName),
             onTap: () {
               Navigator.pop(context);
               _showEditNameDialog();
@@ -266,7 +268,7 @@ class _GroupActionsSheet extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: Icon(Symbols.exit_to_app_rounded, color: cs.error),
-            title: Text('Quitter le groupe', style: TextStyle(color: cs.error)),
+            title: Text(context.l10n.leaveGroup, style: TextStyle(color: cs.error)),
             onTap: () {
               Navigator.pop(context);
               _confirmLeave();
@@ -275,7 +277,7 @@ class _GroupActionsSheet extends StatelessWidget {
           ListTile(
             leading: Icon(Symbols.delete_rounded, color: cs.error),
             title: Text(
-              'Supprimer le groupe',
+              context.l10n.deleteGroup,
               style: TextStyle(color: cs.error),
             ),
             onTap: () {
@@ -294,16 +296,16 @@ class _GroupActionsSheet extends StatelessWidget {
     showDialog(
       context: pageContext,
       builder: (ctx) => AlertDialog(
-        title: const Text('Modifier le nom'),
+        title: Text(ctx.l10n.editName),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nom du groupe'),
+          decoration: InputDecoration(labelText: ctx.l10n.groupName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -312,7 +314,7 @@ class _GroupActionsSheet extends StatelessWidget {
               Navigator.pop(ctx);
               pageContext.read<GroupDetailCubit>().updateName(name);
             },
-            child: const Text('Enregistrer'),
+            child: Text(ctx.l10n.save),
           ),
         ],
       ),
@@ -323,14 +325,12 @@ class _GroupActionsSheet extends StatelessWidget {
     showDialog(
       context: pageContext,
       builder: (ctx) => AlertDialog(
-        title: const Text('Quitter le groupe'),
-        content: const Text(
-          'Vous ne pourrez plus accéder à ce groupe. Cette action est irréversible.',
-        ),
+        title: Text(ctx.l10n.leaveGroup),
+        content: Text(ctx.l10n.leaveGroupBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -343,12 +343,12 @@ class _GroupActionsSheet extends StatelessWidget {
                   .leaveGroup();
               if (!pageContext.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(
-                  pageContext,
-                ).showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(pageContext).showSnackBar(
+                  SnackBar(content: Text(pageContext.l10nError(err))),
+                );
               }
             },
-            child: const Text('Quitter'),
+            child: Text(ctx.l10n.leave),
           ),
         ],
       ),
@@ -359,14 +359,12 @@ class _GroupActionsSheet extends StatelessWidget {
     showDialog(
       context: pageContext,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer le groupe'),
-        content: const Text(
-          'Toutes les dépenses seront supprimées. Cette action est irréversible.',
-        ),
+        title: Text(ctx.l10n.deleteGroup),
+        content: Text(ctx.l10n.deleteGroupBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -379,12 +377,12 @@ class _GroupActionsSheet extends StatelessWidget {
                   .deleteGroup();
               if (!pageContext.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(
-                  pageContext,
-                ).showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(pageContext).showSnackBar(
+                  SnackBar(content: Text(pageContext.l10nError(err))),
+                );
               }
             },
-            child: const Text('Supprimer'),
+            child: Text(ctx.l10n.delete),
           ),
         ],
       ),
@@ -444,7 +442,7 @@ class _BalanceTile extends StatelessWidget {
                           text: entry.fromUserName,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        const TextSpan(text: ' doit à '),
+                        TextSpan(text: context.l10n.owesTo),
                         TextSpan(
                           text: entry.toUserName,
                           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -470,7 +468,7 @@ class _BalanceTile extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
                 onPressed: () => _confirmSettle(context),
-                child: const Text('Régler'),
+                child: Text(context.l10n.settle),
               ),
           ],
         ),
@@ -482,14 +480,18 @@ class _BalanceTile extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Confirmer le remboursement'),
+        title: Text(ctx.l10n.confirmSettle),
         content: Text(
-          '${entry.fromUserName} rembourse ${entry.amount.toStringAsFixed(2)} € à ${entry.toUserName}.',
+          ctx.l10n.settleBody(
+            entry.fromUserName,
+            entry.amount.toStringAsFixed(2),
+            entry.toUserName,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -501,16 +503,16 @@ class _BalanceTile extends StatelessWidget {
               );
               if (!context.mounted) return;
               if (err != null) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(err)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(context.l10nError(err))),
+                );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Remboursement enregistré ✓')),
+                  SnackBar(content: Text(context.l10n.settleSaved)),
                 );
               }
             },
-            child: const Text('Confirmer'),
+            child: Text(ctx.l10n.confirm),
           ),
         ],
       ),
@@ -557,7 +559,7 @@ class _MemberTile extends StatelessWidget {
       balLabel = '${balance.toStringAsFixed(2)} €';
     } else {
       balColor = cs.onSurfaceVariant;
-      balLabel = 'Soldé';
+      balLabel = context.l10n.settled;
     }
 
     return Padding(
@@ -585,7 +587,7 @@ class _MemberTile extends StatelessWidget {
                     ),
                     if (isMe)
                       ExpressiveBadge(
-                        label: 'Moi',
+                        label: context.l10n.me,
                         color: cs.primaryContainer,
                         textColor: cs.onPrimaryContainer,
                         padding: const EdgeInsets.symmetric(
@@ -602,7 +604,12 @@ class _MemberTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Rejoint le ${DateFormat('d MMM yyyy', 'fr_FR').format(member.joinedAt)}',
+                  context.l10n.joinedOn(
+                    DateFormat(
+                      'd MMM yyyy',
+                      Localizations.localeOf(context).toString(),
+                    ).format(member.joinedAt),
+                  ),
                   style: tt.bodySmall?.copyWith(
                     color: cs.onSurfaceVariant,
                     height: 1.25,
@@ -659,10 +666,10 @@ class _GroupDetailSheet extends StatelessWidget {
           children: [
             _GroupedSection(
               title: expenses.isEmpty
-                  ? 'Dépenses'
-                  : 'Dépenses (${expenses.length})',
+                  ? context.l10n.expenses
+                  : context.l10n.expensesCount(expenses.length),
               emptyMessage: expenses.isEmpty
-                  ? 'Aucune dépense pour ce groupe.'
+                  ? context.l10n.noExpensesInGroup
                   : null,
               itemCount: expenses.length,
               itemBuilder: (i) => _ExpenseTile(
@@ -671,7 +678,7 @@ class _GroupDetailSheet extends StatelessWidget {
               ),
             ),
             _GroupedSection(
-              title: 'Membres (${group.members.length})',
+              title: context.l10n.membersCount(group.members.length),
               topPadding: 8,
               itemCount: group.members.length,
               itemBuilder: (i) => _MemberTile(
@@ -775,10 +782,10 @@ class _ExpenseTile extends StatelessWidget {
     final onCat = semantic.onFor(catColor, cs);
 
     final payerLabel = expense.paidBy == currentUserId
-        ? 'Vous'
+        ? context.l10n.you
         : expense.paidByName;
     final metaLine =
-        '$payerLabel - ${_formatRelativeDateFr(expense.expenseDate)}';
+        '$payerLabel - ${_formatRelativeDate(context, expense.expenseDate)}';
 
     return InkWell(
       onLongPress: () => _showExpenseActions(context),
@@ -873,7 +880,7 @@ class _ExpenseTile extends StatelessWidget {
               const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Symbols.edit_rounded),
-                title: const Text('Modifier la dépense'),
+                title: Text(context.l10n.editExpense),
                 subtitle: Text(expense.name),
                 onTap: () {
                   Navigator.pop(context);
@@ -883,16 +890,16 @@ class _ExpenseTile extends StatelessWidget {
               const Divider(height: 1),
               ListTile(
                 leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text('Supprimer', style: TextStyle(color: cs.error)),
+                title: Text(context.l10n.delete, style: TextStyle(color: cs.error)),
                 subtitle: Text(expense.name),
                 onTap: () async {
                   Navigator.pop(context);
                   final err = await cubit.deleteExpense(expense.id);
                   if (!context.mounted) return;
                   if (err != null) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(err)));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(context.l10nError(err))),
+                    );
                   }
                 },
               ),
@@ -933,10 +940,10 @@ class _TotalHero extends StatelessWidget {
     final count = expenses.length;
 
     return ExpressiveHeroBanner(
-      label: 'Total dépenses',
+      label: context.l10n.totalExpenses,
       value: total.toStringAsFixed(2),
       suffix: ' €',
-      subtitle: '$count dépense${count > 1 ? 's' : ''}',
+      subtitle: context.l10n.expenseCount(count),
       variant: ExpressiveTonalVariant.coral,
       accentIcon: Symbols.receipt_long_rounded,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -1003,7 +1010,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
         '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
 
     return AlertDialog(
-      title: const Text('Modifier la dépense'),
+      title: Text(context.l10n.editExpense),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1011,7 +1018,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
           children: [
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: InputDecoration(labelText: context.l10n.description),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -1019,13 +1026,13 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(
-                labelText: 'Montant',
+              decoration: InputDecoration(
+                labelText: context.l10n.amount,
                 suffixText: '€',
               ),
             ),
             const SizedBox(height: 12),
-            Text('Payé par', style: tt.labelMedium),
+            Text(context.l10n.paidBy, style: tt.labelMedium),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               initialValue: _paidBy,
@@ -1041,7 +1048,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
               onChanged: (v) => setState(() => _paidBy = v ?? _paidBy),
             ),
             const SizedBox(height: 12),
-            Text('Date', style: tt.labelMedium),
+            Text(context.l10n.date, style: tt.labelMedium),
             const SizedBox(height: 6),
             InkWell(
               onTap: _pickDate,
@@ -1074,7 +1081,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
       actions: [
         TextButton(
           onPressed: _loading ? null : () => Navigator.pop(context),
-          child: const Text('Annuler'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _loading ? null : _submit,
@@ -1084,7 +1091,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Enregistrer'),
+              : Text(context.l10n.save),
         ),
       ],
     );
@@ -1106,20 +1113,22 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
     if (!mounted) return;
     setState(() => _loading = false);
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10nError(err))),
+      );
     } else {
       Navigator.pop(context);
     }
   }
 }
 
-String _formatRelativeDateFr(DateTime date) {
+String _formatRelativeDate(BuildContext context, DateTime date) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final expenseDay = DateTime(date.year, date.month, date.day);
   final days = today.difference(expenseDay).inDays;
 
-  if (days <= 0) return 'Aujourd\'hui';
-  if (days == 1) return 'Il y a 1 jour';
-  return 'Il y a $days jours';
+  if (days <= 0) return context.l10n.today;
+  if (days == 1) return context.l10n.daysAgoOne;
+  return context.l10n.daysAgo(days);
 }

@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../features/group_detail/cubit/group_detail_cubit.dart';
+import '../../../l10n/l10n.dart';
 import '../../../features/home/cubit/home_cubit.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/widgets/tabby_sheet.dart';
@@ -111,27 +112,26 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     final ready = _lastReady;
     if (ready?.group == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisis un groupe')),
+        SnackBar(content: Text(context.l10n.chooseAGroup)),
       );
       return;
     }
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisis une catégorie')),
+        SnackBar(content: Text(context.l10n.chooseACategory)),
       );
       return;
     }
     final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.'));
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Montant invalide')),
+        SnackBar(content: Text(context.l10n.invalidAmount)),
       );
       return;
     }
     if (_customSplit && !_recurring && !_splitsValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('La somme des parts doit égaler le montant total')),
+        SnackBar(content: Text(context.l10n.splitsMustMatch)),
       );
       return;
     }
@@ -187,7 +187,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
           listener: (context, state) {
             if (state is AddExpenseError) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
+                SnackBar(content: Text(context.l10nError(state.message))),
               );
             }
           },
@@ -202,12 +202,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(state.message, textAlign: TextAlign.center),
+                      Text(context.l10nError(state.message), textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       FilledButton.tonal(
                         onPressed: () =>
                             context.read<AddExpenseCubit>().load(),
-                        child: const Text('Réessayer'),
+                        child: Text(context.l10n.retry),
                       ),
                     ],
                   ),
@@ -237,8 +237,8 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
               child: Column(
                 children: [
                   ExpressiveSheetHeader(
-                    title: 'Nouvelle dépense',
-                    subtitle: 'Saisis le montant et les détails ci-dessous',
+                    title: context.l10n.newExpense,
+                    subtitle: context.l10n.newExpenseSubtitle,
                     onClose: () => Navigator.of(context).pop(),
                   ),
                   Expanded(
@@ -280,11 +280,13 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                   ),
                                 ),
                                 validator: (v) {
-                                  if (v == null || v.isEmpty) return 'Requis';
+                                  if (v == null || v.isEmpty) {
+                                    return context.l10n.required;
+                                  }
                                   if (double.tryParse(
                                           v.replaceAll(',', '.')) ==
                                       null) {
-                                    return 'Invalide';
+                                    return context.l10n.invalid;
                                   }
                                   return null;
                                 },
@@ -296,10 +298,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
                         const SizedBox(height: 24),
                         ExpressiveSheetSection(
-                          label: 'Groupe',
+                          label: context.l10n.group,
                           child: ready.groups.isEmpty
                               ? Text(
-                                  'Crée d\'abord un groupe pour ajouter une dépense.',
+                                  context.l10n.createGroupFirst,
                                   style: tt.bodyMedium?.copyWith(
                                     color: cs.onSurfaceVariant,
                                   ),
@@ -321,7 +323,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                       key: ValueKey(ready.group?.id),
                                       initialValue: ready.group?.id,
                                       isExpanded: true,
-                                      hint: const Text('Choisir un groupe'),
+                                      hint: Text(context.l10n.chooseGroup),
                                       items: ready.groups
                                           .map((g) => DropdownMenuItem(
                                                 value: g.id,
@@ -335,12 +337,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                         if (ready.group != null) ...[
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
-                            label: 'Catégorie',
+                            label: context.l10n.category,
                             trailing: TextButton.icon(
                               onPressed: () =>
                                   _showCreateCategorySheet(context, ready),
                               icon: const Icon(Symbols.add_rounded, size: 16),
-                              label: const Text('Nouvelle'),
+                              label: Text(context.l10n.newFeminine),
                               style: TextButton.styleFrom(
                                 visualDensity: VisualDensity.compact,
                               ),
@@ -355,21 +357,21 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
-                            label: 'Description',
+                            label: context.l10n.description,
                             child: TextFormField(
                               controller: _nameCtrl,
                               textCapitalization:
                                   TextCapitalization.sentences,
                               textInputAction: TextInputAction.done,
-                              decoration: const InputDecoration(
-                                hintText: 'Facultatif',
+                              decoration: InputDecoration(
+                                hintText: context.l10n.optional,
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
-                            label: 'Payé par',
+                            label: context.l10n.paidBy,
                             child: _PayerDropdown(
                               members: ready.group!.members,
                               selectedId: _selectedPayerId,
@@ -380,7 +382,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
-                            label: 'Date',
+                            label: context.l10n.date,
                             child: InkWell(
                               onTap: _pickDate,
                               borderRadius: shapes.radiusLarge,
@@ -401,7 +403,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
-                            label: 'Répartition',
+                            label: context.l10n.split,
                             child: AbsorbPointer(
                               absorbing: _recurring,
                               child: Opacity(
@@ -416,14 +418,14 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                       }
                                     });
                                   },
-                                  segments: const [
+                                  segments: [
                                     ExpressiveButtonGroupSegment(
                                       value: false,
-                                      label: 'Égale',
+                                      label: context.l10n.splitEqual,
                                     ),
                                     ExpressiveButtonGroupSegment(
                                       value: true,
-                                      label: 'Perso',
+                                      label: context.l10n.splitCustom,
                                     ),
                                   ],
                                 ),
@@ -457,8 +459,8 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                         const SizedBox(height: 28),
                         ExpressiveSheetSubmit(
                           label: _recurring
-                              ? 'Programmer la récurrence'
-                              : 'Enregistrer',
+                              ? context.l10n.scheduleRecurrence
+                              : context.l10n.save,
                           loading: submitting,
                           onPressed: ready.group == null ? null : _submit,
                         ),
@@ -584,7 +586,7 @@ class _CustomSplitSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total réparti', style: tt.bodySmall),
+              Text(context.l10n.splitTotal, style: tt.bodySmall),
               Row(
                 children: [
                   if (!isValid)
@@ -752,10 +754,10 @@ class _RecurringTile extends StatelessWidget {
           color: value ? cs.onPrimaryContainer : cs.onSurfaceVariant,
           fill: value ? 1 : 0,
         ),
-        title: const Text('Répéter chaque mois'),
+        title: Text(context.l10n.repeatMonthly),
         subtitle: value
             ? Text(
-                'Le ${expenseDate.day} de chaque mois',
+                context.l10n.repeatOnDay(expenseDate.day),
                 style: tt.bodySmall?.copyWith(color: cs.primary),
               )
             : null,
@@ -823,7 +825,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
         Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la création')),
+          SnackBar(content: Text(context.l10n.errorCreate)),
         );
       }
     }
@@ -847,8 +849,8 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ExpressiveSheetHeader(
-            title: 'Nouvelle catégorie',
-            subtitle: 'Personnalise l\'icône et la couleur',
+            title: context.l10n.newCategory,
+            subtitle: context.l10n.newCategorySubtitle,
             onClose: () => Navigator.of(context).pop(),
           ),
           Padding(
@@ -876,7 +878,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
                 child: TextField(
                   controller: _nameCtrl,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Nom'),
+                  decoration: InputDecoration(labelText: context.l10n.name),
                   autofocus: true,
                 ),
               ),
@@ -888,7 +890,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ExpressiveSheetSection(
-              label: 'Icône',
+              label: context.l10n.icon,
               child: Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -925,7 +927,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ExpressiveSheetSection(
-              label: 'Couleur',
+              label: context.l10n.color,
               child: Wrap(
                 spacing: 10,
                 children: palette.map((color) {
@@ -955,7 +957,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: ExpressiveSheetSubmit(
-              label: 'Créer la catégorie',
+              label: context.l10n.createCategory,
               loading: _loading,
               onPressed: _submit,
             ),

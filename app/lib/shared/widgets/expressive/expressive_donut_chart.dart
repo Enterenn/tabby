@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../models/stats.dart';
 import 'expressive_figure.dart';
 import 'expressive_tonal_card.dart';
@@ -155,7 +156,7 @@ class ExpressiveDonutChart extends StatelessWidget {
                             ),
                       const SizedBox(height: 4),
                       Text(
-                        touched?.category.name ?? 'Total dépenses',
+                        touched?.category.name ?? context.l10n.totalExpenses,
                         style: tt.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),

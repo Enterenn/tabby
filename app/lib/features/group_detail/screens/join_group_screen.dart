@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 
 class JoinGroupScreen extends StatefulWidget {
   const JoinGroupScreen({super.key});
@@ -32,7 +33,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tu as rejoint le groupe !')),
+          SnackBar(content: Text(context.l10n.joinedGroup)),
         );
         context.go('/home');
       }
@@ -40,15 +41,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
       if (mounted) {
         final detail = e.response?.data?['detail']?.toString();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(switch (detail) {
-              'Invalid invite code' => 'Code invalide',
-              'Invite already used' => 'Ce code a déjà été utilisé',
-              'Invite expired' => 'Ce code a expiré',
-              'Already a member' => 'Tu es déjà membre de ce groupe',
-              _ => detail ?? 'Erreur',
-            }),
-          ),
+          SnackBar(content: Text(context.l10nError(detail))),
         );
       }
     } finally {
@@ -61,7 +54,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rejoindre un groupe')),
+      appBar: AppBar(title: Text(context.l10n.joinGroup)),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Form(
@@ -70,11 +63,11 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 32),
-              Text('Entrer le code d\'invitation',
+              Text(context.l10n.joinGroupHeadline,
                   style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(
-                'Demande le code à 6 chiffres à la personne qui a créé le groupe.',
+                context.l10n.joinGroupHint,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
@@ -90,12 +83,12 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                       fontSize: 36,
                       letterSpacing: 8,
                     ),
-                decoration: const InputDecoration(
-                  labelText: 'Code à 6 chiffres',
+                decoration: InputDecoration(
+                  labelText: context.l10n.inviteCodeLabel,
                   counterText: '',
                 ),
                 validator: (v) =>
-                    v == null || v.length != 6 ? 'Code à 6 chiffres requis' : null,
+                    v == null || v.length != 6 ? context.l10n.inviteCodeRequired : null,
               ),
               const SizedBox(height: 32),
               FilledButton(
@@ -106,7 +99,7 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Rejoindre'),
+                    : Text(context.l10n.joinSubmit),
               ),
             ],
           ),

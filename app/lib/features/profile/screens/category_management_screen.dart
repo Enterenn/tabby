@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 
@@ -68,18 +69,16 @@ class _CategoryManagementScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Supprimer la catégorie ?'),
-        content: Text(
-            'La catégorie "${cat.name}" sera supprimée. '
-            'Les dépenses associées conserveront leur catégorie.'),
+        title: Text(ctx.l10n.deleteCategoryTitle),
+        content: Text(ctx.l10n.deleteCategoryBody(cat.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            child: Text(ctx.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Supprimer',
+            child: Text(ctx.l10n.delete,
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.error)),
           ),
@@ -96,7 +95,7 @@ class _CategoryManagementScreenState
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la suppression')),
+          SnackBar(content: Text(context.l10n.errorDelete)),
         );
       }
     }
@@ -108,7 +107,7 @@ class _CategoryManagementScreenState
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mes catégories')),
+      appBar: AppBar(title: Text(context.l10n.categoriesTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -116,11 +115,11 @@ class _CategoryManagementScreenState
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_error!, textAlign: TextAlign.center),
+                      Text(context.l10nError(_error), textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       FilledButton.tonal(
                         onPressed: _load,
-                        child: const Text('Réessayer'),
+                        child: Text(context.l10n.retry),
                       ),
                     ],
                   ),
@@ -142,11 +141,11 @@ class _CategoryManagementScreenState
           children: [
             Icon(Symbols.category_rounded, size: 56, color: cs.outlineVariant),
             const SizedBox(height: 16),
-            Text('Aucune catégorie personnalisée',
+            Text(context.l10n.noCustomCategories,
                 style: tt.headlineSmall, textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
-              'Crée des catégories depuis l\'écran\nNouvelle dépense',
+              context.l10n.noCustomCategoriesHint,
               style: tt.bodyMedium
                   ?.copyWith(color: cs.onSurfaceVariant),
               textAlign: TextAlign.center,

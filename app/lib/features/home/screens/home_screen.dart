@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/widgets/expressive/expressive.dart';
 import '../../../shared/widgets/tabby_logo.dart';
@@ -126,11 +127,11 @@ class _HomeViewState extends State<_HomeView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.message, textAlign: TextAlign.center),
+                  Text(context.l10nError(state.message), textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   FilledButton.tonal(
                     onPressed: () => context.read<HomeCubit>().loadGroups(),
-                    child: const Text('Réessayer'),
+                    child: Text(context.l10n.retry),
                   ),
                 ],
               ),
@@ -170,7 +171,7 @@ class _HomeViewState extends State<_HomeView> {
                         const SizedBox(height: 16),
                         Center(
                           child: ExpressiveCtaButton(
-                            label: 'Nouveau groupe',
+                            label: context.l10n.newGroup,
                             onPressed: () => showNewGroupSheet(context),
                           ),
                         ).animate(delay: 200.ms)
@@ -205,7 +206,7 @@ class _HomeViewState extends State<_HomeView> {
                               ],
                             ),
                             child: ExpressiveCtaButton(
-                              label: 'Nouveau groupe',
+                              label: context.l10n.newGroup,
                               onPressed: () => showNewGroupSheet(context),
                             ),
                           ),
@@ -237,13 +238,13 @@ class _GroupsSectionHeader extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Tes groupes',
+              context.l10n.yourGroups,
               style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           TextButton(
             onPressed: onNewGroup,
-            child: const Text('Nouveau groupe'),
+            child: Text(context.l10n.newGroup),
           ),
         ],
       ),
@@ -263,13 +264,12 @@ class _HomeHeroBanner extends StatelessWidget {
     final netBalance =
         groups.fold<double>(0, (sum, g) => sum + g.balance);
     final count = groups.length;
-    final subtitle = count == 1 ? '1 groupe actif' : '$count groupes actifs';
 
     return ExpressiveHeroBanner(
-      label: 'Solde global',
+      label: context.l10n.globalBalance,
       amount: netBalance,
       suffix: ' €',
-      subtitle: subtitle,
+      subtitle: context.l10n.activeGroups(count),
       accentIcon: Symbols.account_balance_wallet_rounded,
       margin: const EdgeInsets.fromLTRB(0, 8, 0, 12),
     )
@@ -296,14 +296,14 @@ class _HomeHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isEmpty ? 'Bienvenue 👋' : 'Tes groupes',
+            isEmpty ? context.l10n.welcome : context.l10n.yourGroups,
             style: context.tabbyType.displayEditorial,
           ),
           const SizedBox(height: 4),
           Text(
             isEmpty
-                ? 'Appuie sur Nouveau groupe pour commencer'
-                : 'Appuie sur un groupe pour voir les détails',
+                ? context.l10n.homeEmptyHint
+                : context.l10n.homeGroupsHint,
             style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],
@@ -344,11 +344,11 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Aucun groupe pour l\'instant',
+          Text(context.l10n.homeEmptyTitle,
               style: tt.headlineSmall, textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text(
-            'Utilise Nouveau groupe ci-dessous\npour créer ou rejoindre un groupe !',
+            context.l10n.homeEmptyBody,
             style:
                 tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             textAlign: TextAlign.center,

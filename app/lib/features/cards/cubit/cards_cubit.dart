@@ -48,7 +48,7 @@ class CardsCubit extends Cubit<CardsState> {
           .toList();
       emit(CardsLoaded(cards));
     } catch (e) {
-      emit(CardsError(e.toString()));
+      emit(const CardsError('errorNetwork'));
     }
   }
 

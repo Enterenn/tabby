@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 import 'category.dart';
 
 class CategoryStat extends Equatable {
@@ -45,12 +46,8 @@ class MonthStats extends Equatable {
             .toList(),
       );
 
-  static const _months = [
-    '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-  ];
-
-  String get monthLabel => _months[month];
+  String monthLabel([String? locale]) =>
+      DateFormat.MMMM(locale).format(DateTime(year, month));
 
   @override
   List<Object?> get props => [year, month, total, categories];

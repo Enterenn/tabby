@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../features/add_expense/screens/add_expense_screen.dart';
+import '../../l10n/l10n.dart';
 import 'connectivity_banner.dart';
 import 'expressive/expressive.dart';
 
@@ -13,7 +14,6 @@ class MainScaffold extends StatelessWidget {
   final Widget child;
 
   static const _paths = ['/home', '/budget', '/add-expense', '/cards', '/profile'];
-  static const _labels = ['Home', 'Budget', 'Add', 'Cards', 'Profil'];
 
   static const _icons = [
     Symbols.home_rounded,
@@ -67,6 +67,14 @@ class _TabbyNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
+    final l10n = context.l10n;
+    final labels = [
+      l10n.navHome,
+      l10n.navBudget,
+      '',
+      l10n.navCards,
+      l10n.navProfile,
+    ];
 
     return Material(
       color: cs.surfaceContainer,
@@ -86,7 +94,7 @@ class _TabbyNavBar extends StatelessWidget {
                     child: ExpressiveActionButton(
                       icon: Symbols.add_rounded,
                       onPressed: () => onSelect(i),
-                      tooltip: 'Ajouter une dépense',
+                      tooltip: l10n.navAddExpense,
                     ),
                   ),
                 );
@@ -123,7 +131,7 @@ class _TabbyNavBar extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        MainScaffold._labels[i],
+                        labels[i],
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: selected
                                   ? cs.onPrimaryContainer

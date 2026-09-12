@@ -31,7 +31,7 @@ class HomeCubit extends Cubit<HomeState> {
         ..sort(_compareGroups);
       emit(HomeLoaded(groups));
     } on DioException catch (e) {
-      emit(HomeError(e.response?.data?['detail']?.toString() ?? 'Erreur réseau'));
+      emit(HomeError(e.response?.data?['detail']?.toString() ?? 'errorNetwork'));
     }
   }
 

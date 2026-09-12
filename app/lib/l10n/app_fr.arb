@@ -1,0 +1,339 @@
+{
+  "@@locale": "fr",
+
+  "appTitle": "Tabby",
+
+  "retry": "Réessayer",
+  "cancel": "Annuler",
+  "save": "Enregistrer",
+  "confirm": "Confirmer",
+  "close": "Fermer",
+  "delete": "Supprimer",
+  "create": "Créer",
+  "edit": "Modifier",
+  "requiredField": "Champ requis",
+  "invalidEmail": "Email invalide",
+  "minPassword": "Minimum 6 caractères",
+  "me": "Moi",
+  "you": "Vous",
+  "ok": "OK",
+  "errorGeneric": "Erreur",
+  "errorNetwork": "Erreur réseau",
+  "errorUnexpected": "Erreur inattendue",
+  "errorRegister": "Erreur lors de l'inscription",
+  "errorInvalidCredentials": "Email ou mot de passe incorrect",
+  "errorEmailTaken": "Cet email est déjà utilisé",
+  "errorInvalidInvite": "Code invalide",
+  "errorInviteUsed": "Ce code a déjà été utilisé",
+  "errorInviteExpired": "Ce code a expiré",
+  "errorAlreadyMember": "Tu es déjà membre de ce groupe",
+  "errorMemberNotFound": "Membre introuvable",
+  "errorGroupNotFound": "Groupe introuvable",
+  "errorBalanceNotZero": "Solde non nul. Réglez vos dettes avant de quitter.",
+  "errorDelete": "Erreur lors de la suppression",
+  "errorUpdate": "Erreur lors de la mise à jour",
+  "errorCreate": "Erreur lors de la création",
+  "offlineBanner": "Pas de connexion réseau",
+
+  "navHome": "Accueil",
+  "navBudget": "Budget",
+  "navCards": "Cartes",
+  "navProfile": "Profil",
+  "navAddExpense": "Ajouter une dépense",
+  "fabClose": "Fermer",
+  "fabActions": "Actions",
+
+  "loginHello": "Bonjour 👋",
+  "loginSubtitle": "Connecte-toi pour accéder à tes groupes",
+  "loginEmail": "Email",
+  "loginPassword": "Mot de passe",
+  "loginSubmit": "Se connecter",
+  "loginNoAccount": "Pas encore de compte ? S'inscrire",
+  "registerTitle": "Créer un compte",
+  "registerSubtitle": "Rejoins Tabby pour partager tes dépenses",
+  "registerName": "Prénom",
+  "registerSubmit": "S'inscrire",
+  "registerHasAccount": "Déjà un compte ? Se connecter",
+
+  "yourGroups": "Tes groupes",
+  "newGroup": "Nouveau groupe",
+  "globalBalance": "Solde global",
+  "activeGroups": "{count, plural, =1{1 groupe actif} other{{count} groupes actifs}}",
+  "@activeGroups": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "welcome": "Bienvenue 👋",
+  "homeEmptyHint": "Appuie sur Nouveau groupe pour commencer",
+  "homeGroupsHint": "Appuie sur un groupe pour voir les détails",
+  "homeEmptyTitle": "Aucun groupe pour l'instant",
+  "homeEmptyBody": "Utilise Nouveau groupe ci-dessous\npour créer ou rejoindre un groupe !",
+  "newGroupSheetSubtitle": "Crée un groupe ou rejoins-en un avec un code d'invitation.",
+  "createGroup": "Créer un groupe",
+  "createGroupSubtitle": "Lance un groupe et invite tes proches",
+  "joinGroup": "Rejoindre un groupe",
+  "joinGroupSubtitle": "Entre le code partagé par un ami",
+
+  "createGroupHeadline": "Donne un nom à ton groupe",
+  "createGroupHint": "Ex. Couple, Vacances été, Coloc…",
+  "groupName": "Nom du groupe",
+  "createGroupSubmit": "Créer le groupe",
+  "joinGroupHeadline": "Entrer le code d'invitation",
+  "joinGroupHint": "Demande le code à 6 chiffres à la personne qui a créé le groupe.",
+  "inviteCodeLabel": "Code à 6 chiffres",
+  "inviteCodeRequired": "Code à 6 chiffres requis",
+  "joinSubmit": "Rejoindre",
+  "joinedGroup": "Tu as rejoint le groupe !",
+
+  "pinGroup": "Épingler sur l'accueil",
+  "unpinGroup": "Désépingler de l'accueil",
+  "editName": "Modifier le nom",
+  "leaveGroup": "Quitter le groupe",
+  "leaveGroupBody": "Vous ne pourrez plus accéder à ce groupe. Cette action est irréversible.",
+  "leave": "Quitter",
+  "deleteGroup": "Supprimer le groupe",
+  "deleteGroupBody": "Toutes les dépenses seront supprimées. Cette action est irréversible.",
+  "groupOptions": "Options du groupe",
+  "toSettle": "À régler",
+  "addExpense": "Ajouter une dépense",
+  "inviteSomeone": "Inviter quelqu'un",
+  "settle": "Régler",
+  "confirmSettle": "Confirmer le remboursement",
+  "settleBody": "{from} rembourse {amount} € à {to}.",
+  "@settleBody": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "amount": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "settleSaved": "Remboursement enregistré ✓",
+  "settled": "Soldé",
+  "joinedOn": "Rejoint le {date}",
+  "@joinedOn": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "expenses": "Dépenses",
+  "expensesCount": "Dépenses ({count})",
+  "@expensesCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "noExpensesInGroup": "Aucune dépense pour ce groupe.",
+  "membersCount": "Membres ({count})",
+  "@membersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "editExpense": "Modifier la dépense",
+  "totalExpenses": "Total dépenses",
+  "expenseCount": "{count, plural, =1{1 dépense} other{{count} dépenses}}",
+  "@expenseCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "description": "Description",
+  "amount": "Montant",
+  "paidBy": "Payé par",
+  "date": "Date",
+  "today": "Aujourd'hui",
+  "daysAgoOne": "Il y a 1 jour",
+  "daysAgo": "Il y a {days} jours",
+  "@daysAgo": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "inviteMember": "Inviter un membre",
+  "inviteCodeTitle": "Code d'invitation",
+  "inviteCodeShare": "Partage ce code avec la personne à inviter. Il est valable 24h.",
+  "inviteCodeShareShort": "Partage ce code avec la personne à inviter.",
+  "codeCopied": "Code copié !",
+  "tapToCopy": "Tap pour copier",
+  "generateNewCode": "Générer un nouveau code",
+  "backHome": "Retour à l'accueil",
+  "inviteValid24h": "Valable 24h",
+  "inviteGenerateFailed": "Impossible de générer un code.",
+
+  "profile": "Profil",
+  "appearance": "Apparence",
+  "theme": "Thème",
+  "themeHint": "Clair / sombre au choix. Les couleurs suivent la palette Tabby.",
+  "themeSystem": "Système",
+  "themeLight": "Clair",
+  "themeDark": "Sombre",
+  "language": "Langue",
+  "languageHint": "L'interface passe en français ou en anglais.",
+  "languageFrench": "Français",
+  "languageEnglish": "English",
+  "personalization": "Personnalisation",
+  "recurringExpenses": "Dépenses récurrentes",
+  "myCategories": "Mes catégories",
+  "account": "Compte",
+  "logout": "Se déconnecter",
+  "logoutConfirm": "Se déconnecter ?",
+  "logoutAction": "Déconnecter",
+
+  "categoriesTitle": "Mes catégories",
+  "deleteCategoryTitle": "Supprimer la catégorie ?",
+  "deleteCategoryBody": "La catégorie \"{name}\" sera supprimée. Les dépenses associées conserveront leur catégorie.",
+  "@deleteCategoryBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "noCustomCategories": "Aucune catégorie personnalisée",
+  "noCustomCategoriesHint": "Crée des catégories depuis l'écran\nNouvelle dépense",
+
+  "recurringTitle": "Dépenses récurrentes",
+  "noRecurring": "Aucune dépense récurrente",
+  "noRecurringHint": "Active « Répéter chaque mois » lors de\nl'ajout d'une dépense",
+  "deleteRecurringTitle": "Supprimer la récurrence ?",
+  "deleteRecurringBody": "Les dépenses déjà créées ne sont pas supprimées.",
+  "recurringMonthly": "Mensuelle",
+  "recurringYearly": "Annuelle",
+  "recurringFirstOfMonth": "1er du mois",
+  "recurringNthOfMonth": "{day}e du mois",
+  "@recurringNthOfMonth": {
+    "placeholders": {
+      "day": { "type": "int" }
+    }
+  },
+
+  "budget": "Budget",
+  "monthTotal": "Total du mois",
+  "monthBudgets": "Budgets du mois",
+  "noBudgetThisMonth": "Aucun budget ce mois — fixe un plafond par catégorie.",
+  "newBudget": "Nouveau budget",
+  "allGroups": "Tous",
+  "noSpendThisMonth": "Aucune dépense ce mois",
+  "allExpenses": "Toutes les dépenses",
+  "totalAmount": "Total {amount} €",
+  "@totalAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "percentOfTotal": "{percent} % du total",
+  "@percentOfTotal": {
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
+  },
+  "budgetPerMonth": "Budget {amount} €/mois",
+  "@budgetPerMonth": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "overBudget": "Dépassé",
+  "warning": "Attention",
+  "spentAmount": "{amount} € dépensés",
+  "@spentAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "remainingAmount": "{amount} € restants",
+  "@remainingAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "overspendAmount": "{amount} € de dépassement",
+  "@overspendAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "editLimit": "Modifier le plafond",
+  "deleteBudgetTitle": "Supprimer ce budget ?",
+  "deleteBudgetBody": "Le budget \"{name}\" sera supprimé.",
+  "@deleteBudgetBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "editBudget": "Modifier le budget",
+  "monthlyLimit": "Plafond mensuel",
+  "group": "Groupe",
+  "category": "Catégorie",
+  "chooseGroup": "Choisir un groupe",
+  "chooseCategory": "Choisir une catégorie",
+
+  "newExpense": "Nouvelle dépense",
+  "newExpenseSubtitle": "Saisis le montant et les détails ci-dessous",
+  "chooseAGroup": "Choisis un groupe",
+  "chooseACategory": "Choisis une catégorie",
+  "invalidAmount": "Montant invalide",
+  "splitsMustMatch": "La somme des parts doit égaler le montant total",
+  "createGroupFirst": "Crée d'abord un groupe pour ajouter une dépense.",
+  "newFeminine": "Nouvelle",
+  "optional": "Facultatif",
+  "split": "Répartition",
+  "splitEqual": "Égale",
+  "splitCustom": "Perso",
+  "scheduleRecurrence": "Programmer la récurrence",
+  "splitTotal": "Total réparti",
+  "repeatMonthly": "Répéter chaque mois",
+  "repeatOnDay": "Le {day} de chaque mois",
+  "@repeatOnDay": {
+    "placeholders": {
+      "day": { "type": "int" }
+    }
+  },
+  "newCategory": "Nouvelle catégorie",
+  "newCategorySubtitle": "Personnalise l'icône et la couleur",
+  "name": "Nom",
+  "icon": "Icône",
+  "color": "Couleur",
+  "createCategory": "Créer la catégorie",
+  "invalid": "Invalide",
+  "required": "Requis",
+
+  "myCards": "Mes cartes",
+  "noCards": "Aucune carte",
+  "noCardsHint": "Ajoute ta première carte de fidélité\navec le bouton ci-dessous",
+  "addCard": "Ajouter une carte",
+  "showCard": "Afficher la carte",
+  "moveUp": "Monter",
+  "moveDown": "Descendre",
+  "loyaltyCard": "Carte de fidélité",
+  "barcode": "Code-barres",
+  "qrCode": "QR Code",
+  "cameraDenied": "Accès à la caméra refusé",
+  "centerCode": "Centrez le code dans le cadre",
+  "cancelScan": "Annuler le scan",
+  "newCard": "Nouvelle carte",
+  "newCardScanHint": "Scanne le code-barres ou QR de ta carte",
+  "newCardCheckHint": "Vérifie l'enseigne détectée",
+  "scanMyCard": "Scanner ma carte",
+  "enterCodeManually": "Saisir le code manuellement",
+  "rescan": "Rescanner",
+  "detectedBrand": "Enseigne détectée",
+  "brand": "Enseigne",
+  "unknownBrand": "Enseigne non reconnue",
+  "unknownBrandHint": "Le code-barres ne contient pas le nom du magasin. Cherche l'enseigne ci-dessous — on retiendra ce code pour les prochains scans.",
+  "brandHint": "Ex. Animalis, Picard…",
+  "other": "Autre",
+  "brandNameHint": "Nom de l'enseigne",
+  "preview": "Aperçu",
+  "myCard": "Ma carte",
+  "addTheCard": "Ajouter la carte",
+  "enterCode": "Saisir le code",
+  "codeExample": "Ex: 1234567890123",
+  "recognizedAuto": "Reconnue automatiquement",
+  "walletHint": "Tape une carte pour la mettre devant · swipe pour parcourir",
+
+  "owedToYou": "On te doit",
+  "youOwe": "Tu dois",
+  "settledBadge": "Réglé ✓",
+  "owesTo": " doit à "
+}

@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/l10n.dart';
 
 /// Génère un code d'invitation et affiche la boîte de dialogue de partage.
 Future<void> showGroupInviteDialog(
@@ -34,7 +35,7 @@ Future<void> showGroupInviteDialog(
 
   if (code == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Impossible de générer un code.')),
+      SnackBar(content: Text(context.l10n.inviteGenerateFailed)),
     );
     return;
   }
@@ -55,17 +56,17 @@ class _InviteDialog extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return AlertDialog(
-      title: const Text('Code d\'invitation'),
+      title: Text(context.l10n.inviteCodeTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Partage ce code avec la personne à inviter.'),
+          Text(context.l10n.inviteCodeShareShort),
           const SizedBox(height: 20),
           InkWell(
             onTap: () {
               Clipboard.setData(ClipboardData(text: code));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Code copié !')),
+                SnackBar(content: Text(context.l10n.codeCopied)),
               );
             },
             borderRadius: context.tabbyShapes.radiusLarge,
@@ -93,7 +94,7 @@ class _InviteDialog extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Valable 24h',
+            context.l10n.inviteValid24h,
             style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],
@@ -101,7 +102,7 @@ class _InviteDialog extends StatelessWidget {
       actions: [
         FilledButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Fermer'),
+          child: Text(context.l10n.close),
         ),
       ],
     );

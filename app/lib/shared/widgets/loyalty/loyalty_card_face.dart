@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../models/loyalty_brand.dart';
 import '../../models/loyalty_card.dart';
 
@@ -91,7 +92,7 @@ class LoyaltyCardFace extends StatelessWidget {
                           if (!compact) ...[
                             const SizedBox(height: 4),
                             Text(
-                              'Carte de fidélité',
+                              context.l10n.loyaltyCard,
                               style: Theme.of(
                                 context,
                               ).textTheme.bodySmall?.copyWith(color: fg),
@@ -109,7 +110,9 @@ class LoyaltyCardFace extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  card.isBarcode ? 'Code-barres' : 'QR Code',
+                                  card.isBarcode
+                                      ? context.l10n.barcode
+                                      : context.l10n.qrCode,
                                   style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(
                                         color: fg,
@@ -127,7 +130,9 @@ class LoyaltyCardFace extends StatelessWidget {
                             ),
                           ] else
                             Text(
-                              card.isBarcode ? 'Code-barres' : 'QR Code',
+                              card.isBarcode
+                                  ? context.l10n.barcode
+                                  : context.l10n.qrCode,
                               style: Theme.of(
                                 context,
                               ).textTheme.labelSmall?.copyWith(color: fg),

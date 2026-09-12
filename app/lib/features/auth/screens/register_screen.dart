@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/tabby_logo.dart';
 import '../cubit/auth_cubit.dart';
 
@@ -46,7 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         listener: (context, state) {
           if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(content: Text(context.l10nError(state.message))),
             );
           }
         },
@@ -68,12 +69,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 40),
 
                   Text(
-                    'Créer un compte',
+                    context.l10n.registerTitle,
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Rejoins Tabby pour partager tes dépenses',
+                    context.l10n.registerSubtitle,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -85,18 +86,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _nameCtrl,
                     textInputAction: TextInputAction.next,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'Prénom'),
+                    decoration: InputDecoration(labelText: context.l10n.registerName),
                     validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Champ requis' : null,
+                        v == null || v.trim().isEmpty ? context.l10n.requiredField : null,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'Email'),
+                    decoration: InputDecoration(labelText: context.l10n.loginEmail),
                     validator: (v) =>
-                        v == null || !v.contains('@') ? 'Email invalide' : null,
+                        v == null || !v.contains('@') ? context.l10n.invalidEmail : null,
                   ),
                   const SizedBox(height: 14),
                   TextFormField(
@@ -105,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
                     decoration: InputDecoration(
-                      labelText: 'Mot de passe',
+                      labelText: context.l10n.loginPassword,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure
@@ -118,7 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     validator: (v) =>
                         v == null || v.length < 6
-                            ? 'Minimum 6 caractères'
+                            ? context.l10n.minPassword
                             : null,
                   ),
 
@@ -135,7 +136,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 child:
                                     CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : const Text('S\'inscrire'),
+                            : Text(context.l10n.registerSubmit),
                       );
                     },
                   ),
@@ -144,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Center(
                     child: TextButton(
                       onPressed: () => context.go('/login'),
-                      child: const Text('Déjà un compte ? Se connecter'),
+                      child: Text(context.l10n.registerHasAccount),
                     ),
                   ),
                 ],

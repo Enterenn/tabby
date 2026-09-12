@@ -1,0 +1,771 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appTitle => 'Tabby';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get requiredField => 'Required';
+
+  @override
+  String get invalidEmail => 'Invalid email';
+
+  @override
+  String get minPassword => 'At least 6 characters';
+
+  @override
+  String get me => 'Me';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get errorGeneric => 'Error';
+
+  @override
+  String get errorNetwork => 'Network error';
+
+  @override
+  String get errorUnexpected => 'Unexpected error';
+
+  @override
+  String get errorRegister => 'Could not create account';
+
+  @override
+  String get errorInvalidCredentials => 'Invalid email or password';
+
+  @override
+  String get errorEmailTaken => 'This email is already registered';
+
+  @override
+  String get errorInvalidInvite => 'Invalid code';
+
+  @override
+  String get errorInviteUsed => 'This code has already been used';
+
+  @override
+  String get errorInviteExpired => 'This code has expired';
+
+  @override
+  String get errorAlreadyMember => 'You\'re already a member of this group';
+
+  @override
+  String get errorMemberNotFound => 'Member not found';
+
+  @override
+  String get errorGroupNotFound => 'Group not found';
+
+  @override
+  String get errorBalanceNotZero =>
+      'Balance is not zero. Settle your debts before leaving.';
+
+  @override
+  String get errorDelete => 'Could not delete';
+
+  @override
+  String get errorUpdate => 'Could not update';
+
+  @override
+  String get errorCreate => 'Could not create';
+
+  @override
+  String get offlineBanner => 'No network connection';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navBudget => 'Budget';
+
+  @override
+  String get navCards => 'Cards';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get navAddExpense => 'Add expense';
+
+  @override
+  String get fabClose => 'Close';
+
+  @override
+  String get fabActions => 'Actions';
+
+  @override
+  String get loginHello => 'Hello 👋';
+
+  @override
+  String get loginSubtitle => 'Sign in to access your groups';
+
+  @override
+  String get loginEmail => 'Email';
+
+  @override
+  String get loginPassword => 'Password';
+
+  @override
+  String get loginSubmit => 'Sign in';
+
+  @override
+  String get loginNoAccount => 'No account yet? Sign up';
+
+  @override
+  String get registerTitle => 'Create an account';
+
+  @override
+  String get registerSubtitle => 'Join Tabby to share your expenses';
+
+  @override
+  String get registerName => 'First name';
+
+  @override
+  String get registerSubmit => 'Sign up';
+
+  @override
+  String get registerHasAccount => 'Already have an account? Sign in';
+
+  @override
+  String get yourGroups => 'Your groups';
+
+  @override
+  String get newGroup => 'New group';
+
+  @override
+  String get globalBalance => 'Overall balance';
+
+  @override
+  String activeGroups(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active groups',
+      one: '1 active group',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get welcome => 'Welcome 👋';
+
+  @override
+  String get homeEmptyHint => 'Tap New group to get started';
+
+  @override
+  String get homeGroupsHint => 'Tap a group to see details';
+
+  @override
+  String get homeEmptyTitle => 'No groups yet';
+
+  @override
+  String get homeEmptyBody => 'Use New group below\nto create or join a group!';
+
+  @override
+  String get newGroupSheetSubtitle =>
+      'Create a group or join one with an invite code.';
+
+  @override
+  String get createGroup => 'Create a group';
+
+  @override
+  String get createGroupSubtitle => 'Start a group and invite people';
+
+  @override
+  String get joinGroup => 'Join a group';
+
+  @override
+  String get joinGroupSubtitle => 'Enter the code shared by a friend';
+
+  @override
+  String get createGroupHeadline => 'Name your group';
+
+  @override
+  String get createGroupHint => 'e.g. Couple, Summer trip, Flatshare…';
+
+  @override
+  String get groupName => 'Group name';
+
+  @override
+  String get createGroupSubmit => 'Create group';
+
+  @override
+  String get joinGroupHeadline => 'Enter the invite code';
+
+  @override
+  String get joinGroupHint =>
+      'Ask the person who created the group for the 6-digit code.';
+
+  @override
+  String get inviteCodeLabel => '6-digit code';
+
+  @override
+  String get inviteCodeRequired => 'A 6-digit code is required';
+
+  @override
+  String get joinSubmit => 'Join';
+
+  @override
+  String get joinedGroup => 'You\'ve joined the group!';
+
+  @override
+  String get pinGroup => 'Pin to home';
+
+  @override
+  String get unpinGroup => 'Unpin from home';
+
+  @override
+  String get editName => 'Rename';
+
+  @override
+  String get leaveGroup => 'Leave group';
+
+  @override
+  String get leaveGroupBody =>
+      'You will no longer have access to this group. This cannot be undone.';
+
+  @override
+  String get leave => 'Leave';
+
+  @override
+  String get deleteGroup => 'Delete group';
+
+  @override
+  String get deleteGroupBody =>
+      'All expenses will be deleted. This cannot be undone.';
+
+  @override
+  String get groupOptions => 'Group options';
+
+  @override
+  String get toSettle => 'To settle';
+
+  @override
+  String get addExpense => 'Add expense';
+
+  @override
+  String get inviteSomeone => 'Invite someone';
+
+  @override
+  String get settle => 'Settle';
+
+  @override
+  String get confirmSettle => 'Confirm repayment';
+
+  @override
+  String settleBody(String from, String amount, String to) {
+    return '$from pays $amount € back to $to.';
+  }
+
+  @override
+  String get settleSaved => 'Repayment saved ✓';
+
+  @override
+  String get settled => 'Settled';
+
+  @override
+  String joinedOn(String date) {
+    return 'Joined $date';
+  }
+
+  @override
+  String get expenses => 'Expenses';
+
+  @override
+  String expensesCount(int count) {
+    return 'Expenses ($count)';
+  }
+
+  @override
+  String get noExpensesInGroup => 'No expenses in this group.';
+
+  @override
+  String membersCount(int count) {
+    return 'Members ($count)';
+  }
+
+  @override
+  String get editExpense => 'Edit expense';
+
+  @override
+  String get totalExpenses => 'Total spent';
+
+  @override
+  String expenseCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count expenses',
+      one: '1 expense',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get description => 'Description';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get paidBy => 'Paid by';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get daysAgoOne => '1 day ago';
+
+  @override
+  String daysAgo(int days) {
+    return '$days days ago';
+  }
+
+  @override
+  String get inviteMember => 'Invite a member';
+
+  @override
+  String get inviteCodeTitle => 'Invite code';
+
+  @override
+  String get inviteCodeShare =>
+      'Share this code with the person you want to invite. It is valid for 24 hours.';
+
+  @override
+  String get inviteCodeShareShort =>
+      'Share this code with the person you want to invite.';
+
+  @override
+  String get codeCopied => 'Code copied!';
+
+  @override
+  String get tapToCopy => 'Tap to copy';
+
+  @override
+  String get generateNewCode => 'Generate a new code';
+
+  @override
+  String get backHome => 'Back to home';
+
+  @override
+  String get inviteValid24h => 'Valid for 24 hours';
+
+  @override
+  String get inviteGenerateFailed => 'Could not generate a code.';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get theme => 'Theme';
+
+  @override
+  String get themeHint => 'Light or dark — colors follow the Tabby palette.';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageHint => 'Switch the interface between French and English.';
+
+  @override
+  String get languageFrench => 'Français';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get personalization => 'Personalization';
+
+  @override
+  String get recurringExpenses => 'Recurring expenses';
+
+  @override
+  String get myCategories => 'My categories';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get logout => 'Sign out';
+
+  @override
+  String get logoutConfirm => 'Sign out?';
+
+  @override
+  String get logoutAction => 'Sign out';
+
+  @override
+  String get categoriesTitle => 'My categories';
+
+  @override
+  String get deleteCategoryTitle => 'Delete this category?';
+
+  @override
+  String deleteCategoryBody(String name) {
+    return 'The category \"$name\" will be deleted. Existing expenses will keep their category.';
+  }
+
+  @override
+  String get noCustomCategories => 'No custom categories';
+
+  @override
+  String get noCustomCategoriesHint =>
+      'Create categories from the\nNew expense screen';
+
+  @override
+  String get recurringTitle => 'Recurring expenses';
+
+  @override
+  String get noRecurring => 'No recurring expenses';
+
+  @override
+  String get noRecurringHint =>
+      'Turn on “Repeat every month” when\nadding an expense';
+
+  @override
+  String get deleteRecurringTitle => 'Delete this recurrence?';
+
+  @override
+  String get deleteRecurringBody =>
+      'Expenses already created will not be deleted.';
+
+  @override
+  String get recurringMonthly => 'Monthly';
+
+  @override
+  String get recurringYearly => 'Yearly';
+
+  @override
+  String get recurringFirstOfMonth => '1st of the month';
+
+  @override
+  String recurringNthOfMonth(int day) {
+    return 'Day $day of the month';
+  }
+
+  @override
+  String get budget => 'Budget';
+
+  @override
+  String get monthTotal => 'Month total';
+
+  @override
+  String get monthBudgets => 'Monthly budgets';
+
+  @override
+  String get noBudgetThisMonth =>
+      'No budget this month — set a cap per category.';
+
+  @override
+  String get newBudget => 'New budget';
+
+  @override
+  String get allGroups => 'All';
+
+  @override
+  String get noSpendThisMonth => 'No spending this month';
+
+  @override
+  String get allExpenses => 'All expenses';
+
+  @override
+  String totalAmount(String amount) {
+    return 'Total $amount €';
+  }
+
+  @override
+  String percentOfTotal(String percent) {
+    return '$percent% of total';
+  }
+
+  @override
+  String budgetPerMonth(String amount) {
+    return 'Budget $amount €/month';
+  }
+
+  @override
+  String get overBudget => 'Over';
+
+  @override
+  String get warning => 'Watch';
+
+  @override
+  String spentAmount(String amount) {
+    return '$amount € spent';
+  }
+
+  @override
+  String remainingAmount(String amount) {
+    return '$amount € left';
+  }
+
+  @override
+  String overspendAmount(String amount) {
+    return '$amount € over';
+  }
+
+  @override
+  String get editLimit => 'Edit limit';
+
+  @override
+  String get deleteBudgetTitle => 'Delete this budget?';
+
+  @override
+  String deleteBudgetBody(String name) {
+    return 'The budget for \"$name\" will be deleted.';
+  }
+
+  @override
+  String get editBudget => 'Edit budget';
+
+  @override
+  String get monthlyLimit => 'Monthly limit';
+
+  @override
+  String get group => 'Group';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get chooseGroup => 'Choose a group';
+
+  @override
+  String get chooseCategory => 'Choose a category';
+
+  @override
+  String get newExpense => 'New expense';
+
+  @override
+  String get newExpenseSubtitle => 'Enter the amount and details below';
+
+  @override
+  String get chooseAGroup => 'Choose a group';
+
+  @override
+  String get chooseACategory => 'Choose a category';
+
+  @override
+  String get invalidAmount => 'Invalid amount';
+
+  @override
+  String get splitsMustMatch => 'The shares must add up to the total';
+
+  @override
+  String get createGroupFirst => 'Create a group first to add an expense.';
+
+  @override
+  String get newFeminine => 'New';
+
+  @override
+  String get optional => 'Optional';
+
+  @override
+  String get split => 'Split';
+
+  @override
+  String get splitEqual => 'Equal';
+
+  @override
+  String get splitCustom => 'Custom';
+
+  @override
+  String get scheduleRecurrence => 'Schedule recurrence';
+
+  @override
+  String get splitTotal => 'Allocated total';
+
+  @override
+  String get repeatMonthly => 'Repeat every month';
+
+  @override
+  String repeatOnDay(int day) {
+    return 'On the $day of each month';
+  }
+
+  @override
+  String get newCategory => 'New category';
+
+  @override
+  String get newCategorySubtitle => 'Customize the icon and color';
+
+  @override
+  String get name => 'Name';
+
+  @override
+  String get icon => 'Icon';
+
+  @override
+  String get color => 'Color';
+
+  @override
+  String get createCategory => 'Create category';
+
+  @override
+  String get invalid => 'Invalid';
+
+  @override
+  String get required => 'Required';
+
+  @override
+  String get myCards => 'My cards';
+
+  @override
+  String get noCards => 'No cards';
+
+  @override
+  String get noCardsHint =>
+      'Add your first loyalty card\nwith the button below';
+
+  @override
+  String get addCard => 'Add a card';
+
+  @override
+  String get showCard => 'Show card';
+
+  @override
+  String get moveUp => 'Move up';
+
+  @override
+  String get moveDown => 'Move down';
+
+  @override
+  String get loyaltyCard => 'Loyalty card';
+
+  @override
+  String get barcode => 'Barcode';
+
+  @override
+  String get qrCode => 'QR Code';
+
+  @override
+  String get cameraDenied => 'Camera access denied';
+
+  @override
+  String get centerCode => 'Center the code in the frame';
+
+  @override
+  String get cancelScan => 'Cancel scan';
+
+  @override
+  String get newCard => 'New card';
+
+  @override
+  String get newCardScanHint => 'Scan the barcode or QR on your card';
+
+  @override
+  String get newCardCheckHint => 'Check the detected brand';
+
+  @override
+  String get scanMyCard => 'Scan my card';
+
+  @override
+  String get enterCodeManually => 'Enter the code manually';
+
+  @override
+  String get rescan => 'Scan again';
+
+  @override
+  String get detectedBrand => 'Detected brand';
+
+  @override
+  String get brand => 'Brand';
+
+  @override
+  String get unknownBrand => 'Unrecognized brand';
+
+  @override
+  String get unknownBrandHint =>
+      'The barcode does not include the store name. Search for the brand below — we will remember this code for later scans.';
+
+  @override
+  String get brandHint => 'e.g. Animalis, Picard…';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get brandNameHint => 'Brand name';
+
+  @override
+  String get preview => 'Preview';
+
+  @override
+  String get myCard => 'My card';
+
+  @override
+  String get addTheCard => 'Add card';
+
+  @override
+  String get enterCode => 'Enter the code';
+
+  @override
+  String get codeExample => 'e.g. 1234567890123';
+
+  @override
+  String get recognizedAuto => 'Recognized automatically';
+
+  @override
+  String get walletHint => 'Tap a card to bring it forward · swipe to browse';
+
+  @override
+  String get owedToYou => 'You\'re owed';
+
+  @override
+  String get youOwe => 'You owe';
+
+  @override
+  String get settledBadge => 'Settled ✓';
+
+  @override
+  String get owesTo => ' owes ';
+}
