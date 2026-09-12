@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../../../core/theme/app_theme.dart';
+import 'expressive_press_scale.dart';
 
 enum ExpressiveCtaVariant { filled, tonal }
 
@@ -54,22 +55,25 @@ class ExpressiveCtaButton extends StatelessWidget {
     );
 
     final enabled = onPressed != null;
-    final button = Opacity(
-      opacity: enabled ? 1 : 0.45,
-      child: Material(
-        color: bg,
-        elevation: 0,
-        shape: shapes.buttonShape,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: shapes.buttonShape,
-          child: SizedBox(
-            height: 52,
-            width: expanded ? double.infinity : null,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 28),
-              child: Center(child: content),
+    final button = ExpressivePressScale(
+      enabled: enabled,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.45,
+        child: Material(
+          color: bg,
+          elevation: 0,
+          shape: shapes.buttonShape,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: shapes.buttonShape,
+            child: SizedBox(
+              height: 52,
+              width: expanded ? double.infinity : null,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 28),
+                child: Center(child: content),
+              ),
             ),
           ),
         ),

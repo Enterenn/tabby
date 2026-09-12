@@ -10,5 +10,6 @@ export 'expressive_cta_button.dart';
 export 'expressive_donut_chart.dart';
 export 'expressive_figure.dart';
 export 'expressive_hero.dart';
+export 'expressive_press_scale.dart';
 export 'expressive_sheet.dart';
 export 'expressive_tonal_card.dart';

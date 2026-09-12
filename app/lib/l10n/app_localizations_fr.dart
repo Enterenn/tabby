@@ -378,6 +378,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get description => 'Description';
 
   @override
+  String get expenseNameHint => 'Courses, resto…';
+
+  @override
   String get amount => 'Montant';
 
   @override

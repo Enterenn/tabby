@@ -1038,7 +1038,7 @@ class _EditExpenseDialogState extends State<_EditExpenseDialog> {
           children: [
             TextField(
               controller: _nameCtrl,
-              decoration: InputDecoration(labelText: context.l10n.description),
+              decoration: InputDecoration(labelText: context.l10n.name),
             ),
             const SizedBox(height: 12),
             TextField(

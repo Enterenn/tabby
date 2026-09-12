@@ -150,6 +150,7 @@
     }
   },
   "description": "Description",
+  "expenseNameHint": "Courses, resto…",
   "amount": "Montant",
   "paidBy": "Payé par",
   "date": "Date",

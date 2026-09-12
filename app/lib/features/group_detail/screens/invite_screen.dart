@@ -88,7 +88,6 @@ class _InviteScreenState extends State<InviteScreen> {
                     decoration: BoxDecoration(
                       color: cs.tertiaryContainer,
                       borderRadius: context.tabbyShapes.radiusExtraLarge,
-                      border: Border.all(color: cs.tertiary, width: 2),
                     ),
                     child: Text(
                       _code!,

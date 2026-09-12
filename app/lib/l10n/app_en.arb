@@ -118,6 +118,7 @@
   "totalExpenses": "Total spent",
   "expenseCount": "{count, plural, =1{1 expense} other{{count} expenses}}",
   "description": "Description",
+  "expenseNameHint": "Groceries, dinner…",
   "amount": "Amount",
   "paidBy": "Paid by",
   "date": "Date",

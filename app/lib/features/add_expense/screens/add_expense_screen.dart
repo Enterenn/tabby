@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/expressive_shapes.dart';
 import '../../../features/group_detail/cubit/group_detail_cubit.dart';
 import '../../../l10n/l10n.dart';
 import '../../../features/home/cubit/home_cubit.dart';
@@ -149,9 +150,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       }).toList();
     }
 
-    final name = _nameCtrl.text.trim().isEmpty
-        ? _selectedCategory!.name
-        : _nameCtrl.text.trim();
+    final name = _nameCtrl.text.trim();
 
     final ok = await context.read<AddExpenseCubit>().submit(
           groupId: ready!.group!.id,
@@ -248,53 +247,117 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                         ExpressiveTonalCard(
                           variant: ExpressiveTonalVariant.lime,
                           margin: EdgeInsets.zero,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 28,
+                            horizontal: 24,
+                          ),
                           child: Center(
-                            child: IntrinsicWidth(
-                              child: TextFormField(
-                                controller: _amountCtrl,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                        decimal: true),
-                                textAlign: TextAlign.center,
-                                style: type.figureHero.copyWith(
-                                  color: cs.onTertiaryContainer,
-                                ),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[\d,.]')),
-                                ],
-                                onChanged: (_) {
-                                  if (_customSplit) setState(() {});
-                                },
-                                decoration: InputDecoration(
-                                  filled: false,
-                                  border: InputBorder.none,
-                                  hintText: '0,00',
-                                  hintStyle: type.figureLarge.copyWith(
-                                    color: cs.outline,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(minWidth: 96),
+                                  child: IntrinsicWidth(
+                                    child: TextFormField(
+                                      controller: _amountCtrl,
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                      textAlign: TextAlign.end,
+                                      autofocus: true,
+                                      cursorColor: cs.onTertiaryContainer,
+                                      style: type.figureHero.copyWith(
+                                        color: cs.onTertiaryContainer,
+                                      ),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'[\d,.]'),
+                                        ),
+                                      ],
+                                      onChanged: (_) => setState(() {}),
+                                      decoration: InputDecoration(
+                                        filled: false,
+                                        isCollapsed: true,
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        errorBorder: InputBorder.none,
+                                        focusedErrorBorder: InputBorder.none,
+                                        hintText: '0,00',
+                                        hintStyle: type.figureHero.copyWith(
+                                          color: cs.onTertiaryContainer
+                                              .withValues(alpha: 0.34),
+                                        ),
+                                        errorStyle: const TextStyle(
+                                          fontSize: 0,
+                                          height: 0,
+                                        ),
+                                      ),
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return context.l10n.required;
+                                        }
+                                        if (double.tryParse(
+                                              v.replaceAll(',', '.'),
+                                            ) ==
+                                            null) {
+                                          return context.l10n.invalid;
+                                        }
+                                        return null;
+                                      },
+                                    ),
                                   ),
-                                  suffixText: '€',
-                                  suffixStyle: type.figureMedium.copyWith(
-                                    color: cs.onTertiaryContainer,
+                                ),
+                                Text(
+                                  ' €',
+                                  style: type.figureMedium.copyWith(
+                                    color: cs.onTertiaryContainer.withValues(
+                                      alpha:
+                                          _amountCtrl.text.isEmpty ? 0.34 : 1,
+                                    ),
                                   ),
                                 ),
-                                validator: (v) {
-                                  if (v == null || v.isEmpty) {
-                                    return context.l10n.required;
-                                  }
-                                  if (double.tryParse(
-                                          v.replaceAll(',', '.')) ==
-                                      null) {
-                                    return context.l10n.invalid;
-                                  }
-                                  return null;
-                                },
-                                autofocus: true,
-                              ),
+                              ],
                             ),
                           ),
                         ),
+
+                        const SizedBox(height: 24),
+                        ExpressiveSheetSection(
+                          label: context.l10n.name,
+                          child: TextFormField(
+                            controller: _nameCtrl,
+                            textCapitalization: TextCapitalization.sentences,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              hintText: context.l10n.expenseNameHint,
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return context.l10n.requiredField;
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+
+                        if (ready.group != null) ...[
+                          const SizedBox(height: 24),
+                          ExpressiveSheetSection(
+                            label: context.l10n.category,
+                            child: _CategoryRail(
+                              categories: ready.categories,
+                              selected: _selectedCategory,
+                              onSelect: (c) =>
+                                  setState(() => _selectedCategory = c),
+                              onCreate: () =>
+                                  _showCreateCategorySheet(context, ready),
+                            ),
+                          ),
+                        ],
 
                         const SizedBox(height: 24),
                         ExpressiveSheetSection(
@@ -335,40 +398,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                         ),
 
                         if (ready.group != null) ...[
-                          const SizedBox(height: 24),
-                          ExpressiveSheetSection(
-                            label: context.l10n.category,
-                            trailing: TextButton.icon(
-                              onPressed: () =>
-                                  _showCreateCategorySheet(context, ready),
-                              icon: const Icon(Symbols.add_rounded, size: 16),
-                              label: Text(context.l10n.newFeminine),
-                              style: TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                            child: _CategoryGrid(
-                              categories: ready.categories,
-                              selected: _selectedCategory,
-                              onSelect: (c) =>
-                                  setState(() => _selectedCategory = c),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-                          ExpressiveSheetSection(
-                            label: context.l10n.description,
-                            child: TextFormField(
-                              controller: _nameCtrl,
-                              textCapitalization:
-                                  TextCapitalization.sentences,
-                              textInputAction: TextInputAction.done,
-                              decoration: InputDecoration(
-                                hintText: context.l10n.optional,
-                              ),
-                            ),
-                          ),
-
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
                             label: context.l10n.paidBy,
@@ -619,61 +648,181 @@ class _CustomSplitSection extends StatelessWidget {
   }
 }
 
-// ─── CategoryGrid ─────────────────────────────────────────────────────────────
+// ─── Category rail (une seule catégorie par dépense) ─────────────────────────
 
-class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({
+class _CategoryRail extends StatelessWidget {
+  const _CategoryRail({
     required this.categories,
     required this.selected,
     required this.onSelect,
+    required this.onCreate,
   });
 
   final List<Category> categories;
   final Category? selected;
   final ValueChanged<Category> onSelect;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 100,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          if (index == categories.length) {
+            return _CategoryRailAdd(onTap: onCreate);
+          }
+          final category = categories[index];
+          return _CategoryRailItem(
+            category: category,
+            selected: selected?.id == category.id,
+            onTap: () => onSelect(category),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CategoryRailItem extends StatelessWidget {
+  const _CategoryRailItem({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Category category;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final semantic = context.tabbySemantic;
-    final shapes = context.tabbyShapes;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: categories.map((c) {
-        final isSelected = selected?.id == c.id;
-        final catColor = semantic.chartColorFor(c);
-        final onCat = semantic.onFor(catColor, cs);
-        return GestureDetector(
-          onTap: () => onSelect(c),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? catColor : cs.surfaceContainerLow,
-              borderRadius: shapes.radiusLarge,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                c.iconWidget(
-                  size: 18,
-                  color: isSelected ? onCat : cs.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  c.name,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: isSelected ? onCat : cs.onSurfaceVariant,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
+    final color = semantic.chartColorFor(category);
+    final onColor = semantic.onFor(color, cs);
+
+    return SizedBox(
+      width: 68,
+      child: ExpressivePressScale(
+        onTap: onTap,
+        child: Column(
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: selected ? 1 : 0),
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+              builder: (context, t, _) {
+                final size = 52.0 + 4.0 * t;
+                return SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: Center(
+                    child: ClipPath(
+                      clipper: ExpressiveAccentClipper(
+                        lobes: 8,
+                        amplitude: 0.07 * t,
+                        rotation: 0.12 * t,
                       ),
-                ),
-              ],
+                      child: ColoredBox(
+                        color: Color.lerp(cs.surfaceContainerLow, color, t)!,
+                        child: SizedBox(
+                          width: size,
+                          height: size,
+                          child: Center(
+                            child: category.iconWidget(
+                              size: 22 + 2 * t,
+                              color: Color.lerp(
+                                cs.onSurfaceVariant,
+                                onColor,
+                                t,
+                              ),
+                              fill: t,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-        );
-      }).toList(),
+            const SizedBox(height: 4),
+            Text(
+              category.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: selected ? cs.onSurface : cs.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryRailAdd extends StatelessWidget {
+  const _CategoryRailAdd({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
+    final shapes = context.tabbyShapes;
+
+    return SizedBox(
+      width: 68,
+      child: ExpressivePressScale(
+        onTap: onTap,
+        child: Column(
+          children: [
+            SizedBox(
+              width: 58,
+              height: 58,
+              child: Center(
+                child: Material(
+                  color: cs.surfaceContainerLow,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: shapes.radiusLarge.topLeft,
+                      topRight: shapes.radiusExtraLarge.topRight,
+                      bottomRight: shapes.radiusMedium.bottomRight,
+                      bottomLeft: shapes.radiusExtraLarge.bottomLeft,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: const SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: Icon(Symbols.add_rounded),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.newFeminine,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

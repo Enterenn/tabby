@@ -376,6 +376,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get description => 'Description';
 
   @override
+  String get expenseNameHint => 'Groceries, dinner…';
+
+  @override
   String get amount => 'Amount';
 
   @override

@@ -764,6 +764,12 @@ abstract class AppLocalizations {
   /// **'Description'**
   String get description;
 
+  /// No description provided for @expenseNameHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Courses, resto…'**
+  String get expenseNameHint;
+
   /// No description provided for @amount.
   ///
   /// In fr, this message translates to:
