@@ -306,26 +306,31 @@ class _CardsBodyState extends State<_CardsBody> {
                 LoyaltyBrandCategory.mergeVisibleOrder(widget.cards, list),
               ),
         ),
-      LoyaltyCardsView.grid => GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: visible.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.52,
-          ),
-          itemBuilder: (context, i) => LayoutBuilder(
-            builder: (context, constraints) => LoyaltyCardFace(
-              card: visible[i],
-              style: LoyaltyCardFaceStyle.tile,
-              height: constraints.maxHeight,
-              onTap: () => _openFullScreen(context, visible[i]),
-              onLongPress: () =>
-                  _showActions(context, visible[i], widget.cards),
-            ),
-          ),
+      LoyaltyCardsView.grid => LayoutBuilder(
+          builder: (context, constraints) {
+            const gap = 12.0;
+            final tileWidth = (constraints.maxWidth - gap) / 2;
+            final tileHeight = tileWidth / 1.52;
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                for (final card in visible)
+                  SizedBox(
+                    width: tileWidth,
+                    height: tileHeight,
+                    child: LoyaltyCardFace(
+                      card: card,
+                      style: LoyaltyCardFaceStyle.tile,
+                      height: tileHeight,
+                      onTap: () => _openFullScreen(context, card),
+                      onLongPress: () =>
+                          _showActions(context, card, widget.cards),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       LoyaltyCardsView.compact => Column(
           children: [
