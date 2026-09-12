@@ -52,9 +52,15 @@ class AuthCubit extends Cubit<AuthState> {
       }
       emit(AuthAuthenticated(user));
       FcmService.instance.init();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await tokenStorage.clear();
+        emit(AuthUnauthenticated());
+        return;
+      }
+      emit(AuthError(_extractDetail(e, 'errorNetwork')));
     } catch (_) {
-      await tokenStorage.clear();
-      emit(AuthUnauthenticated());
+      emit(AuthError('errorUnexpected'));
     }
   }
 
@@ -133,6 +139,14 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
+    final refresh = tokenStorage.refreshToken;
+    try {
+      if (refresh != null) {
+        await apiClient.dio.post('/auth/logout', data: {'refresh_token': refresh});
+      }
+    } catch (_) {
+      // On continue le logout local même si le réseau est down.
+    }
     await FcmService.instance.deleteToken();
     await tokenStorage.clear();
     apiClient.clearToken();

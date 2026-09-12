@@ -28,8 +28,13 @@ String _redactLogLine(String line) {
   return out;
 }
 
-/// Base URL du backend — IP locale (même réseau) ou IP Tailscale (hors réseau).
-const String _defaultBaseUrl = 'http://192.168.1.31:8000';
+/// Base URL du backend.
+/// Prod : `flutter run --dart-define=API_BASE_URL=https://<host>:8000`
+/// Debug local : fallback HTTP LAN (cleartext autorisé uniquement en debug).
+const String _defaultBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://192.168.1.31:8000',
+);
 
 class ApiClient {
   ApiClient({String? baseUrl}) {
@@ -112,8 +117,12 @@ class _AuthInterceptor extends Interceptor {
         retryOptions.headers['Authorization'] = 'Bearer $newAccess';
         final retryResponse = await _dio.fetch(retryOptions);
         handler.resolve(retryResponse);
+      } on DioException catch (refreshErr) {
+        if (refreshErr.response?.statusCode == 401) {
+          await tokenStorage.clear();
+        }
+        handler.next(refreshErr.response?.statusCode == 401 ? err : refreshErr);
       } catch (_) {
-        await tokenStorage.clear();
         handler.next(err);
       } finally {
         _isRefreshing = false;
