@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
@@ -9,6 +11,7 @@ class FcmService {
   static final FcmService instance = FcmService._();
 
   final _fm = FirebaseMessaging.instance;
+  StreamSubscription<String>? _tokenRefreshSub;
 
   /// Initialise les permissions et le token. Appelé après authentification.
   Future<void> init() async {
@@ -22,8 +25,8 @@ class FcmService {
     // Enregistre le token initial
     await _refreshToken();
 
-    // Rafraîchit le token si Firebase le renouvelle
-    _fm.onTokenRefresh.listen(_sendTokenToBackend);
+    await _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = _fm.onTokenRefresh.listen(_sendTokenToBackend);
 
     // Optionnel : affiche les notifs en foreground sur Android
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
@@ -33,8 +36,14 @@ class FcmService {
     );
   }
 
+  Future<void> dispose() async {
+    await _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = null;
+  }
+
   /// Supprime le token côté backend (appelé au logout).
   Future<void> deleteToken() async {
+    await dispose();
     try {
       final token = await _fm.getToken();
       if (token != null) {

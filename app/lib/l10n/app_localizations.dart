@@ -290,6 +290,30 @@ abstract class AppLocalizations {
   /// **'Erreur lors de la création'**
   String get errorCreate;
 
+  /// No description provided for @errorUnauthorized.
+  ///
+  /// In fr, this message translates to:
+  /// **'Session expirée, reconnecte-toi'**
+  String get errorUnauthorized;
+
+  /// No description provided for @errorForbidden.
+  ///
+  /// In fr, this message translates to:
+  /// **'Action non autorisée'**
+  String get errorForbidden;
+
+  /// No description provided for @errorConflict.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action entre en conflit avec l\'état actuel'**
+  String get errorConflict;
+
+  /// No description provided for @errorValidation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Données invalides'**
+  String get errorValidation;
+
   /// No description provided for @offlineBanner.
   ///
   /// In fr, this message translates to:

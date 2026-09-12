@@ -78,6 +78,7 @@ class _HomeViewState extends State<_HomeView> {
   final _scrollController = ScrollController();
   final _headerLinkKey = GlobalKey();
   bool _headerLinkVisible = true;
+  String? _headerMeasureStamp;
 
   @override
   void initState() {
@@ -129,9 +130,13 @@ class _HomeViewState extends State<_HomeView> {
           }
           if (state is HomeLoaded) {
             final hasGroups = state.groups.isNotEmpty;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _updateHeaderLinkVisibility();
-            });
+            final stamp = state.groups.map((g) => g.id).join(',');
+            if (_headerMeasureStamp != stamp) {
+              _headerMeasureStamp = stamp;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _updateHeaderLinkVisibility();
+              });
+            }
             return Stack(
               children: [
                 RefreshIndicator(
@@ -181,7 +186,11 @@ class _HomeViewState extends State<_HomeView> {
                             .slideY(begin: 0.06, end: 0, duration: 500.ms, curve: Curves.easeOut)
                       else
                         ...state.groups.asMap().entries.map((e) =>
-                          GroupCard(group: e.value, index: e.key)),
+                          GroupCard(
+                            key: ValueKey(e.value.id),
+                            group: e.value,
+                            index: e.key,
+                          )),
                     ],
                   ),
                 ),

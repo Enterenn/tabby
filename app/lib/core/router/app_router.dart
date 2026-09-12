@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:animations/animations.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
@@ -116,6 +118,14 @@ CustomTransitionPage<void> _fadePage(GoRouterState state, Widget child) {
 
 class _AuthListenable extends ChangeNotifier {
   _AuthListenable(AuthCubit cubit) {
-    cubit.stream.listen((_) => notifyListeners());
+    _sub = cubit.stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<AuthState> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
   }
 }

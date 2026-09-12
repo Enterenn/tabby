@@ -81,55 +81,71 @@ class _AuthInterceptor extends Interceptor {
   _AuthInterceptor(this._dio);
 
   final Dio _dio;
-  bool _isRefreshing = false;
+  Future<String>? _refreshing;
+
+  static bool _skipRefresh(RequestOptions options) {
+    final path = options.path;
+    return path.endsWith('/auth/refresh') ||
+        path.endsWith('/auth/login') ||
+        path.endsWith('/auth/register') ||
+        path.endsWith('/auth/logout');
+  }
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    final token = tokenStorage.accessToken;
-    if (token != null && !options.headers.containsKey('Authorization')) {
-      options.headers['Authorization'] = 'Bearer $token';
+    if (!_skipRefresh(options)) {
+      final token = tokenStorage.accessToken;
+      if (token != null && !options.headers.containsKey('Authorization')) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
     }
     handler.next(options);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401 && !_isRefreshing) {
-      final refresh = tokenStorage.refreshToken;
-      if (refresh == null) {
-        handler.next(err);
-        return;
-      }
-      _isRefreshing = true;
-      try {
-        final response = await _dio.post(
-          '/auth/refresh',
-          data: {'refresh_token': refresh},
-          options: Options(headers: {}), // pas de token sur ce call
-        );
-        final newAccess = response.data['access_token'] as String;
-        final newRefresh = response.data['refresh_token'] as String;
-        await tokenStorage.save(access: newAccess, refresh: newRefresh);
-        apiClient.setAccessToken(newAccess);
+    if (err.response?.statusCode != 401 || _skipRefresh(err.requestOptions)) {
+      handler.next(err);
+      return;
+    }
 
-        // Rejouer la requête initiale avec le nouveau token
-        final retryOptions = err.requestOptions;
-        retryOptions.headers['Authorization'] = 'Bearer $newAccess';
-        final retryResponse = await _dio.fetch(retryOptions);
-        handler.resolve(retryResponse);
-      } on DioException catch (refreshErr) {
-        if (refreshErr.response?.statusCode == 401) {
-          await tokenStorage.clear();
-        }
-        handler.next(refreshErr.response?.statusCode == 401 ? err : refreshErr);
-      } catch (_) {
+    final refresh = tokenStorage.refreshToken;
+    if (refresh == null) {
+      handler.next(err);
+      return;
+    }
+
+    _refreshing ??= _refreshAccessToken(refresh).whenComplete(() {
+      _refreshing = null;
+    });
+    try {
+      final newAccess = await _refreshing!;
+      final retryOptions = err.requestOptions;
+      retryOptions.headers['Authorization'] = 'Bearer $newAccess';
+      handler.resolve(await _dio.fetch(retryOptions));
+    } on DioException catch (refreshErr) {
+      if (refreshErr.response?.statusCode == 401) {
+        await tokenStorage.clear();
         handler.next(err);
-      } finally {
-        _isRefreshing = false;
+      } else {
+        handler.next(refreshErr);
       }
-    } else {
+    } catch (_) {
       handler.next(err);
     }
+  }
+
+  Future<String> _refreshAccessToken(String refresh) async {
+    final response = await _dio.post(
+      '/auth/refresh',
+      data: {'refresh_token': refresh},
+      options: Options(headers: {}),
+    );
+    final newAccess = response.data['access_token'] as String;
+    final newRefresh = response.data['refresh_token'] as String;
+    await tokenStorage.save(access: newAccess, refresh: newRefresh);
+    apiClient.setAccessToken(newAccess);
+    return newAccess;
   }
 }
 

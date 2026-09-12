@@ -247,11 +247,13 @@ class _GroupSliverAppBar extends StatelessWidget {
         title: ctx.l10n.editName,
         submitLabel: ctx.l10n.save,
         cancelLabel: ctx.l10n.cancel,
-        onSubmit: () {
+        onSubmit: () async {
           final name = ctrl.text.trim();
           if (name.isEmpty) return;
           Navigator.pop(ctx);
-          context.read<GroupDetailCubit>().updateName(name);
+          final err = await context.read<GroupDetailCubit>().updateName(name);
+          if (!context.mounted || err == null) return;
+          showTabbySnack(context, context.l10nError(err));
         },
         child: TextField(
           controller: ctrl,
@@ -405,6 +407,7 @@ class _BalanceTile extends StatelessWidget {
 
 class _MemberTile extends StatelessWidget {
   const _MemberTile({
+    super.key,
     required this.member,
     required this.balances,
     required this.currentUserId,
@@ -558,6 +561,7 @@ class _GroupDetailSheet extends StatelessWidget {
                   : null,
               itemCount: expenses.length,
               itemBuilder: (i) => _ExpenseTile(
+                key: ValueKey(expenses[i].id),
                 expense: expenses[i],
                 currentUserId: currentUserId,
               ),
@@ -567,6 +571,7 @@ class _GroupDetailSheet extends StatelessWidget {
               topPadding: 8,
               itemCount: group.members.length,
               itemBuilder: (i) => _MemberTile(
+                key: ValueKey(group.members[i].user.id),
                 member: group.members[i],
                 balances: balances,
                 currentUserId: currentUserId,
@@ -652,7 +657,11 @@ class _GroupedSection extends StatelessWidget {
 // ─── Expense row ──────────────────────────────────────────────────────────────
 
 class _ExpenseTile extends StatelessWidget {
-  const _ExpenseTile({required this.expense, required this.currentUserId});
+  const _ExpenseTile({
+    super.key,
+    required this.expense,
+    required this.currentUserId,
+  });
 
   final Expense expense;
   final String currentUserId;

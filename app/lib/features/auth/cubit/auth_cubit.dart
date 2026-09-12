@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/auth/biometric_settings.dart';
 import '../../../core/services/fcm_service.dart';
@@ -50,17 +51,19 @@ class AuthCubit extends Cubit<AuthState> {
           userId: user.id,
         );
       }
+      if (isClosed) return;
       emit(AuthAuthenticated(user));
       FcmService.instance.init();
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
+      final fail = ApiFailure.fromDio(e, fallback: 'errorNetwork');
+      if (fail.isUnauthorized) {
         await tokenStorage.clear();
-        emit(AuthUnauthenticated());
+        if (!isClosed) emit(AuthUnauthenticated());
         return;
       }
-      emit(AuthError(_extractDetail(e, 'errorNetwork')));
+      if (!isClosed) emit(AuthError(fail.message));
     } catch (_) {
-      emit(AuthError('errorUnexpected'));
+      if (!isClosed) emit(AuthError('errorUnexpected'));
     }
   }
 
@@ -78,9 +81,11 @@ class AuthCubit extends Cubit<AuthState> {
       });
       await login(email: email, password: password);
     } on DioException catch (e) {
-      emit(AuthError(_extractDetail(e, 'errorRegister')));
+      if (!isClosed) {
+        emit(AuthError(ApiFailure.fromDio(e, fallback: 'errorRegister').message));
+      }
     } catch (e) {
-      emit(AuthError('errorUnexpected'));
+      if (!isClosed) emit(AuthError('errorUnexpected'));
     }
   }
 
@@ -101,41 +106,18 @@ class AuthCubit extends Cubit<AuthState> {
       final user = User.fromJson(profileResponse.data as Map<String, dynamic>);
       await tokenStorage.save(access: access, refresh: refresh, userId: user.id);
       _offerBiometrics = !biometricSettings.enabled && !biometricSettings.prompted;
+      if (isClosed) return;
       emit(AuthAuthenticated(user));
       FcmService.instance.init();
     } on DioException catch (e) {
-      emit(AuthError(_extractDetail(e, 'errorInvalidCredentials')));
+      if (!isClosed) {
+        emit(AuthError(
+          ApiFailure.fromDio(e, fallback: 'errorInvalidCredentials').message,
+        ));
+      }
     } catch (e) {
-      emit(AuthError('errorUnexpected'));
+      if (!isClosed) emit(AuthError('errorUnexpected'));
     }
-  }
-
-  /// Extrait `detail` depuis la réponse d'erreur FastAPI,
-  /// quelle que soit la forme de `response.data` (Map, String, null).
-  static String _extractDetail(DioException e, String fallback) {
-    final data = e.response?.data;
-    if (data is Map) {
-      final detail = data['detail'];
-      final extracted = _unwrapDetail(detail);
-      if (extracted != null) return extracted;
-    }
-    final status = e.response?.statusCode;
-    if (status != null) return '$fallback (HTTP $status)';
-    return '$fallback (${e.type.name}: ${e.message})';
-  }
-
-  static String? _unwrapDetail(dynamic detail) {
-    if (detail is List && detail.isNotEmpty) {
-      return _unwrapDetail(detail.first);
-    }
-    if (detail is Map) {
-      final msg = detail['msg']?.toString();
-      if (msg == null || msg.isEmpty) return null;
-      const prefix = 'Value error, ';
-      return msg.startsWith(prefix) ? msg.substring(prefix.length) : msg;
-    }
-    if (detail == null) return null;
-    return detail.toString();
   }
 
   Future<void> logout() async {
@@ -150,7 +132,7 @@ class AuthCubit extends Cubit<AuthState> {
     await FcmService.instance.deleteToken();
     await tokenStorage.clear();
     apiClient.clearToken();
-    emit(AuthUnauthenticated());
+    if (!isClosed) emit(AuthUnauthenticated());
   }
 
   Future<String?> updateProfile({
@@ -164,10 +146,12 @@ class AuthCubit extends Cubit<AuthState> {
         'name': name,
         'email': email,
       });
-      emit(AuthAuthenticated(User.fromJson(response.data as Map<String, dynamic>)));
+      if (!isClosed) {
+        emit(AuthAuthenticated(User.fromJson(response.data as Map<String, dynamic>)));
+      }
       return null;
     } on DioException catch (e) {
-      return _extractDetail(e, 'errorUpdate');
+      return ApiFailure.fromDio(e, fallback: 'errorUpdate').message;
     } catch (_) {
       return 'errorUnexpected';
     }
@@ -185,7 +169,7 @@ class AuthCubit extends Cubit<AuthState> {
       });
       return null;
     } on DioException catch (e) {
-      return _extractDetail(e, 'errorUpdate');
+      return ApiFailure.fromDio(e, fallback: 'errorUpdate').message;
     } catch (_) {
       return 'errorUnexpected';
     }
@@ -207,10 +191,12 @@ class AuthCubit extends Cubit<AuthState> {
           receiveTimeout: const Duration(seconds: 30),
         ),
       );
-      emit(AuthAuthenticated(User.fromJson(response.data as Map<String, dynamic>)));
+      if (!isClosed) {
+        emit(AuthAuthenticated(User.fromJson(response.data as Map<String, dynamic>)));
+      }
       return null;
     } on DioException catch (e) {
-      return _extractDetail(e, 'avatarUploadFailed');
+      return ApiFailure.fromDio(e, fallback: 'avatarUploadFailed').message;
     } catch (_) {
       return 'avatarUploadFailed';
     }

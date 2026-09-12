@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../shared/models/loyalty_card.dart';
 
 // ─── States ───────────────────────────────────────────────────────────────────
@@ -46,9 +47,9 @@ class CardsCubit extends Cubit<CardsState> {
       final cards = (resp.data as List)
           .map((c) => LoyaltyCard.fromJson(c as Map<String, dynamic>))
           .toList();
-      emit(CardsLoaded(cards));
+      if (!isClosed) emit(CardsLoaded(cards));
     } catch (e) {
-      emit(const CardsError('errorNetwork'));
+      if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
     }
   }
 
@@ -89,7 +90,7 @@ class CardsCubit extends Cubit<CardsState> {
 
   Future<void> reorder(List<LoyaltyCard> newOrder) async {
     // Mise à jour optimiste locale
-    emit(CardsLoaded(newOrder));
+    if (!isClosed) emit(CardsLoaded(newOrder));
     try {
       await apiClient.dio.put(
         '/loyalty-cards/reorder',
@@ -100,7 +101,7 @@ class CardsCubit extends Cubit<CardsState> {
             .toList(),
       );
     } catch (_) {
-      await load(); // rollback si erreur
+      await load();
     }
   }
 }

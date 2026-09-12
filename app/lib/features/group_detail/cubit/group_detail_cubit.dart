@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
 import '../../home/cubit/home_cubit.dart';
@@ -90,21 +91,24 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
           .map((e) => Expense.fromJson(e as Map<String, dynamic>))
           .toList();
 
-      emit(GroupDetailLoaded(group: group, balances: balances, expenses: expenses));
+      if (!isClosed) {
+        emit(GroupDetailLoaded(group: group, balances: balances, expenses: expenses));
+      }
     } catch (e) {
-      emit(GroupDetailError(e.toString()));
+      if (!isClosed) emit(GroupDetailError(ApiFailure.from(e).message));
     }
   }
 
-  Future<void> updateName(String name) async {
-    final prev = state as GroupDetailLoaded?;
-    if (prev == null) return;
+  Future<String?> updateName(String name) async {
+    final prev = state;
+    if (prev is! GroupDetailLoaded) return null;
     try {
       final res = await _dio.patch('/groups/$_groupId', data: {'name': name});
       final updated = Group.fromJson(res.data as Map<String, dynamic>);
-      emit(prev.copyWith(group: updated));
+      if (!isClosed) emit(prev.copyWith(group: updated));
+      return null;
     } catch (e) {
-      emit(GroupDetailError(_errorMessage(e)));
+      return ApiFailure.from(e).message;
     }
   }
 
@@ -112,7 +116,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     try {
       final res = await _dio.post('/groups/$_groupId/invite');
       return res.data['code'] as String;
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
@@ -131,7 +135,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
       await load();
       return null;
     } catch (e) {
-      return _errorMessage(e);
+      return ApiFailure.from(e).message;
     }
   }
 
@@ -167,10 +171,10 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
       final balances = (balRes.data as List)
           .map((e) => BalanceEntry.fromJson(e as Map<String, dynamic>))
           .toList();
-      emit(prev.copyWith(expenses: expenses, balances: balances));
+      if (!isClosed) emit(prev.copyWith(expenses: expenses, balances: balances));
       return null;
     } catch (e) {
-      return _errorMessage(e);
+      return ApiFailure.from(e).message;
     }
   }
 
@@ -179,18 +183,22 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     if (prev == null) return null;
     try {
       await _dio.delete('/groups/$_groupId/expenses/$expenseId');
-      emit(prev.copyWith(
-        expenses: prev.expenses.where((e) => e.id != expenseId).toList(),
-      ));
-      // Recharge les balances après suppression
+      if (!isClosed) {
+        emit(prev.copyWith(
+          expenses: prev.expenses.where((e) => e.id != expenseId).toList(),
+        ));
+      }
       final balRes = await _dio.get('/groups/$_groupId/balances');
       final balances = (balRes.data as List)
           .map((e) => BalanceEntry.fromJson(e as Map<String, dynamic>))
           .toList();
-      emit((state as GroupDetailLoaded).copyWith(balances: balances));
+      final current = state;
+      if (!isClosed && current is GroupDetailLoaded) {
+        emit(current.copyWith(balances: balances));
+      }
       return null;
     } catch (e) {
-      return _errorMessage(e);
+      return ApiFailure.from(e).message;
     }
   }
 
@@ -204,46 +212,35 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
         data: {'is_pinned': isPinned},
       );
       final updated = Group.fromJson(res.data as Map<String, dynamic>);
-      final current = state as GroupDetailLoaded?;
-      if (current != null) {
+      final current = state;
+      if (!isClosed && current is GroupDetailLoaded) {
         emit(current.copyWith(group: updated));
       }
       HomeCubit.refreshIfActive();
       return null;
     } catch (e) {
-      emit(prev);
-      return _errorMessage(e);
+      if (!isClosed) emit(prev);
+      return ApiFailure.from(e).message;
     }
   }
 
   Future<String?> leaveGroup() async {
     try {
       await _dio.post('/groups/$_groupId/leave');
-      emit(GroupDetailLeft());
+      if (!isClosed) emit(GroupDetailLeft());
       return null;
     } catch (e) {
-      return _errorMessage(e);
+      return ApiFailure.from(e).message;
     }
   }
 
   Future<String?> deleteGroup() async {
     try {
       await _dio.delete('/groups/$_groupId');
-      emit(GroupDetailLeft());
+      if (!isClosed) emit(GroupDetailLeft());
       return null;
     } catch (e) {
-      return _errorMessage(e);
+      return ApiFailure.from(e).message;
     }
-  }
-
-  String _errorMessage(Object e) {
-    if (e is Exception) {
-      final msg = e.toString();
-      // Extrait le message du detail FastAPI si présent
-      final match = RegExp(r'"detail":"([^"]+)"').firstMatch(msg);
-      if (match != null) return match.group(1)!;
-      return msg;
-    }
-    return e.toString();
   }
 }

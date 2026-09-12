@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/recurring_expense.dart';
@@ -35,7 +36,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             .toList();
       });
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = ApiFailure.from(e).message);
     }
   }
 

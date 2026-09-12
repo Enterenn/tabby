@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 
@@ -81,29 +82,35 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
           .toList();
 
       if (groups.isEmpty) {
-        emit(AddExpenseReady(
-          groups: const [],
-          categories: const [],
-          groupLocked: lockGroup,
-        ));
+        if (!isClosed) {
+          emit(AddExpenseReady(
+            groups: const [],
+            categories: const [],
+            groupLocked: lockGroup,
+          ));
+        }
         return;
       }
 
       final selectedId = groupId ?? (groups.length == 1 ? groups.first.id : null);
       if (selectedId == null) {
-        emit(AddExpenseReady(groups: groups, categories: const []));
+        if (!isClosed) {
+          emit(AddExpenseReady(groups: groups, categories: const []));
+        }
         return;
       }
 
       final data = await _fetchGroupData(selectedId);
-      emit(AddExpenseReady(
-        groups: groups,
-        group: data.group,
-        categories: data.categories,
-        groupLocked: lockGroup && groupId != null,
-      ));
+      if (!isClosed) {
+        emit(AddExpenseReady(
+          groups: groups,
+          group: data.group,
+          categories: data.categories,
+          groupLocked: lockGroup && groupId != null,
+        ));
+      }
     } catch (e) {
-      emit(const AddExpenseError('errorNetwork'));
+      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
     }
   }
 
@@ -112,9 +119,11 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     if (current is! AddExpenseReady || current.groupLocked) return;
     try {
       final data = await _fetchGroupData(groupId);
-      emit(current.copyWith(group: data.group, categories: data.categories));
+      if (!isClosed) {
+        emit(current.copyWith(group: data.group, categories: data.categories));
+      }
     } catch (e) {
-      emit(const AddExpenseError('errorNetwork'));
+      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
     }
   }
 
@@ -147,7 +156,9 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
         'color': color,
       });
       final newCat = Category.fromJson(response.data as Map<String, dynamic>);
-      emit(current.copyWith(categories: [...current.categories, newCat]));
+      if (!isClosed) {
+        emit(current.copyWith(categories: [...current.categories, newCat]));
+      }
       return newCat;
     } catch (_) {
       return null;
@@ -202,10 +213,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
         await apiClient.dio.post('/groups/$groupId/expenses', data: body);
       }
 
-      emit(const AddExpenseSuccess());
+      if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (_) {
-      emit(current);
+      if (!isClosed) emit(current);
       return false;
     }
   }

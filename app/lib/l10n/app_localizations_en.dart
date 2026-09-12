@@ -109,6 +109,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorCreate => 'Could not create';
 
   @override
+  String get errorUnauthorized => 'Session expired, please sign in again';
+
+  @override
+  String get errorForbidden => 'You are not allowed to do this';
+
+  @override
+  String get errorConflict => 'This action conflicts with the current state';
+
+  @override
+  String get errorValidation => 'Invalid data';
+
+  @override
   String get offlineBanner => 'No network connection';
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -59,6 +61,7 @@ class _TabbyAppState extends State<TabbyApp> {
   late final LocaleCubit _localeCubit;
   late final BiometricCubit _biometricCubit;
   late final GoRouter _router;
+  StreamSubscription<RemoteMessage>? _openedAppSub;
 
   @override
   void initState() {
@@ -76,7 +79,7 @@ class _TabbyAppState extends State<TabbyApp> {
 
   void _setupNotificationHandlers() {
     // App en background : tap sur la notification
-    FirebaseMessaging.onMessageOpenedApp.listen((msg) {
+    _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen((msg) {
       final groupId = msg.data['group_id'] as String?;
       if (groupId != null) navigateToGroup(groupId);
     });
@@ -96,6 +99,8 @@ class _TabbyAppState extends State<TabbyApp> {
 
   @override
   void dispose() {
+    _openedAppSub?.cancel();
+    FcmService.instance.dispose();
     _authCubit.close();
     _themeCubit.close();
     _localeCubit.close();

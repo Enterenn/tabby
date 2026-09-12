@@ -34,6 +34,10 @@
   "errorDelete": "Erreur lors de la suppression",
   "errorUpdate": "Erreur lors de la mise à jour",
   "errorCreate": "Erreur lors de la création",
+  "errorUnauthorized": "Session expirée, reconnecte-toi",
+  "errorForbidden": "Action non autorisée",
+  "errorConflict": "Cette action entre en conflit avec l'état actuel",
+  "errorValidation": "Données invalides",
   "offlineBanner": "Pas de connexion réseau",
 
   "navHome": "Accueil",

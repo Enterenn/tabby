@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../shared/models/group.dart';
 
 part 'home_state.dart';
@@ -29,9 +29,9 @@ class HomeCubit extends Cubit<HomeState> {
           .map((g) => Group.fromJson(g as Map<String, dynamic>))
           .toList()
         ..sort(_compareGroups);
-      emit(HomeLoaded(groups));
-    } on DioException catch (e) {
-      emit(HomeError(e.response?.data?['detail']?.toString() ?? 'errorNetwork'));
+      if (!isClosed) emit(HomeLoaded(groups));
+    } catch (e) {
+      if (!isClosed) emit(HomeError(ApiFailure.from(e).message));
     }
   }
 

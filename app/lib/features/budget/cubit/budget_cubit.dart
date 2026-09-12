@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_failure.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
@@ -148,20 +149,22 @@ class BudgetCubit extends Cubit<BudgetState> {
         results[3].data as Map<String, dynamic>,
       );
 
-      emit(
-        BudgetLoaded(
-          budgets: budgets,
-          groups: groups,
-          allCategories: categories,
-          stats: stats,
-          selectedYear: targetYear,
-          selectedMonth: targetMonth,
-          selectedGroupId: targetGroup,
-          selectedCategoryId: prev?.selectedCategoryId,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          BudgetLoaded(
+            budgets: budgets,
+            groups: groups,
+            allCategories: categories,
+            stats: stats,
+            selectedYear: targetYear,
+            selectedMonth: targetMonth,
+            selectedGroupId: targetGroup,
+            selectedCategoryId: prev?.selectedCategoryId,
+          ),
+        );
+      }
     } catch (e) {
-      emit(const BudgetError('errorNetwork'));
+      if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
     }
   }
 

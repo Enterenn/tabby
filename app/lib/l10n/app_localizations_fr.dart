@@ -109,6 +109,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get errorCreate => 'Erreur lors de la création';
 
   @override
+  String get errorUnauthorized => 'Session expirée, reconnecte-toi';
+
+  @override
+  String get errorForbidden => 'Action non autorisée';
+
+  @override
+  String get errorConflict =>
+      'Cette action entre en conflit avec l\'état actuel';
+
+  @override
+  String get errorValidation => 'Données invalides';
+
+  @override
   String get offlineBanner => 'Pas de connexion réseau';
 
   @override

@@ -58,6 +58,12 @@ class ExpressiveAvatar extends StatelessWidget {
             : Image.network(
                 imageUrl!,
                 fit: BoxFit.cover,
+                cacheWidth: (size * MediaQuery.devicePixelRatioOf(context))
+                    .round()
+                    .clamp(1, 1024),
+                cacheHeight: (size * MediaQuery.devicePixelRatioOf(context))
+                    .round()
+                    .clamp(1, 1024),
                 errorBuilder: (context, error, stackTrace) => initials(),
                 loadingBuilder: (context, child, progress) {
                   if (progress == null) return child;

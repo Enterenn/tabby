@@ -625,7 +625,7 @@ class _BudgetCard extends StatelessWidget {
       danger: true,
     );
     if (confirmed && context.mounted) {
-      context.read<BudgetCubit>().deleteBudget(
+      await context.read<BudgetCubit>().deleteBudget(
             groupId: budget.groupId,
             budgetId: budget.id,
           );

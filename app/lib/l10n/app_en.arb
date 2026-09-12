@@ -34,6 +34,10 @@
   "errorDelete": "Could not delete",
   "errorUpdate": "Could not update",
   "errorCreate": "Could not create",
+  "errorUnauthorized": "Session expired, please sign in again",
+  "errorForbidden": "You are not allowed to do this",
+  "errorConflict": "This action conflicts with the current state",
+  "errorValidation": "Invalid data",
   "offlineBanner": "No network connection",
 
   "navHome": "Home",
