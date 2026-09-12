@@ -191,25 +191,13 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
           },
           builder: (context, state) {
             if (state is AddExpenseInitial || state is AddExpenseLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const TabbyLoading();
             }
             if (state is AddExpenseError && _lastReady == null) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(context.l10nError(state.message), textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      FilledButton.tonal(
-                        onPressed: () =>
-                            context.read<AddExpenseCubit>().load(),
-                        child: Text(context.l10n.retry),
-                      ),
-                    ],
-                  ),
-                ),
+              return TabbyErrorState(
+                message: context.l10nError(state.message),
+                retryLabel: context.l10n.retry,
+                onRetry: () => context.read<AddExpenseCubit>().load(),
               );
             }
 

@@ -38,54 +38,23 @@ class _CardsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
     return BlocBuilder<CardsCubit, CardsState>(
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: Text(context.l10n.myCards)),
           body: switch (state) {
-            CardsInitial() || CardsLoading() =>
-              const Center(child: CircularProgressIndicator()),
-            CardsError(:final message) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(context.l10nError(message), textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton.tonal(
-                      onPressed: () => context.read<CardsCubit>().load(),
-                      child: Text(context.l10n.retry),
-                    ),
-                  ],
-                ),
+            CardsInitial() || CardsLoading() => const TabbyLoading(),
+            CardsError(:final message) => TabbyErrorState(
+                message: context.l10nError(message),
+                retryLabel: context.l10n.retry,
+                onRetry: () => context.read<CardsCubit>().load(),
               ),
-            CardsLoaded(:final cards) when cards.isEmpty => Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Symbols.credit_card_rounded,
-                          size: 56, color: cs.outlineVariant),
-                      const SizedBox(height: 16),
-                      Text(context.l10n.noCards, style: tt.headlineSmall),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.l10n.noCardsHint,
-                        style: tt.bodyMedium
-                            ?.copyWith(color: cs.onSurfaceVariant),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: () => _showAddSheet(context),
-                        child: Text(context.l10n.addCard),
-                      ),
-                    ],
-                  ),
-                ),
+            CardsLoaded(:final cards) when cards.isEmpty => TabbyEmptyState(
+                icon: Symbols.credit_card_rounded,
+                title: context.l10n.noCards,
+                body: context.l10n.noCardsHint,
+                actionLabel: context.l10n.addCard,
+                onAction: () => _showAddSheet(context),
               ),
             CardsLoaded(:final cards) => Column(
                 children: [
@@ -196,79 +165,45 @@ void _showActions(
   LoyaltyCard card,
   List<LoyaltyCard> cards,
 ) {
+  final cubit = context.read<CardsCubit>();
   final index = cards.indexWhere((c) => c.id == card.id);
-  showTabbySheet(
+  showTabbyActionSheet(
     context,
-    builder: (ctx) => BlocProvider.value(
-      value: context.read<CardsCubit>(),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        child: Builder(builder: (context) {
-          final cs = Theme.of(context).colorScheme;
-          final cubit = context.read<CardsCubit>();
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 32,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: context.tabbyShapes.radiusExtraSmall,
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Symbols.fullscreen_rounded),
-                title: Text(context.l10n.showCard),
-                shape: context.tabbyShapes.fieldShape,
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _openFullScreen(context, card);
-                },
-              ),
-              if (index > 0)
-                ListTile(
-                  leading: const Icon(Symbols.arrow_upward_rounded),
-                  title: Text(context.l10n.moveUp),
-                  shape: context.tabbyShapes.fieldShape,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    final list = List<LoyaltyCard>.from(cards);
-                    final item = list.removeAt(index);
-                    list.insert(index - 1, item);
-                    cubit.reorder(list);
-                  },
-                ),
-              if (index >= 0 && index < cards.length - 1)
-                ListTile(
-                  leading: const Icon(Symbols.arrow_downward_rounded),
-                  title: Text(context.l10n.moveDown),
-                  shape: context.tabbyShapes.fieldShape,
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    final list = List<LoyaltyCard>.from(cards);
-                    final item = list.removeAt(index);
-                    list.insert(index + 1, item);
-                    cubit.reorder(list);
-                  },
-                ),
-              ListTile(
-                leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text(context.l10n.delete, style: TextStyle(color: cs.error)),
-                shape: context.tabbyShapes.fieldShape,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await cubit.deleteCard(card.id);
-                },
-              ),
-            ],
-          );
-        }),
+    actions: [
+      TabbyActionSheetItem(
+        label: context.l10n.showCard,
+        icon: Symbols.fullscreen_rounded,
+        onTap: () => _openFullScreen(context, card),
       ),
-    ),
+      if (index > 0)
+        TabbyActionSheetItem(
+          label: context.l10n.moveUp,
+          icon: Symbols.arrow_upward_rounded,
+          onTap: () {
+            final list = List<LoyaltyCard>.from(cards);
+            final item = list.removeAt(index);
+            list.insert(index - 1, item);
+            cubit.reorder(list);
+          },
+        ),
+      if (index >= 0 && index < cards.length - 1)
+        TabbyActionSheetItem(
+          label: context.l10n.moveDown,
+          icon: Symbols.arrow_downward_rounded,
+          onTap: () {
+            final list = List<LoyaltyCard>.from(cards);
+            final item = list.removeAt(index);
+            list.insert(index + 1, item);
+            cubit.reorder(list);
+          },
+        ),
+      TabbyActionSheetItem(
+        label: context.l10n.delete,
+        icon: Symbols.delete_rounded,
+        danger: true,
+        onTap: () => cubit.deleteCard(card.id),
+      ),
+    ],
   );
 }
 
@@ -963,33 +898,26 @@ class _AddCardSheetState extends State<_AddCardSheet> {
 
   void _showManualInput(BuildContext context) {
     final ctrl = TextEditingController(text: _codeValue);
-    showTabbyDialog(
+    showTabbyFormDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.enterCode),
-        content: TextField(
+      builder: (ctx) => TabbyFormDialog(
+        title: ctx.l10n.enterCode,
+        submitLabel: ctx.l10n.ok,
+        cancelLabel: ctx.l10n.cancel,
+        onSubmit: () {
+          final v = ctrl.text.trim();
+          if (v.isNotEmpty) _applyManualCode(v);
+          Navigator.pop(ctx);
+        },
+        child: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(
             hintText: ctx.l10n.codeExample,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(ctx.l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final v = ctrl.text.trim();
-              if (v.isNotEmpty) _applyManualCode(v);
-              Navigator.pop(ctx);
-            },
-            child: Text(ctx.l10n.ok),
-          ),
-        ],
       ),
-    );
+    ).whenComplete(ctrl.dispose);
   }
 }
 

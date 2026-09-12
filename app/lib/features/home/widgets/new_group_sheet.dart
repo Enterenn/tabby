@@ -20,45 +20,48 @@ class _NewGroupSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
-    final tt = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(context.l10n.newGroup, style: tt.titleLarge),
-          const SizedBox(height: 4),
-          Text(
-            context.l10n.newGroupSheetSubtitle,
-            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ExpressiveSheetHeader(
+            title: context.l10n.newGroup,
+            subtitle: context.l10n.newGroupSheetSubtitle,
           ),
-          const SizedBox(height: 20),
-          _OptionTile(
-            icon: Symbols.add_rounded,
-            title: context.l10n.createGroup,
-            subtitle: context.l10n.createGroupSubtitle,
-            color: cs.primaryContainer,
-            iconColor: cs.onPrimaryContainer,
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/groups/create');
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                _OptionTile(
+                  icon: Symbols.add_rounded,
+                  title: context.l10n.createGroup,
+                  subtitle: context.l10n.createGroupSubtitle,
+                  color: cs.primaryContainer,
+                  iconColor: cs.onPrimaryContainer,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/groups/create');
+                  },
+                ),
+                const SizedBox(height: 10),
+                _OptionTile(
+                  icon: Symbols.group_add_rounded,
+                  title: context.l10n.joinGroup,
+                  subtitle: context.l10n.joinGroupSubtitle,
+                  color: cs.secondaryContainer,
+                  iconColor: cs.onSecondaryContainer,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/groups/join');
+                  },
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-          _OptionTile(
-            icon: Symbols.group_add_rounded,
-            title: context.l10n.joinGroup,
-            subtitle: context.l10n.joinGroupSubtitle,
-            color: cs.secondaryContainer,
-            iconColor: cs.onSecondaryContainer,
-            onTap: () {
-              Navigator.pop(context);
-              context.push('/groups/join');
-            },
-          ),
-          const SizedBox(height: 4),
         ],
       ),
     );

@@ -52,20 +52,11 @@ class _BudgetView extends StatelessWidget {
                 : Text(context.l10n.budget),
           ),
           body: switch (state) {
-            BudgetInitial() || BudgetLoading() =>
-              const Center(child: CircularProgressIndicator()),
-            BudgetError(:final message) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(context.l10nError(message), textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton.tonal(
-                      onPressed: () => context.read<BudgetCubit>().load(),
-                      child: Text(context.l10n.retry),
-                    ),
-                  ],
-                ),
+            BudgetInitial() || BudgetLoading() => const TabbyLoading(),
+            BudgetError(:final message) => TabbyErrorState(
+                message: context.l10nError(message),
+                retryLabel: context.l10n.retry,
+                onRetry: () => context.read<BudgetCubit>().load(),
               ),
             BudgetLoaded() => _BudgetContent(
                 state: state,
@@ -79,7 +70,7 @@ class _BudgetView extends StatelessWidget {
   }
 
   void _showCreateDialog(BuildContext context, BudgetLoaded state) {
-    showTabbyDialog(
+    showTabbyFormDialog(
       context: context,
       builder: (_) => BlocProvider.value(
         value: context.read<BudgetCubit>(),
@@ -674,60 +665,27 @@ class _BudgetCard extends StatelessWidget {
   }
 
   void _showActions(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    showTabbySheet(
+    showTabbyActionSheet(
       context,
-      builder: (ctx) => BlocProvider.value(
-        value: context.read<BudgetCubit>(),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  children: [
-                    budget.category.iconWidget(
-                      size: 20,
-                      color: budget.category.resolvedColor,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(budget.category.name, style: tt.titleMedium),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: const Icon(Symbols.edit_rounded),
-                title: Text(context.l10n.editLimit),
-                shape: context.tabbyShapes.fieldShape,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _showEditDialog(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Symbols.delete_rounded, color: cs.error),
-                title: Text(context.l10n.delete, style: TextStyle(color: cs.error)),
-                shape: context.tabbyShapes.fieldShape,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _confirmDelete(context);
-                },
-              ),
-            ],
-          ),
+      title: budget.category.name,
+      actions: [
+        TabbyActionSheetItem(
+          label: context.l10n.editLimit,
+          icon: Symbols.edit_rounded,
+          onTap: () => _showEditDialog(context),
         ),
-      ),
+        TabbyActionSheetItem(
+          label: context.l10n.delete,
+          icon: Symbols.delete_rounded,
+          danger: true,
+          onTap: () => _confirmDelete(context),
+        ),
+      ],
     );
   }
 
   void _showEditDialog(BuildContext context) {
-    showTabbyDialog(
+    showTabbyFormDialog(
       context: context,
       builder: (_) => BlocProvider.value(
         value: context.read<BudgetCubit>(),
@@ -737,25 +695,14 @@ class _BudgetCard extends StatelessWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.deleteBudgetTitle),
-        content: Text(ctx.l10n.deleteBudgetBody(budget.category.name)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(ctx.l10n.cancel)),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctx.l10n.delete,
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
+    final confirmed = await showTabbyConfirm(
+      context,
+      title: context.l10n.deleteBudgetTitle,
+      body: context.l10n.deleteBudgetBody(budget.category.name),
+      confirmLabel: context.l10n.delete,
+      danger: true,
     );
-    if (confirmed == true && context.mounted) {
+    if (confirmed && context.mounted) {
       context.read<BudgetCubit>().deleteBudget(
             groupId: budget.groupId,
             budgetId: budget.id,
@@ -812,16 +759,21 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
     final b = widget.budget;
     final catColor = b.category.resolvedColor;
 
-    return AlertDialog(
-      title: Text(context.l10n.editBudget),
-      content: Column(
+    return TabbyFormDialog(
+      title: context.l10n.editBudget,
+      submitLabel: context.l10n.save,
+      cancelLabel: context.l10n.cancel,
+      loading: _loading,
+      onSubmit: _save,
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: catColor,
                   borderRadius: context.tabbyShapes.radiusMedium,
@@ -852,20 +804,6 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(context.l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _loading ? null : _save,
-          child: _loading
-              ? const SizedBox(
-                  height: 16, width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(context.l10n.save),
-        ),
-      ],
     );
   }
 }
@@ -941,85 +879,74 @@ class _BudgetDialogState extends State<_BudgetDialog> {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
 
-    return AlertDialog(
-      title: Text(context.l10n.newBudget),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.state.groups.length > 1) ...[
-              Text(context.l10n.group, style: tt.labelLarge),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<Group>(
-                initialValue: _selectedGroup,
-                hint: Text(context.l10n.chooseGroup),
-                items: widget.state.groups
-                    .map((g) => DropdownMenuItem(
-                          value: g,
-                          child: Text(g.name),
-                        ))
-                    .toList(),
-                onChanged: (g) => setState(() {
-                  _selectedGroup = g;
-                  _selectedCategory = null;
-                }),
-              ),
-              const SizedBox(height: 16),
-            ],
-            Text(context.l10n.category, style: tt.labelLarge),
+    return TabbyFormDialog(
+      title: context.l10n.newBudget,
+      submitLabel: context.l10n.create,
+      cancelLabel: context.l10n.cancel,
+      loading: _loading,
+      scrollable: true,
+      onSubmit: _submit,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.state.groups.length > 1) ...[
+            Text(context.l10n.group, style: tt.labelLarge),
             const SizedBox(height: 6),
-            DropdownButtonFormField<Category>(
-              initialValue: _selectedCategory,
-              hint: Text(context.l10n.chooseCategory),
-              items: _availableCategories
-                  .map((c) => DropdownMenuItem(
-                        value: c,
-                        child: Row(
-                          children: [
-                            c.iconWidget(
-                              size: 18,
-                              color: c.resolvedColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(c.name),
-                          ],
-                        ),
+            DropdownButtonFormField<Group>(
+              initialValue: _selectedGroup,
+              hint: Text(context.l10n.chooseGroup),
+              items: widget.state.groups
+                  .map((g) => DropdownMenuItem(
+                        value: g,
+                        child: Text(g.name),
                       ))
                   .toList(),
-              onChanged: _selectedGroup == null
-                  ? null
-                  : (c) => setState(() => _selectedCategory = c),
+              onChanged: (g) => setState(() {
+                _selectedGroup = g;
+                _selectedCategory = null;
+              }),
             ),
             const SizedBox(height: 16),
-            Text(context.l10n.monthlyLimit, style: tt.labelLarge),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _amountCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
-              ],
-              decoration: const InputDecoration(suffixText: '€'),
-            ),
           ],
-        ),
+          Text(context.l10n.category, style: tt.labelLarge),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<Category>(
+            initialValue: _selectedCategory,
+            hint: Text(context.l10n.chooseCategory),
+            items: _availableCategories
+                .map((c) => DropdownMenuItem(
+                      value: c,
+                      child: Row(
+                        children: [
+                          c.iconWidget(
+                            size: 18,
+                            color: c.resolvedColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(c.name),
+                        ],
+                      ),
+                    ))
+                .toList(),
+            onChanged: _selectedGroup == null
+                ? null
+                : (c) => setState(() => _selectedCategory = c),
+          ),
+          const SizedBox(height: 16),
+          Text(context.l10n.monthlyLimit, style: tt.labelLarge),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _amountCtrl,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
+            ],
+            decoration: const InputDecoration(suffixText: '€'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(context.l10n.cancel),
-        ),
-        FilledButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
-              ? const SizedBox(
-                  height: 16, width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(context.l10n.create),
-        ),
-      ],
     );
   }
 }

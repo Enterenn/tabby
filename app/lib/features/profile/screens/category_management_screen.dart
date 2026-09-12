@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
+import '../../../design_system/design_system.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
 
@@ -66,26 +67,14 @@ class _CategoryManagementScreenState
   }
 
   Future<void> _delete(String groupId, Category cat) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.deleteCategoryTitle),
-        content: Text(ctx.l10n.deleteCategoryBody(cat.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctx.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(ctx.l10n.delete,
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.error)),
-          ),
-        ],
-      ),
+    final confirmed = await showTabbyConfirm(
+      context,
+      title: context.l10n.deleteCategoryTitle,
+      body: context.l10n.deleteCategoryBody(cat.name),
+      confirmLabel: context.l10n.delete,
+      danger: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     try {
       await apiClient.dio.delete('/categories/${cat.id}');
@@ -109,20 +98,12 @@ class _CategoryManagementScreenState
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.categoriesTitle)),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const TabbyLoading()
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(context.l10nError(_error), textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      FilledButton.tonal(
-                        onPressed: _load,
-                        child: Text(context.l10n.retry),
-                      ),
-                    ],
-                  ),
+              ? TabbyErrorState(
+                  message: context.l10nError(_error),
+                  retryLabel: context.l10n.retry,
+                  onRetry: _load,
                 )
               : _buildList(context, cs, tt),
     );
@@ -135,23 +116,10 @@ class _CategoryManagementScreenState
         .toList();
 
     if (groupsWithCustom.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Symbols.category_rounded, size: 56, color: cs.outlineVariant),
-            const SizedBox(height: 16),
-            Text(context.l10n.noCustomCategories,
-                style: tt.headlineSmall, textAlign: TextAlign.center),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.noCustomCategoriesHint,
-              style: tt.bodyMedium
-                  ?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      return TabbyEmptyState(
+        icon: Symbols.category_rounded,
+        title: context.l10n.noCustomCategories,
+        body: context.l10n.noCustomCategoriesHint,
       );
     }
 

@@ -1,12 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
+import '../../../design_system/design_system.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.groupId});
@@ -72,32 +71,13 @@ class _InviteScreenState extends State<InviteScreen> {
             ),
             const SizedBox(height: 48),
             if (_loading)
-              const Center(child: CircularProgressIndicator())
+              const TabbyLoading()
             else if (_code != null) ...[
               Center(
-                child: GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: _code!));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.l10n.codeCopied)),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 28),
-                    decoration: BoxDecoration(
-                      color: cs.tertiaryContainer,
-                      borderRadius: context.tabbyShapes.radiusExtraLarge,
-                    ),
-                    child: Text(
-                      _code!,
-                      style: context.tabbyType.clockDisplay.copyWith(
-                        fontSize: 40,
-                        letterSpacing: 12,
-                        color: cs.onTertiaryContainer,
-                      ),
-                    ),
-                  ),
+                child: TabbyInviteCode(
+                  code: _code!,
+                  copiedLabel: context.l10n.codeCopied,
+                  size: TabbyInviteCodeSize.large,
                 ),
               ),
               const SizedBox(height: 16),

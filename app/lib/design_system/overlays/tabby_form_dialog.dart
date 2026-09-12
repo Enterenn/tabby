@@ -22,6 +22,7 @@ class TabbyFormDialog extends StatelessWidget {
     this.cancelLabel,
     this.loading = false,
     this.danger = false,
+    this.scrollable = false,
   });
 
   final String title;
@@ -31,6 +32,7 @@ class TabbyFormDialog extends StatelessWidget {
   final String? cancelLabel;
   final bool loading;
   final bool danger;
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class TabbyFormDialog extends StatelessWidget {
     return AlertDialog(
       title: Text(title),
       content: child,
+      scrollable: scrollable,
       actions: [
         TextButton(
           onPressed: loading ? null : () => Navigator.pop(context),

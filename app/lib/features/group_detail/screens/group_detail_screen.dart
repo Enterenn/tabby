@@ -55,25 +55,15 @@ class _GroupDetailView extends StatelessWidget {
       builder: (context, state) {
         return switch (state) {
           GroupDetailLoading() || GroupDetailInitial() => const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: TabbyLoading(),
           ),
           GroupDetailLoaded(:final group, :final balances, :final expenses) =>
             _LoadedBody(group: group, balances: balances, expenses: expenses),
           GroupDetailError(:final message) => Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Symbols.error_outline_rounded, size: 48),
-                  const SizedBox(height: 16),
-                  Text(context.l10nError(message), textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => context.read<GroupDetailCubit>().load(),
-                    child: Text(context.l10n.retry),
-                  ),
-                ],
-              ),
+            body: TabbyErrorState(
+              message: context.l10nError(message),
+              retryLabel: context.l10n.retry,
+              onRetry: () => context.read<GroupDetailCubit>().load(),
             ),
           ),
           _ => const SizedBox.shrink(),

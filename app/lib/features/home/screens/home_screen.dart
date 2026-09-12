@@ -120,21 +120,13 @@ class _HomeViewState extends State<_HomeView> {
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           if (state is HomeLoading || state is HomeInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const TabbyLoading();
           }
           if (state is HomeError) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(context.l10nError(state.message), textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton.tonal(
-                    onPressed: () => context.read<HomeCubit>().loadGroups(),
-                    child: Text(context.l10n.retry),
-                  ),
-                ],
-              ),
+            return TabbyErrorState(
+              message: context.l10nError(state.message),
+              retryLabel: context.l10n.retry,
+              onRetry: () => context.read<HomeCubit>().loadGroups(),
             );
           }
           if (state is HomeLoaded) {
@@ -161,23 +153,19 @@ class _HomeViewState extends State<_HomeView> {
                         ),
                       ],
                       if (!hasGroups)
-                        _EmptyState().animate(delay: 100.ms)
+                        TabbyEmptyState(
+                          icon: Symbols.group_rounded,
+                          title: context.l10n.homeEmptyTitle,
+                          body: context.l10n.homeEmptyBody,
+                          actionLabel: context.l10n.newGroup,
+                          onAction: () => showNewGroupSheet(context),
+                          tone: TabbyEmptyTone.featured,
+                        ).animate(delay: 100.ms)
                             .fadeIn(duration: 500.ms)
                             .slideY(begin: 0.06, end: 0, duration: 500.ms, curve: Curves.easeOut)
                       else
                         ...state.groups.asMap().entries.map((e) =>
                           GroupCard(group: e.value, index: e.key)),
-                      if (!hasGroups) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: FilledButton(
-                            onPressed: () => showNewGroupSheet(context),
-                            child: Text(context.l10n.newGroup),
-                          ),
-                        ).animate(delay: 200.ms)
-                          .fadeIn(duration: 400.ms)
-                          .slideY(begin: 0.05, end: 0, duration: 400.ms),
-                      ],
                     ],
                   ),
                 ),
@@ -356,46 +344,3 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 96,
-            height: 96,
-            child: Material(
-              color: cs.primaryContainer,
-              elevation: 0,
-              shape: context.tabbyShapes.circle(),
-              clipBehavior: Clip.antiAlias,
-              child: Icon(
-                Symbols.group_rounded,
-                size: 48,
-                color: cs.onPrimaryContainer,
-                fill: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(context.l10n.homeEmptyTitle,
-              style: tt.headlineSmall, textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          Text(
-            context.l10n.homeEmptyBody,
-            style:
-                tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -211,26 +211,13 @@ class ProfileScreen extends StatelessWidget {
                 label: context.l10n.logout,
                 color: cs.error,
                 onTap: () async {
-                  final confirm = await showTabbyDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Text(ctx.l10n.logoutConfirm),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(ctx.l10n.cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(
-                            ctx.l10n.logoutAction,
-                            style: TextStyle(color: cs.error),
-                          ),
-                        ),
-                      ],
-                    ),
+                  final confirm = await showTabbyConfirm(
+                    context,
+                    title: context.l10n.logoutConfirm,
+                    confirmLabel: context.l10n.logoutAction,
+                    danger: true,
                   );
-                  if (confirm == true && context.mounted) {
+                  if (confirm && context.mounted) {
                     context.read<AuthCubit>().logout();
                   }
                 },

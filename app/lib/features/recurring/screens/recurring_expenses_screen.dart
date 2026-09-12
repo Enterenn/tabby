@@ -60,28 +60,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
   }
 
   Future<void> _delete(RecurringExpense item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ctx.l10n.deleteRecurringTitle),
-        content: Text(ctx.l10n.deleteRecurringBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(ctx.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              ctx.l10n.delete,
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await showTabbyConfirm(
+      context,
+      title: context.l10n.deleteRecurringTitle,
+      body: context.l10n.deleteRecurringBody,
+      confirmLabel: context.l10n.delete,
+      danger: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
 
     try {
       await apiClient.dio.delete(
@@ -99,44 +85,21 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.recurringTitle)),
       body: _error != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(context.l10nError(_error), textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  FilledButton.tonal(
-                      onPressed: _load, child: Text(context.l10n.retry)),
-                ],
-              ),
+          ? TabbyErrorState(
+              message: context.l10nError(_error),
+              retryLabel: context.l10n.retry,
+              onRetry: _load,
             )
           : _items == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const TabbyLoading()
               : _items!.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Symbols.repeat_rounded,
-                              size: 56, color: cs.outlineVariant),
-                          const SizedBox(height: 16),
-                          Text(context.l10n.noRecurring,
-                              style: tt.headlineSmall),
-                          const SizedBox(height: 8),
-                          Text(
-                            context.l10n.noRecurringHint,
-                            style: tt.bodyMedium
-                                ?.copyWith(color: cs.onSurfaceVariant),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                  ? TabbyEmptyState(
+                      icon: Symbols.repeat_rounded,
+                      title: context.l10n.noRecurring,
+                      body: context.l10n.noRecurringHint,
                     )
                   : RefreshIndicator(
                       onRefresh: _load,
