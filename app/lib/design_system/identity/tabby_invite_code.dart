@@ -33,6 +33,19 @@ class TabbyInviteCode extends StatelessWidget {
     final large = size == TabbyInviteCodeSize.large;
     final bg = large ? cs.tertiaryContainer : cs.primaryContainer;
     final fg = large ? cs.onTertiaryContainer : cs.onPrimaryContainer;
+    final letterSpacing = large ? 6.0 : 3.0;
+    final style = large
+        ? context.tabbyType.clockDisplay.copyWith(
+            fontSize: 36,
+            height: 1.15,
+            letterSpacing: letterSpacing,
+            color: fg,
+          )
+        : tt.headlineMedium?.copyWith(
+            color: fg,
+            height: 1.15,
+            letterSpacing: letterSpacing,
+          );
 
     return Material(
       color: bg,
@@ -42,28 +55,31 @@ class TabbyInviteCode extends StatelessWidget {
       child: InkWell(
         onTap: () => _copy(context),
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: large ? 40 : 24,
-            vertical: large ? 28 : 16,
+          padding: EdgeInsets.fromLTRB(
+            large ? 24 : 20,
+            large ? 24 : 16,
+            large ? 24 : 16,
+            large ? 24 : 16,
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                code,
-                style: large
-                    ? context.tabbyType.clockDisplay.copyWith(
-                        fontSize: 40,
-                        letterSpacing: 12,
-                        color: fg,
-                      )
-                    : tt.displaySmall?.copyWith(
-                        color: fg,
-                        letterSpacing: 8,
-                      ),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    // Flutter adds [letterSpacing] after the last glyph.
+                    padding: EdgeInsets.only(right: letterSpacing),
+                    child: Text(
+                      code,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: style,
+                    ),
+                  ),
+                ),
               ),
               if (!large) ...[
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Icon(Symbols.content_copy_rounded, color: fg),
               ],
             ],

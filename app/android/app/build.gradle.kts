@@ -33,6 +33,13 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Flutter 3.35+ injects x86_64 (emulator) unless we set this here.
+        // arm64 only: 32-bit phones (roughly 2017 and older) are out.
+        // Must live in defaultConfig — Flutter overwrites release filters.
+        ndk {
+            abiFilters.clear()
+            abiFilters.addAll(listOf("arm64-v8a"))
+        }
     }
 
     signingConfigs {
@@ -53,6 +60,8 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

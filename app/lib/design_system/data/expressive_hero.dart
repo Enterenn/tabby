@@ -284,7 +284,7 @@ class _BalanceHeroContent extends StatelessWidget {
                         ? context.tabbySemantic.onSuccessContainer
                         : context.tabbySemantic.onDangerContainer,
                 icon: isNeutral
-                    ? Icons.check_rounded
+                    ? Symbols.check_rounded
                     : isPositive
                         ? Symbols.south_west_rounded
                         : Symbols.north_east_rounded,

@@ -52,21 +52,24 @@ class _InviteDialog extends StatelessWidget {
 
     return AlertDialog(
       title: Text(context.l10n.inviteCodeTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(context.l10n.inviteCodeShareShort),
-          const SizedBox(height: 20),
-          TabbyInviteCode(
-            code: code,
-            copiedLabel: context.l10n.codeCopied,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.l10n.inviteValid24h,
-            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-          ),
-        ],
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(context.l10n.inviteCodeShareShort),
+            const SizedBox(height: 20),
+            TabbyInviteCode(
+              code: code,
+              copiedLabel: context.l10n.codeCopied,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              context.l10n.inviteValid24h,
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ],
+        ),
       ),
       actions: [
         FilledButton(
