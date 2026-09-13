@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/api/token_storage.dart';
 import '../../../core/format/split_shares.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/expressive_shapes.dart';
@@ -178,6 +179,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     if (picked != null) setState(() => _expenseDate = picked);
   }
 
+  String? _defaultPayerId(List<GroupMember> members) {
+    final me = tokenStorage.userId;
+    if (me != null && members.any((m) => m.user.id == me)) return me;
+    return members.isNotEmpty ? members.first.user.id : null;
+  }
+
   Future<void> _onGroupChanged(String? id) async {
     if (id == null) return;
     setState(() {
@@ -235,8 +242,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
             recurring: _recurring,
           );
     } else {
-      final payerId =
-          _selectedPayerId ?? ready!.group!.members.first.user.id;
+      final payerId = _selectedPayerId ??
+          _defaultPayerId(ready!.group!.members);
+      if (payerId == null) {
+        showTabbySnack(context, context.l10n.chooseAGroup);
+        return;
+      }
 
       List<Map<String, dynamic>>? splits;
       if (!_recurring) {
@@ -311,7 +322,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
             if (_selectedPayerId == null &&
                 ready.group != null &&
                 ready.group!.members.isNotEmpty) {
-              _selectedPayerId = ready.group!.members.first.user.id;
+              _selectedPayerId = _defaultPayerId(ready.group!.members);
             }
             if (ready.group != null) {
               _syncSplitMembers(ready.group!.members, ready.group!.id);
