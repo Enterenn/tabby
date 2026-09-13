@@ -40,6 +40,11 @@ class User(Base):
     expense_splits: Mapped[list["ExpenseSplit"]] = relationship(back_populates="user")
     loyalty_cards: Mapped[list["LoyaltyCard"]] = relationship(back_populates="user", passive_deletes=True)
     recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="paid_by_user")
+    personal_expenses: Mapped[list["PersonalExpense"]] = relationship(
+        back_populates="user", passive_deletes=True
+    )
+    personal_categories: Mapped[list["Category"]] = relationship(back_populates="user")
+    budgets: Mapped[list["Budget"]] = relationship(back_populates="user", passive_deletes=True)
     device_tokens: Mapped[list["DeviceToken"]] = relationship(back_populates="user", passive_deletes=True)
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", passive_deletes=True
@@ -88,7 +93,6 @@ class Group(Base):
     categories: Mapped[list["Category"]] = relationship(back_populates="group", passive_deletes=True)
     expenses: Mapped[list["Expense"]] = relationship(back_populates="group", passive_deletes=True)
     recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="group", passive_deletes=True)
-    budgets: Mapped[list["Budget"]] = relationship(back_populates="group", passive_deletes=True)
     invites: Mapped[list["GroupInvite"]] = relationship(back_populates="group", passive_deletes=True)
 
 
@@ -114,9 +118,12 @@ class Category(Base):
     __tablename__ = "category"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
-    # NULL = catégorie globale par défaut
+    # NULL = catégorie globale par défaut (is_default) ou héritage groupe
     group_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("group.id", ondelete="CASCADE"), nullable=True
+    )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=True
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     icon: Mapped[str] = mapped_column(Text, nullable=False)
@@ -125,8 +132,10 @@ class Category(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
 
     group: Mapped["Group | None"] = relationship(back_populates="categories")
+    user: Mapped["User | None"] = relationship(back_populates="personal_categories")
     expenses: Mapped[list["Expense"]] = relationship(back_populates="category")
     recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="category")
+    personal_expenses: Mapped[list["PersonalExpense"]] = relationship(back_populates="category")
     budgets: Mapped[list["Budget"]] = relationship(back_populates="category")
 
 
@@ -208,14 +217,33 @@ class RecurringExpense(Base):
     generated_expenses: Mapped[list["Expense"]] = relationship(back_populates="recurring_source")
 
 
+class PersonalExpense(Base):
+    __tablename__ = "personal_expense"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    expense_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="personal_expenses")
+    category: Mapped["Category"] = relationship(back_populates="personal_expenses")
+
+
 class Budget(Base):
     __tablename__ = "budget"
 
-    __table_args__ = (UniqueConstraint("group_id", "category_id", name="uq_budget_group_category"),)
+    __table_args__ = (UniqueConstraint("user_id", "category_id", name="uq_budget_user_category"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
-    group_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("group.id", ondelete="CASCADE"), nullable=False
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
@@ -228,7 +256,7 @@ class Budget(Base):
         default="monthly",
     )
 
-    group: Mapped["Group"] = relationship(back_populates="budgets")
+    user: Mapped["User"] = relationship(back_populates="budgets")
     category: Mapped["Category"] = relationship(back_populates="budgets")
 
 

@@ -16,6 +16,7 @@ from app.api.v1.expenses import router as expenses_router
 from app.api.v1.groups import router as groups_router
 from app.api.v1.devices import router as devices_router
 from app.api.v1.loyalty_cards import router as loyalty_cards_router
+from app.api.v1.personal_expenses import router as personal_expenses_router
 from app.api.v1.stats import router as stats_router
 from app.api.v1.budgets import (
     global_router as budgets_global_router,
@@ -109,5 +110,6 @@ app.include_router(budgets_global_router)
 app.include_router(stats_router)
 app.include_router(devices_router)
 app.include_router(loyalty_cards_router)
+app.include_router(personal_expenses_router)
 
 ensure_upload_dirs()

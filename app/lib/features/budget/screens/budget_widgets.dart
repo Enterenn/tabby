@@ -20,9 +20,45 @@ class _BudgetContent extends StatelessWidget {
           child: ExpressiveHeroBanner(
             label: context.l10n.monthTotal,
             value: formatMoney(context, state.stats.total),
+            subtitle: switch (state.selectedScope) {
+              SpendScope.all => context.l10n.shareLegendAll,
+              SpendScope.groups => context.l10n.shareLegendGroups,
+              SpendScope.personal => context.l10n.shareLegendPersonal,
+            },
             variant: ExpressiveTonalVariant.lime,
             accentIcon: Symbols.payments_rounded,
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          ),
+        ),
+
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                TabbyFilterChip(
+                  label: context.l10n.scopeAll,
+                  selected: state.selectedScope == SpendScope.all,
+                  onSelected: () =>
+                      context.read<BudgetCubit>().selectScope(SpendScope.all),
+                ),
+                TabbyFilterChip(
+                  label: context.l10n.scopeGroups,
+                  selected: state.selectedScope == SpendScope.groups,
+                  onSelected: () =>
+                      context.read<BudgetCubit>().selectScope(SpendScope.groups),
+                ),
+                TabbyFilterChip(
+                  label: context.l10n.scopePersonal,
+                  selected: state.selectedScope == SpendScope.personal,
+                  onSelected: () => context
+                      .read<BudgetCubit>()
+                      .selectScope(SpendScope.personal),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -38,6 +74,33 @@ class _BudgetContent extends StatelessWidget {
           child: _StatsSection(
             stats: state.stats,
             selectedCategoryId: state.selectedCategoryId,
+          ),
+        ),
+
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+            child: Column(
+              children: [
+                TabbyListCard(
+                  child: ListTile(
+                    leading: const Icon(Symbols.repeat_rounded),
+                    title: Text(context.l10n.recurringExpenses),
+                    trailing: const Icon(Symbols.chevron_right_rounded),
+                    onTap: () => context.push('/profile/recurring'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TabbyListCard(
+                  child: ListTile(
+                    leading: const Icon(Symbols.category_rounded),
+                    title: Text(context.l10n.myCategories),
+                    trailing: const Icon(Symbols.chevron_right_rounded),
+                    onTap: () => context.push('/profile/categories'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -82,7 +145,7 @@ class _BudgetContent extends StatelessWidget {
                   return _BudgetCard(
                     budget: budget,
                     selected: state.selectedCategoryId == budget.category.id,
-                    canManage: _isAdminOf(state.groups, budget.groupId),
+                    canManage: true,
                   );
                 },
                 childCount: state.budgets.length,
@@ -559,10 +622,7 @@ class _BudgetCard extends StatelessWidget {
       danger: true,
     );
     if (confirmed && context.mounted) {
-      await context.read<BudgetCubit>().deleteBudget(
-            groupId: budget.groupId,
-            budgetId: budget.id,
-          );
+      await context.read<BudgetCubit>().deleteBudget(budgetId: budget.id);
     }
   }
 }
@@ -599,7 +659,6 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
     if (amount == null || amount <= 0) return;
     setState(() => _loading = true);
     final ok = await context.read<BudgetCubit>().updateBudget(
-          groupId: widget.budget.groupId,
           budgetId: widget.budget.id,
           limitAmount: amount,
         );
@@ -662,34 +721,15 @@ class _BudgetDialog extends StatefulWidget {
 }
 
 class _BudgetDialogState extends State<_BudgetDialog> {
-  Group? _selectedGroup;
   Category? _selectedCategory;
   final _amountCtrl = TextEditingController();
   bool _loading = false;
 
   List<Category> get _availableCategories {
-    if (_selectedGroup == null) return [];
     return context.read<BudgetCubit>().availableCategories(
-          groupId: _selectedGroup!.id,
           budgets: widget.state.budgets,
           allCategories: widget.state.allCategories,
         );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    final adminGroups = _adminGroups(widget.state.groups);
-    if (adminGroups.length == 1) {
-      _selectedGroup = adminGroups.first;
-    } else if (widget.state.selectedGroupId != null) {
-      for (final group in adminGroups) {
-        if (group.id == widget.state.selectedGroupId) {
-          _selectedGroup = group;
-          break;
-        }
-      }
-    }
   }
 
   @override
@@ -701,15 +741,11 @@ class _BudgetDialogState extends State<_BudgetDialog> {
   Future<void> _submit() async {
     final amount =
         TabbyAmountField.parse(_amountCtrl.text);
-    if (_selectedGroup == null ||
-        _selectedCategory == null ||
-        amount == null ||
-        amount <= 0) {
+    if (_selectedCategory == null || amount == null || amount <= 0) {
       return;
     }
     setState(() => _loading = true);
     final ok = await context.read<BudgetCubit>().createBudget(
-          groupId: _selectedGroup!.id,
           categoryId: _selectedCategory!.id,
           limitAmount: amount,
         );
@@ -734,25 +770,6 @@ class _BudgetDialogState extends State<_BudgetDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_adminGroups(widget.state.groups).length > 1) ...[
-            Text(context.l10n.group, style: tt.labelLarge),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<Group>(
-              initialValue: _selectedGroup,
-              hint: Text(context.l10n.chooseGroup),
-              items: _adminGroups(widget.state.groups)
-                  .map((g) => DropdownMenuItem(
-                        value: g,
-                        child: Text(g.name),
-                      ))
-                  .toList(),
-              onChanged: (g) => setState(() {
-                _selectedGroup = g;
-                _selectedCategory = null;
-              }),
-            ),
-            const SizedBox(height: 16),
-          ],
           Text(context.l10n.category, style: tt.labelLarge),
           const SizedBox(height: 6),
           DropdownButtonFormField<Category>(
@@ -773,9 +790,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                       ),
                     ))
                 .toList(),
-            onChanged: _selectedGroup == null
-                ? null
-                : (c) => setState(() => _selectedCategory = c),
+            onChanged: (c) => setState(() => _selectedCategory = c),
           ),
           const SizedBox(height: 16),
           Text(context.l10n.monthlyLimit, style: tt.labelLarge),

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../core/api/api_client.dart';
 import '../shared/models/budget.dart';
+import '../shared/models/spend_scope.dart';
 import '../shared/models/stats.dart';
 import 'parse_list.dart';
 
@@ -14,11 +15,13 @@ class BudgetsRepository {
     required int year,
     required int month,
     String? groupId,
+    SpendScope scope = SpendScope.all,
   }) =>
       {
         'year': year,
         'month': month,
         'group_id': ?groupId,
+        'scope': scope.apiValue,
       };
 
   Future<List<Budget>> list({
@@ -37,38 +40,42 @@ class BudgetsRepository {
     required int year,
     required int month,
     String? groupId,
+    SpendScope scope = SpendScope.all,
   }) async {
     final response = await _dio.get(
       '/stats',
-      queryParameters: _period(year: year, month: month, groupId: groupId),
+      queryParameters: _period(
+        year: year,
+        month: month,
+        groupId: groupId,
+        scope: scope,
+      ),
     );
     return MonthStats.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> create({
-    required String groupId,
     required String categoryId,
     required double limitAmount,
   }) {
     return _dio.post(
-      '/groups/$groupId/budgets',
+      '/budgets',
       data: {'category_id': categoryId, 'limit_amount': limitAmount},
     );
   }
 
   Future<void> update({
-    required String groupId,
     required String budgetId,
     required double limitAmount,
   }) {
     return _dio.put(
-      '/groups/$groupId/budgets/$budgetId',
+      '/budgets/$budgetId',
       data: {'limit_amount': limitAmount},
     );
   }
 
-  Future<void> delete({required String groupId, required String budgetId}) {
-    return _dio.delete('/groups/$groupId/budgets/$budgetId');
+  Future<void> delete({required String budgetId}) {
+    return _dio.delete('/budgets/$budgetId');
   }
 }
 

@@ -374,7 +374,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editExpense => 'Edit expense';
 
   @override
-  String get totalExpenses => 'Total spent';
+  String get totalExpenses => 'Group total';
+
+  @override
+  String get yourShare => 'Your share';
+
+  @override
+  String yourShareAmount(String amount) {
+    return 'You: $amount €';
+  }
 
   @override
   String expenseCount(int count) {
@@ -576,7 +584,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budget => 'Budget';
 
   @override
-  String get monthTotal => 'Month total';
+  String get monthTotal => 'Your share this month';
+
+  @override
+  String get yourShareLegend => 'Only your share of shared expenses.';
+
+  @override
+  String get shareLegendAll =>
+      'Your share of groups plus your personal spending.';
+
+  @override
+  String get shareLegendGroups => 'Only your share of shared expenses.';
+
+  @override
+  String get shareLegendPersonal => 'Only your personal expenses.';
+
+  @override
+  String get scopeAll => 'All';
+
+  @override
+  String get scopeGroups => 'Groups';
+
+  @override
+  String get scopePersonal => 'For me';
+
+  @override
+  String get expenseShared => 'Shared';
+
+  @override
+  String get expenseForMe => 'For me';
+
+  @override
+  String get categoryNamePrivacyHint =>
+      'The name is yours. If you use it on a shared expense, group members will see that name — not your For me purchases.';
 
   @override
   String get monthBudgets => 'Monthly budgets';
@@ -709,7 +749,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splitEqual => 'Equal';
 
   @override
-  String get splitCustom => 'Custom';
+  String get splitCustom => 'Amounts';
 
   @override
   String get scheduleRecurrence => 'Schedule recurrence';

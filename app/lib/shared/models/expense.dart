@@ -53,6 +53,13 @@ class Expense extends Equatable {
             .toList(),
       );
 
+  double shareFor(String userId) {
+    for (final split in splits) {
+      if (split.userId == userId) return split.amount;
+    }
+    return 0;
+  }
+
   @override
   List<Object?> get props =>
       [id, name, amount, category, paidBy, expenseDate, createdAt];

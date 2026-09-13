@@ -6,6 +6,7 @@ import '../../../data/repositories.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/spend_scope.dart';
 import '../../../shared/models/stats.dart';
 
 // ─── States ───────────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ class BudgetLoaded extends BudgetState {
     required this.selectedMonth,
     this.selectedGroupId,
     this.selectedCategoryId,
+    this.selectedScope = SpendScope.all,
   });
 
   final List<Budget> budgets;
@@ -44,6 +46,7 @@ class BudgetLoaded extends BudgetState {
   final int selectedMonth;
   final String? selectedGroupId; // null = tous les groupes
   final String? selectedCategoryId;
+  final SpendScope selectedScope;
 
   BudgetLoaded copyWith({
     List<Budget>? budgets,
@@ -54,6 +57,7 @@ class BudgetLoaded extends BudgetState {
     int? selectedMonth,
     String? selectedGroupId,
     String? selectedCategoryId,
+    SpendScope? selectedScope,
     bool clearGroup = false,
     bool clearCategory = false,
   }) => BudgetLoaded(
@@ -69,6 +73,7 @@ class BudgetLoaded extends BudgetState {
     selectedCategoryId: clearCategory
         ? null
         : (selectedCategoryId ?? this.selectedCategoryId),
+    selectedScope: selectedScope ?? this.selectedScope,
   );
 
   int? get selectedCategoryIndex {
@@ -89,6 +94,7 @@ class BudgetLoaded extends BudgetState {
     selectedMonth,
     selectedGroupId,
     selectedCategoryId,
+    selectedScope,
   ];
 }
 
@@ -135,6 +141,7 @@ class BudgetCubit extends Cubit<BudgetState> {
           year: targetYear,
           month: targetMonth,
           groupId: targetGroup,
+          scope: prev?.selectedScope ?? SpendScope.all,
         ),
       ]);
 
@@ -154,6 +161,7 @@ class BudgetCubit extends Cubit<BudgetState> {
             selectedMonth: targetMonth,
             selectedGroupId: targetGroup,
             selectedCategoryId: prev?.selectedCategoryId,
+            selectedScope: prev?.selectedScope ?? SpendScope.all,
           ),
         );
       }
@@ -189,6 +197,26 @@ class BudgetCubit extends Cubit<BudgetState> {
     );
   }
 
+  Future<void> selectScope(SpendScope scope) async {
+    if (state is! BudgetLoaded) return;
+    final s = state as BudgetLoaded;
+    if (s.selectedScope == scope) return;
+    emit(s.copyWith(selectedScope: scope));
+    try {
+      final stats = await budgetsRepository.stats(
+        year: s.selectedYear,
+        month: s.selectedMonth,
+        groupId: s.selectedGroupId,
+        scope: scope,
+      );
+      if (!isClosed && state is BudgetLoaded) {
+        emit((state as BudgetLoaded).copyWith(stats: stats));
+      }
+    } catch (e) {
+      if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
+    }
+  }
+
   void selectCategory(String? categoryId) {
     if (state is! BudgetLoaded) return;
     final s = state as BudgetLoaded;
@@ -200,13 +228,11 @@ class BudgetCubit extends Cubit<BudgetState> {
   }
 
   Future<bool> createBudget({
-    required String groupId,
     required String categoryId,
     required double limitAmount,
   }) async {
     try {
       await budgetsRepository.create(
-        groupId: groupId,
         categoryId: categoryId,
         limitAmount: limitAmount,
       );
@@ -224,13 +250,11 @@ class BudgetCubit extends Cubit<BudgetState> {
   }
 
   Future<bool> updateBudget({
-    required String groupId,
     required String budgetId,
     required double limitAmount,
   }) async {
     try {
       await budgetsRepository.update(
-        groupId: groupId,
         budgetId: budgetId,
         limitAmount: limitAmount,
       );
@@ -248,11 +272,10 @@ class BudgetCubit extends Cubit<BudgetState> {
   }
 
   Future<bool> deleteBudget({
-    required String groupId,
     required String budgetId,
   }) async {
     try {
-      await budgetsRepository.delete(groupId: groupId, budgetId: budgetId);
+      await budgetsRepository.delete(budgetId: budgetId);
       final s = state is BudgetLoaded ? state as BudgetLoaded : null;
       await load(
         year: s?.selectedYear,
@@ -267,14 +290,10 @@ class BudgetCubit extends Cubit<BudgetState> {
   }
 
   List<Category> availableCategories({
-    required String groupId,
     required List<Budget> budgets,
     required List<Category> allCategories,
   }) {
-    final alreadyUsed = budgets
-        .where((b) => b.groupId == groupId)
-        .map((b) => b.category.id)
-        .toSet();
+    final alreadyUsed = budgets.map((b) => b.category.id).toSet();
     return allCategories.where((c) => !alreadyUsed.contains(c.id)).toList();
   }
 }

@@ -5,13 +5,17 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import extract, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.models.models import Category, Expense, GroupMember, User
+from app.core.spend import (
+    merge_category_amounts,
+    personal_spend_by_category,
+    user_share_by_category,
+)
+from app.models.models import Category, GroupMember, User
 from app.schemas.expense import CategoryResponse
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -29,13 +33,13 @@ async def get_stats(
     year: int = Query(default=None),
     month: int = Query(default=None, ge=1, le=12),
     group_id: Optional[uuid.UUID] = Query(default=None),
+    scope: str = Query(default="all", pattern="^(all|groups|personal)$"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Agrégation des dépenses par catégorie.
+    Agrégation de *ta part* par catégorie (somme des ExpenseSplit).
     Filtre : mois/année courant par défaut, optionnellement un groupe.
-    Retourne uniquement les groupes dont l'utilisateur est membre.
     """
     today = date.today()
     target_year = year or today.year
@@ -47,49 +51,48 @@ async def get_stats(
     )
     accessible_group_ids = [row[0] for row in memberships.all()]
 
-    if not accessible_group_ids:
-        return {"year": target_year, "month": target_month, "total": 0, "categories": []}
-
-    # Filtre groupe
     if group_id is not None and group_id in accessible_group_ids:
         group_filter = [group_id]
     else:
         group_filter = accessible_group_ids
 
-    # Agréger montants par category_id
-    result = await db.execute(
-        select(
-            Expense.category_id,
-            func.sum(Expense.amount).label("total_amount"),
+    group_rows: list[tuple[uuid.UUID, float]] = []
+    if scope in ("all", "groups") and group_filter:
+        group_rows = await user_share_by_category(
+            db,
+            user_id=current_user.id,
+            group_ids=group_filter,
+            year=target_year,
+            month=target_month,
         )
-        .where(
-            Expense.group_id.in_(group_filter),
-            extract("year", Expense.expense_date) == target_year,
-            extract("month", Expense.expense_date) == target_month,
+
+    personal_rows: list[tuple[uuid.UUID, float]] = []
+    if scope in ("all", "personal") and group_id is None:
+        personal_rows = await personal_spend_by_category(
+            db,
+            user_id=current_user.id,
+            year=target_year,
+            month=target_month,
         )
-        .group_by(Expense.category_id)
-        .order_by(func.sum(Expense.amount).desc())
-    )
-    rows = result.all()
+
+    rows = merge_category_amounts(group_rows, personal_rows)
 
     if not rows:
         return {"year": target_year, "month": target_month, "total": 0, "categories": []}
 
-    grand_total = float(sum(r.total_amount for r in rows))
+    grand_total = float(sum(amount for _, amount in rows))
 
-    # Charger les catégories
-    cat_ids = [r.category_id for r in rows]
+    cat_ids = [category_id for category_id, _ in rows]
     cats_result = await db.execute(
         select(Category).where(Category.id.in_(cat_ids))
     )
     cats_by_id = {c.id: c for c in cats_result.scalars().all()}
 
     categories = []
-    for r in rows:
-        cat = cats_by_id.get(r.category_id)
+    for category_id, amount in rows:
+        cat = cats_by_id.get(category_id)
         if cat is None:
             continue
-        amount = float(r.total_amount)
         categories.append({
             "category": CategoryResponse(
                 id=str(cat.id),

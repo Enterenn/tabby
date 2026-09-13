@@ -120,7 +120,14 @@
   "noExpensesInGroup": "No expenses in this group.",
   "membersCount": "Members ({count})",
   "editExpense": "Edit expense",
-  "totalExpenses": "Total spent",
+  "totalExpenses": "Group total",
+  "yourShare": "Your share",
+  "yourShareAmount": "You: {amount} €",
+  "@yourShareAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
   "expenseCount": "{count, plural, =1{1 expense} other{{count} expenses}}",
   "description": "Description",
   "expenseNameHint": "Groceries, dinner…",
@@ -186,7 +193,17 @@
   "recurringNthOfMonth": "Day {day} of the month",
 
   "budget": "Budget",
-  "monthTotal": "Month total",
+  "monthTotal": "Your share this month",
+  "yourShareLegend": "Only your share of shared expenses.",
+  "shareLegendAll": "Your share of groups plus your personal spending.",
+  "shareLegendGroups": "Only your share of shared expenses.",
+  "shareLegendPersonal": "Only your personal expenses.",
+  "scopeAll": "All",
+  "scopeGroups": "Groups",
+  "scopePersonal": "For me",
+  "expenseShared": "Shared",
+  "expenseForMe": "For me",
+  "categoryNamePrivacyHint": "The name is yours. If you use it on a shared expense, group members will see that name — not your For me purchases.",
   "monthBudgets": "Monthly budgets",
   "noBudgetThisMonth": "No budget this month — set a cap per category.",
   "noBudgetTitle": "No budgets yet",
@@ -226,7 +243,7 @@
   "optional": "Optional",
   "split": "Split",
   "splitEqual": "Equal",
-  "splitCustom": "Custom",
+  "splitCustom": "Amounts",
   "scheduleRecurrence": "Schedule recurrence",
   "splitTotal": "Allocated total",
   "repeatMonthly": "Repeat every month",

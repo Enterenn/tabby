@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
@@ -127,23 +126,6 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   );
                 },
-              ),
-              const SizedBox(height: 24),
-              Text(
-                context.l10n.personalization,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              _ActionTile(
-                icon: Symbols.repeat_rounded,
-                label: context.l10n.recurringExpenses,
-                onTap: () => context.push('/profile/recurring'),
-              ),
-              const SizedBox(height: 8),
-              _ActionTile(
-                icon: Symbols.category_rounded,
-                label: context.l10n.myCategories,
-                onTap: () => context.push('/profile/categories'),
               ),
               const SizedBox(height: 24),
               Text(

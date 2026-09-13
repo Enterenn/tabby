@@ -779,8 +779,20 @@ abstract class AppLocalizations {
   /// No description provided for @totalExpenses.
   ///
   /// In fr, this message translates to:
-  /// **'Total dépenses'**
+  /// **'Total du groupe'**
   String get totalExpenses;
+
+  /// No description provided for @yourShare.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ta part'**
+  String get yourShare;
+
+  /// No description provided for @yourShareAmount.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toi : {amount} €'**
+  String yourShareAmount(String amount);
 
   /// No description provided for @expenseCount.
   ///
@@ -1145,8 +1157,68 @@ abstract class AppLocalizations {
   /// No description provided for @monthTotal.
   ///
   /// In fr, this message translates to:
-  /// **'Total du mois'**
+  /// **'Ta part ce mois-ci'**
   String get monthTotal;
+
+  /// No description provided for @yourShareLegend.
+  ///
+  /// In fr, this message translates to:
+  /// **'Uniquement ta part des dépenses partagées.'**
+  String get yourShareLegend;
+
+  /// No description provided for @shareLegendAll.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ta part des groupes et tes dépenses pour toi.'**
+  String get shareLegendAll;
+
+  /// No description provided for @shareLegendGroups.
+  ///
+  /// In fr, this message translates to:
+  /// **'Uniquement ta part des dépenses partagées.'**
+  String get shareLegendGroups;
+
+  /// No description provided for @shareLegendPersonal.
+  ///
+  /// In fr, this message translates to:
+  /// **'Uniquement tes dépenses pour toi.'**
+  String get shareLegendPersonal;
+
+  /// No description provided for @scopeAll.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout'**
+  String get scopeAll;
+
+  /// No description provided for @scopeGroups.
+  ///
+  /// In fr, this message translates to:
+  /// **'Groupes'**
+  String get scopeGroups;
+
+  /// No description provided for @scopePersonal.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour moi'**
+  String get scopePersonal;
+
+  /// No description provided for @expenseShared.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partagée'**
+  String get expenseShared;
+
+  /// No description provided for @expenseForMe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour moi'**
+  String get expenseForMe;
+
+  /// No description provided for @categoryNamePrivacyHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nom est à toi. S’il est utilisé sur une dépense partagée, les membres du groupe le verront — pas tes achats Pour moi.'**
+  String get categoryNamePrivacyHint;
 
   /// No description provided for @monthBudgets.
   ///
@@ -1379,7 +1451,7 @@ abstract class AppLocalizations {
   /// No description provided for @splitCustom.
   ///
   /// In fr, this message translates to:
-  /// **'Perso'**
+  /// **'Montants'**
   String get splitCustom;
 
   /// No description provided for @scheduleRecurrence.

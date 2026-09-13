@@ -19,7 +19,7 @@ class CategoryResponse(BaseModel):
 
 
 class CategoryCreate(BaseModel):
-    group_id: uuid.UUID
+    group_id: uuid.UUID | None = None
     name: str
     icon: str
     color: str  # hex sans le # ou avec

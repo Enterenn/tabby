@@ -54,6 +54,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   DateTime _expenseDate = DateTime.now();
   bool _customSplit = false;
   bool _recurring = false;
+  bool _forMe = false;
 
   final Map<String, TextEditingController> _splitCtrls = {};
 
@@ -114,7 +115,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final ready = _lastReady;
-    if (ready?.group == null) {
+    if (!_forMe && ready?.group == null) {
       showTabbySnack(context, context.l10n.chooseAGroup);
       return;
     }
@@ -132,31 +133,40 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       return;
     }
 
-    final payerId =
-        _selectedPayerId ?? ready!.group!.members.first.user.id;
-
-    List<Map<String, dynamic>>? splits;
-    if (_customSplit) {
-      splits = _splitCtrls.entries.map((e) {
-        return {
-          'user_id': e.key,
-          'amount': double.tryParse(e.value.text.replaceAll(',', '.')) ?? 0.0,
-        };
-      }).toList();
-    }
-
     final name = _nameCtrl.text.trim();
+    final bool ok;
+    if (_forMe) {
+      ok = await context.read<AddExpenseCubit>().submitPersonal(
+            name: name,
+            amount: amount,
+            categoryId: _selectedCategory!.id,
+            expenseDate: _expenseDate,
+          );
+    } else {
+      final payerId =
+          _selectedPayerId ?? ready!.group!.members.first.user.id;
 
-    final ok = await context.read<AddExpenseCubit>().submit(
-          groupId: ready!.group!.id,
-          name: name,
-          amount: amount,
-          categoryId: _selectedCategory!.id,
-          paidBy: payerId,
-          expenseDate: _expenseDate,
-          customSplits: _recurring ? null : splits,
-          recurring: _recurring,
-        );
+      List<Map<String, dynamic>>? splits;
+      if (_customSplit) {
+        splits = _splitCtrls.entries.map((e) {
+          return {
+            'user_id': e.key,
+            'amount': double.tryParse(e.value.text.replaceAll(',', '.')) ?? 0.0,
+          };
+        }).toList();
+      }
+
+      ok = await context.read<AddExpenseCubit>().submit(
+            groupId: ready!.group!.id,
+            name: name,
+            amount: amount,
+            categoryId: _selectedCategory!.id,
+            paidBy: payerId,
+            expenseDate: _expenseDate,
+            customSplits: _recurring ? null : splits,
+            recurring: _recurring,
+          );
+    }
 
     if (ok && mounted) {
       widget.onCreated();
@@ -227,6 +237,23 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       children: [
+                        if (!ready.groupLocked) ...[
+                          ExpressiveButtonGroup<bool>(
+                            value: _forMe,
+                            onChanged: (v) => setState(() => _forMe = v),
+                            segments: [
+                              ExpressiveButtonGroupSegment(
+                                value: false,
+                                label: context.l10n.expenseShared,
+                              ),
+                              ExpressiveButtonGroupSegment(
+                                value: true,
+                                label: context.l10n.expenseForMe,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                         ExpressiveTonalCard(
                           variant: ExpressiveTonalVariant.lime,
                           margin: EdgeInsets.zero,
@@ -327,7 +354,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                           ),
                         ),
 
-                        if (ready.group != null) ...[
+                        if (ready.categories.isNotEmpty) ...[
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
                             label: context.l10n.category,
@@ -342,9 +369,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                           ),
                         ],
 
-                        const SizedBox(height: 24),
-                        ExpressiveSheetSection(
-                          label: context.l10n.group,
+                        if (!_forMe) ...[
+                          const SizedBox(height: 24),
+                          ExpressiveSheetSection(
+                            label: context.l10n.group,
                           child: ready.groups.isEmpty
                               ? Text(
                                   context.l10n.createGroupFirst,
@@ -378,12 +406,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                           .toList(),
                                       onChanged: _onGroupChanged,
                                     ),
-                        ),
+                          ),
 
-                        if (ready.group != null) ...[
-                          const SizedBox(height: 24),
-                          ExpressiveSheetSection(
-                            label: context.l10n.paidBy,
+                          if (ready.group != null) ...[
+                            const SizedBox(height: 24),
+                            ExpressiveSheetSection(
+                              label: context.l10n.paidBy,
                             child: _PayerDropdown(
                               members: ready.group!.members,
                               selectedId: _selectedPayerId,
@@ -466,6 +494,29 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                               if (v) _customSplit = false;
                             }),
                           ),
+                          ],
+                        ],
+                        if (_forMe) ...[
+                          const SizedBox(height: 24),
+                          ExpressiveSheetSection(
+                            label: context.l10n.date,
+                            child: InkWell(
+                              onTap: _pickDate,
+                              borderRadius: shapes.radiusLarge,
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(
+                                    Symbols.calendar_month_rounded,
+                                    size: 18,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
+                                  style: tt.bodyMedium,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
 
                         const SizedBox(height: 28),
@@ -474,7 +525,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                               ? context.l10n.scheduleRecurrence
                               : context.l10n.save,
                           loading: submitting,
-                          onPressed: ready.group == null ? null : _submit,
+                          onPressed: (!_forMe && ready.group == null)
+                              ? null
+                              : _submit,
                         ),
                       ],
                     ),
@@ -492,15 +545,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     BuildContext context,
     AddExpenseReady ready,
   ) {
-    final groupId = ready.group?.id;
-    if (groupId == null) return;
     showTabbySheet(
       context,
       isScrollControlled: true,
       builder: (_) => BlocProvider.value(
         value: context.read<AddExpenseCubit>(),
         child: _CreateCategorySheet(
-          groupId: groupId,
           onCreated: (cat) => setState(() => _selectedCategory = cat),
         ),
       ),

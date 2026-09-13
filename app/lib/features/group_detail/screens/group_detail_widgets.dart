@@ -449,12 +449,29 @@ class _ExpenseTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              '${expense.amount.toStringAsFixed(2)} €',
-              style: tt.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${expense.amount.toStringAsFixed(2)} €',
+                  style: tt.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
+                if (currentUserId.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.yourShareAmount(
+                      expense.shareFor(currentUserId).toStringAsFixed(2),
+                    ),
+                    style: tt.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -513,22 +530,87 @@ class _ExpenseTile extends StatelessWidget {
 
 // Remplace l'ancienne mini card par un hero stat expressif
 class _TotalHero extends StatelessWidget {
-  const _TotalHero({required this.expenses});
+  const _TotalHero({required this.expenses, required this.currentUserId});
   final List<Expense> expenses;
+  final String currentUserId;
 
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
     final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
-    final count = expenses.length;
+    final myShare = currentUserId.isEmpty
+        ? 0.0
+        : expenses.fold<double>(0, (sum, e) => sum + e.shareFor(currentUserId));
 
-    return ExpressiveHeroBanner(
-      label: context.l10n.totalExpenses,
-      value: total.toStringAsFixed(2),
-      suffix: ' €',
-      subtitle: context.l10n.expenseCount(count),
+    return ExpressiveTonalCard(
       variant: ExpressiveTonalVariant.coral,
-      accentIcon: Symbols.receipt_long_rounded,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _CostColumn(
+                  label: context.l10n.yourShare,
+                  value: formatMoney(context, myShare),
+                ),
+              ),
+              Expanded(
+                child: _CostColumn(
+                  label: context.l10n.totalExpenses,
+                  value: formatMoney(context, total),
+                  alignEnd: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            context.l10n.expenseCount(expenses.length),
+            style: tt.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CostColumn extends StatelessWidget {
+  const _CostColumn({
+    required this.label,
+    required this.value,
+    this.alignEnd = false,
+  });
+
+  final String label;
+  final String value;
+  final bool alignEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final align = alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    return Column(
+      crossAxisAlignment: align,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: tt.labelMedium?.copyWith(
+            letterSpacing: 1.4,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+          child: Text(
+            value,
+            style: context.tabbyType.figureMedium,
+          ),
+        ),
+      ],
     );
   }
 }

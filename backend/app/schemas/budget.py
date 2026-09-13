@@ -30,7 +30,7 @@ class BudgetUpdate(BaseModel):
 
 class BudgetResponse(BaseModel):
     id: str
-    group_id: str
+    group_id: str | None = None
     category: CategoryResponse
     limit_amount: float
     spent_amount: float   # dépenses du mois courant dans cette catégorie

@@ -377,7 +377,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get editExpense => 'Modifier la dépense';
 
   @override
-  String get totalExpenses => 'Total dépenses';
+  String get totalExpenses => 'Total du groupe';
+
+  @override
+  String get yourShare => 'Ta part';
+
+  @override
+  String yourShareAmount(String amount) {
+    return 'Toi : $amount €';
+  }
 
   @override
   String expenseCount(int count) {
@@ -580,7 +588,38 @@ class AppLocalizationsFr extends AppLocalizations {
   String get budget => 'Budget';
 
   @override
-  String get monthTotal => 'Total du mois';
+  String get monthTotal => 'Ta part ce mois-ci';
+
+  @override
+  String get yourShareLegend => 'Uniquement ta part des dépenses partagées.';
+
+  @override
+  String get shareLegendAll => 'Ta part des groupes et tes dépenses pour toi.';
+
+  @override
+  String get shareLegendGroups => 'Uniquement ta part des dépenses partagées.';
+
+  @override
+  String get shareLegendPersonal => 'Uniquement tes dépenses pour toi.';
+
+  @override
+  String get scopeAll => 'Tout';
+
+  @override
+  String get scopeGroups => 'Groupes';
+
+  @override
+  String get scopePersonal => 'Pour moi';
+
+  @override
+  String get expenseShared => 'Partagée';
+
+  @override
+  String get expenseForMe => 'Pour moi';
+
+  @override
+  String get categoryNamePrivacyHint =>
+      'Le nom est à toi. S’il est utilisé sur une dépense partagée, les membres du groupe le verront — pas tes achats Pour moi.';
 
   @override
   String get monthBudgets => 'Budgets du mois';
@@ -717,7 +756,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get splitEqual => 'Égale';
 
   @override
-  String get splitCustom => 'Perso';
+  String get splitCustom => 'Montants';
 
   @override
   String get scheduleRecurrence => 'Programmer la récurrence';

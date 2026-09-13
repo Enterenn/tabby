@@ -147,7 +147,14 @@
     }
   },
   "editExpense": "Modifier la dépense",
-  "totalExpenses": "Total dépenses",
+  "totalExpenses": "Total du groupe",
+  "yourShare": "Ta part",
+  "yourShareAmount": "Toi : {amount} €",
+  "@yourShareAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
   "expenseCount": "{count, plural, =1{1 dépense} other{{count} dépenses}}",
   "@expenseCount": {
     "placeholders": {
@@ -233,7 +240,17 @@
   },
 
   "budget": "Budget",
-  "monthTotal": "Total du mois",
+  "monthTotal": "Ta part ce mois-ci",
+  "yourShareLegend": "Uniquement ta part des dépenses partagées.",
+  "shareLegendAll": "Ta part des groupes et tes dépenses pour toi.",
+  "shareLegendGroups": "Uniquement ta part des dépenses partagées.",
+  "shareLegendPersonal": "Uniquement tes dépenses pour toi.",
+  "scopeAll": "Tout",
+  "scopeGroups": "Groupes",
+  "scopePersonal": "Pour moi",
+  "expenseShared": "Partagée",
+  "expenseForMe": "Pour moi",
+  "categoryNamePrivacyHint": "Le nom est à toi. S’il est utilisé sur une dépense partagée, les membres du groupe le verront — pas tes achats Pour moi.",
   "monthBudgets": "Budgets du mois",
   "noBudgetThisMonth": "Aucun budget ce mois — fixe un plafond par catégorie.",
   "noBudgetTitle": "Aucun budget",
@@ -308,7 +325,7 @@
   "optional": "Facultatif",
   "split": "Répartition",
   "splitEqual": "Égale",
-  "splitCustom": "Perso",
+  "splitCustom": "Montants",
   "scheduleRecurrence": "Programmer la récurrence",
   "splitTotal": "Total réparti",
   "repeatMonthly": "Répéter chaque mois",

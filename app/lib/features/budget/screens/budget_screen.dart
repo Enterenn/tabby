@@ -1,9 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/api/token_storage.dart';
-import '../../../core/auth/group_admin.dart';
 import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
@@ -12,29 +11,11 @@ import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/expressive/expressive_donut_chart.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/spend_scope.dart';
 import '../../../shared/models/stats.dart';
 import '../cubit/budget_cubit.dart';
 
 part 'budget_widgets.dart';
-
-bool _isAdminOf(List<Group> groups, String? groupId) {
-  final userId = tokenStorage.userId;
-  if (groupId == null) {
-    return groups.any((g) => isGroupAdmin(userId: userId, ownerId: g.ownerId));
-  }
-  for (final group in groups) {
-    if (group.id == groupId) {
-      return isGroupAdmin(userId: userId, ownerId: group.ownerId);
-    }
-  }
-  return false;
-}
-
-List<Group> _adminGroups(List<Group> groups) {
-  return groups
-      .where((g) => isGroupAdmin(userId: tokenStorage.userId, ownerId: g.ownerId))
-      .toList();
-}
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
@@ -82,7 +63,7 @@ class _BudgetView extends StatelessWidget {
               ),
             BudgetLoaded() => _BudgetContent(
                 state: state,
-                canCreate: _isAdminOf(state.groups, state.selectedGroupId),
+                canCreate: true,
                 onCreateBudget: () => _showCreateDialog(context, state),
               ),
             _ => const SizedBox.shrink(),

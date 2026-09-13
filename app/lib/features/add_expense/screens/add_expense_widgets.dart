@@ -372,11 +372,9 @@ class _RecurringTile extends StatelessWidget {
 
 class _CreateCategorySheet extends StatefulWidget {
   const _CreateCategorySheet({
-    required this.groupId,
     required this.onCreated,
   });
 
-  final String groupId;
   final ValueChanged<Category> onCreated;
 
   @override
@@ -415,7 +413,6 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
     if (name.isEmpty) return;
     setState(() => _loading = true);
     final cat = await context.read<AddExpenseCubit>().createCategory(
-          groupId: widget.groupId,
           name: name,
           icon: _selectedIcon,
           color: _colorToHex(_selectedColor),
@@ -450,7 +447,7 @@ class _CreateCategorySheetState extends State<_CreateCategorySheet> {
         children: [
           ExpressiveSheetHeader(
             title: context.l10n.newCategory,
-            subtitle: context.l10n.newCategorySubtitle,
+            subtitle: context.l10n.categoryNamePrivacyHint,
             onClose: () => Navigator.of(context).pop(),
           ),
           Padding(

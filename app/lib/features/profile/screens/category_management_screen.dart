@@ -23,11 +23,7 @@ class CategoryManagementScreen extends StatelessWidget {
 class _CategoriesView extends StatelessWidget {
   const _CategoriesView();
 
-  Future<void> _delete(
-    BuildContext context, {
-    required String groupId,
-    required Category cat,
-  }) async {
+  Future<void> _delete(BuildContext context, Category cat) async {
     final confirmed = await showTabbyConfirm(
       context,
       title: context.l10n.deleteCategoryTitle,
@@ -37,7 +33,6 @@ class _CategoriesView extends StatelessWidget {
     );
     if (!confirmed || !context.mounted) return;
     final err = await context.read<CategoriesCubit>().delete(
-          groupId: groupId,
           categoryId: cat.id,
         );
     if (!context.mounted || err == null) return;
@@ -57,10 +52,9 @@ class _CategoriesView extends StatelessWidget {
                 retryLabel: context.l10n.retry,
                 onRetry: () => context.read<CategoriesCubit>().load(),
               ),
-            CategoriesLoaded(:final data) => _CategoriesList(
-                data: data,
-                onDelete: (groupId, cat) =>
-                    _delete(context, groupId: groupId, cat: cat),
+            CategoriesLoaded(:final custom) => _CategoriesList(
+                custom: custom,
+                onDelete: (cat) => _delete(context, cat),
               ),
           };
         },
@@ -70,20 +64,16 @@ class _CategoriesView extends StatelessWidget {
 }
 
 class _CategoriesList extends StatelessWidget {
-  const _CategoriesList({required this.data, required this.onDelete});
+  const _CategoriesList({required this.custom, required this.onDelete});
 
-  final CategoriesLoadedData data;
-  final void Function(String groupId, Category cat) onDelete;
+  final List<Category> custom;
+  final void Function(Category cat) onDelete;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final groupsWithCustom = data.customByGroup.entries
-        .where((e) => e.value.isNotEmpty)
-        .toList();
 
-    if (groupsWithCustom.isEmpty) {
+    if (custom.isEmpty) {
       return TabbyEmptyState(
         icon: Symbols.category_rounded,
         title: context.l10n.noCustomCategories,
@@ -93,63 +83,44 @@ class _CategoriesList extends StatelessWidget {
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      children: groupsWithCustom.map((entry) {
-        final groupId = entry.key;
-        final cats = entry.value;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                data.groupNames[groupId] ?? groupId,
-                style: tt.titleMedium,
-              ),
-            ),
-            TabbyListCard(
-              child: Column(
-                children: cats.asMap().entries.map((e) {
-                  final i = e.key;
-                  final cat = e.value;
-                  return Column(
-                    children: [
-                      ListTile(
-                        leading: TabbyCategoryGlyph(
-                          icon: cat.flutterIcon,
-                          background: context.tabbySemantic.chartColorFor(cat),
-                          foreground: context.tabbySemantic.onFor(
-                            context.tabbySemantic.chartColorFor(cat),
-                            cs,
-                          ),
-                          size: 36,
-                          iconSize: 20,
-                        ),
-                        title: Text(cat.name),
-                        trailing: IconButton(
-                          icon: Icon(
-                            Symbols.delete_rounded,
-                            size: 20,
-                            color: cs.error,
-                          ),
-                          onPressed: () => onDelete(groupId, cat),
-                        ),
-                      ),
-                      if (i < cats.length - 1)
-                        Divider(
-                          height: 1,
-                          indent: 16,
-                          endIndent: 16,
-                          color: cs.outlineVariant,
-                        ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      }).toList(),
+      children: [
+        TabbyListCard(
+          child: Column(
+            children: [
+              for (var i = 0; i < custom.length; i++) ...[
+                ListTile(
+                  leading: TabbyCategoryGlyph(
+                    icon: custom[i].flutterIcon,
+                    background: context.tabbySemantic.chartColorFor(custom[i]),
+                    foreground: context.tabbySemantic.onFor(
+                      context.tabbySemantic.chartColorFor(custom[i]),
+                      cs,
+                    ),
+                    size: 36,
+                    iconSize: 20,
+                  ),
+                  title: Text(custom[i].name),
+                  trailing: IconButton(
+                    icon: Icon(
+                      Symbols.delete_rounded,
+                      size: 20,
+                      color: cs.error,
+                    ),
+                    onPressed: () => onDelete(custom[i]),
+                  ),
+                ),
+                if (i < custom.length - 1)
+                  Divider(
+                    height: 1,
+                    indent: 16,
+                    endIndent: 16,
+                    color: cs.outlineVariant,
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

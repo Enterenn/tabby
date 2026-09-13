@@ -77,12 +77,13 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     emit(const AddExpenseLoading());
     try {
       final groups = await groupsRepository.list();
+      final categories = await categoriesRepository.list();
 
       if (groups.isEmpty) {
         if (!isClosed) {
           emit(AddExpenseReady(
             groups: const [],
-            categories: const [],
+            categories: categories,
             groupLocked: lockGroup,
           ));
         }
@@ -92,17 +93,17 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       final selectedId = groupId ?? (groups.length == 1 ? groups.first.id : null);
       if (selectedId == null) {
         if (!isClosed) {
-          emit(AddExpenseReady(groups: groups, categories: const []));
+          emit(AddExpenseReady(groups: groups, categories: categories));
         }
         return;
       }
 
-      final data = await _fetchGroupData(selectedId);
+      final group = await groupsRepository.get(selectedId);
       if (!isClosed) {
         emit(AddExpenseReady(
           groups: groups,
-          group: data.group,
-          categories: data.categories,
+          group: group,
+          categories: categories,
           groupLocked: lockGroup && groupId != null,
         ));
       }
@@ -115,29 +116,16 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     final current = state;
     if (current is! AddExpenseReady || current.groupLocked) return;
     try {
-      final data = await _fetchGroupData(groupId);
+      final group = await groupsRepository.get(groupId);
       if (!isClosed) {
-        emit(current.copyWith(group: data.group, categories: data.categories));
+        emit(current.copyWith(group: group));
       }
     } catch (e) {
       if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
     }
   }
 
-  Future<({Group group, List<Category> categories})> _fetchGroupData(
-      String groupId) async {
-    final results = await Future.wait([
-      categoriesRepository.list(groupId: groupId),
-      groupsRepository.get(groupId),
-    ]);
-    return (
-      group: results[1] as Group,
-      categories: results[0] as List<Category>,
-    );
-  }
-
   Future<Category?> createCategory({
-    required String groupId,
     required String name,
     required String icon,
     required String color,
@@ -146,7 +134,6 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     if (current is! AddExpenseReady) return null;
     try {
       final newCat = await categoriesRepository.create(
-        groupId: groupId,
         name: name,
         icon: icon,
         color: color,
@@ -196,6 +183,29 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
         );
       }
 
+      if (!isClosed) emit(const AddExpenseSuccess());
+      return true;
+    } catch (e) {
+      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      return false;
+    }
+  }
+
+  Future<bool> submitPersonal({
+    required String name,
+    required double amount,
+    required String categoryId,
+    required DateTime expenseDate,
+  }) async {
+    if (state is! AddExpenseReady) return false;
+    emit(const AddExpenseSubmitting());
+    try {
+      await personalExpensesRepository.create(
+        name: name,
+        amount: amount,
+        categoryId: categoryId,
+        expenseDate: expenseDate,
+      );
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (e) {

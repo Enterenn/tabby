@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/auth/group_admin.dart';
+import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../features/home/cubit/home_cubit.dart';
@@ -102,7 +103,9 @@ class _LoadedBody extends StatelessWidget {
               _GroupSliverAppBar(group: group),
               // Total des dépenses — hero display
               if (expenses.isNotEmpty)
-                SliverToBoxAdapter(child: _TotalHero(expenses: expenses)),
+                SliverToBoxAdapter(
+                  child: _TotalHero(expenses: expenses, currentUserId: me),
+                ),
               SliverToBoxAdapter(
                 child: _GroupDetailSheet(
                   group: group,

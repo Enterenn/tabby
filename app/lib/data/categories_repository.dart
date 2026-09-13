@@ -18,13 +18,13 @@ class CategoriesRepository {
   }
 
   Future<Category> create({
-    required String groupId,
+    String? groupId,
     required String name,
     required String icon,
     required String color,
   }) async {
     final response = await _dio.post('/categories', data: {
-      'group_id': groupId,
+      'group_id': ?groupId,
       'name': name,
       'icon': icon,
       'color': color,
