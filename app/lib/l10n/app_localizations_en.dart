@@ -662,6 +662,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allGroups => 'All';
 
   @override
+  String get allGroupsMenu => 'All groups';
+
+  @override
+  String get thisMonth => 'This month';
+
+  @override
+  String get noPersonalPurchasesYet => 'No For me purchases yet';
+
+  @override
   String get noSpendThisMonth => 'No spending this month';
 
   @override
@@ -776,6 +785,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splitTotal => 'Allocated total';
+
+  @override
+  String get splitSelectAll => 'Select all';
+
+  @override
+  String get splitSelectNone => 'Select none';
+
+  @override
+  String get splitNeedSomeone => 'Select at least one person';
 
   @override
   String get repeatMonthly => 'Repeat every month';

@@ -1298,6 +1298,24 @@ abstract class AppLocalizations {
   /// **'Tous'**
   String get allGroups;
 
+  /// No description provided for @allGroupsMenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tous les groupes'**
+  String get allGroupsMenu;
+
+  /// No description provided for @thisMonth.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce mois-ci'**
+  String get thisMonth;
+
+  /// No description provided for @noPersonalPurchasesYet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun achat Pour moi'**
+  String get noPersonalPurchasesYet;
+
   /// No description provided for @noSpendThisMonth.
   ///
   /// In fr, this message translates to:
@@ -1501,6 +1519,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Total réparti'**
   String get splitTotal;
+
+  /// No description provided for @splitSelectAll.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout cocher'**
+  String get splitSelectAll;
+
+  /// No description provided for @splitSelectNone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout décocher'**
+  String get splitSelectNone;
+
+  /// No description provided for @splitNeedSomeone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Coche au moins une personne'**
+  String get splitNeedSomeone;
 
   /// No description provided for @repeatMonthly.
   ///
