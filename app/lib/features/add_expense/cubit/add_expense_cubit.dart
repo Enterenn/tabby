@@ -191,6 +191,37 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     }
   }
 
+  Future<bool> update({
+    required String groupId,
+    required String expenseId,
+    required String name,
+    required double amount,
+    required String categoryId,
+    required String paidBy,
+    required DateTime expenseDate,
+    List<Map<String, dynamic>>? customSplits,
+  }) async {
+    if (state is! AddExpenseReady) return false;
+    emit(const AddExpenseSubmitting());
+    try {
+      await expensesRepository.update(
+        groupId: groupId,
+        expenseId: expenseId,
+        name: name,
+        amount: amount,
+        categoryId: categoryId,
+        paidBy: paidBy,
+        expenseDate: expenseDate,
+        customSplits: customSplits,
+      );
+      if (!isClosed) emit(const AddExpenseSuccess());
+      return true;
+    } catch (e) {
+      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      return false;
+    }
+  }
+
   Future<bool> submitPersonal({
     required String name,
     required double amount,

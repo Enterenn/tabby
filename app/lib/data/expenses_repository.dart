@@ -45,6 +45,7 @@ class ExpensesRepository {
     String? categoryId,
     String? paidBy,
     DateTime? expenseDate,
+    List<Map<String, dynamic>>? customSplits,
   }) async {
     final data = <String, dynamic>{
       'name': ?name,
@@ -52,6 +53,8 @@ class ExpensesRepository {
       'category_id': ?categoryId,
       'paid_by': ?paidBy,
       if (expenseDate != null) 'expense_date': formatApiDate(expenseDate),
+      if (customSplits != null) 'split_type': 'custom',
+      'splits': ?customSplits,
     };
     final response = await _dio.patch(
       '/groups/$groupId/expenses/$expenseId',

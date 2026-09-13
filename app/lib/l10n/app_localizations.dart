@@ -854,6 +854,18 @@ abstract class AppLocalizations {
   /// **'Payé par'**
   String get paidBy;
 
+  /// No description provided for @paidByPerson.
+  ///
+  /// In fr, this message translates to:
+  /// **'Payé par {name}'**
+  String paidByPerson(String name);
+
+  /// No description provided for @participants.
+  ///
+  /// In fr, this message translates to:
+  /// **'Participants'**
+  String get participants;
+
   /// No description provided for @date.
   ///
   /// In fr, this message translates to:
@@ -1477,6 +1489,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Saisis le montant et les détails ci-dessous'**
   String get newExpenseSubtitle;
+
+  /// No description provided for @editExpenseSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifie le montant et les détails ci-dessous'**
+  String get editExpenseSubtitle;
 
   /// No description provided for @chooseAGroup.
   ///

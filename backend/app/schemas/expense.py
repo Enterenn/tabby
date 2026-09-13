@@ -89,6 +89,8 @@ class ExpenseUpdate(BaseModel):
     category_id: uuid.UUID | None = None
     paid_by: uuid.UUID | None = None
     expense_date: date | None = None
+    split_type: Literal["equal", "custom"] | None = None
+    splits: list[SplitItem] | None = None
 
     @field_validator("name")
     @classmethod
@@ -99,6 +101,19 @@ class ExpenseUpdate(BaseModel):
         if not name:
             raise ValueError("Name is required")
         return name
+
+    @model_validator(mode="after")
+    def validate_custom_splits(self) -> "ExpenseUpdate":
+        if self.split_type == "custom":
+            if not self.splits:
+                raise ValueError("splits required when split_type is 'custom'")
+            if self.amount is not None:
+                total_splits = round(sum(s.amount for s in self.splits), 2)
+                if abs(total_splits - round(self.amount, 2)) > 0.01:
+                    raise ValueError(
+                        f"Splits sum ({total_splits}) must equal expense amount ({self.amount})"
+                    )
+        return self
 
 
 class ExpenseResponse(BaseModel):

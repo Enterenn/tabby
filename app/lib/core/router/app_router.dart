@@ -11,6 +11,7 @@ import '../../features/home/screens/home_screen.dart';
 import '../../features/budget/screens/budget_screen.dart';
 import '../../features/cards/screens/cards_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
+import '../../features/group_detail/cubit/group_detail_cubit.dart';
 import '../../features/group_detail/screens/create_group_screen.dart';
 import '../../features/group_detail/screens/group_detail_screen.dart';
 import '../../features/group_detail/screens/invite_screen.dart';
@@ -55,6 +56,28 @@ GoRouter buildRouter(AuthCubit authCubit) {
         path: '/groups/:groupId/invite',
         builder: (context, state) =>
             InviteScreen(groupId: state.pathParameters['groupId']!),
+      ),
+      GoRoute(
+        path: '/groups/:groupId/expenses/:expenseId',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: ExpenseDetailScreen(
+            groupId: state.pathParameters['groupId']!,
+            expenseId: state.pathParameters['expenseId']!,
+            cubit: state.extra is GroupDetailCubit
+                ? state.extra as GroupDetailCubit
+                : null,
+          ),
+          transitionDuration: const Duration(milliseconds: 400),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          transitionsBuilder: (ctx, animation, secondaryAnimation, child) =>
+              SharedAxisTransition(
+                animation: animation,
+                secondaryAnimation: secondaryAnimation,
+                transitionType: SharedAxisTransitionType.horizontal,
+                child: child,
+              ),
+        ),
       ),
       GoRoute(
         path: '/groups/:groupId',

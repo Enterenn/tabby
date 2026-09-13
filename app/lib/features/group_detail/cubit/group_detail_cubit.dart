@@ -69,6 +69,10 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
 
   Future<void> load() async {
     emit(GroupDetailLoading());
+    await refresh();
+  }
+
+  Future<void> refresh() async {
     try {
       final results = await Future.wait([
         _groups.get(_groupId),

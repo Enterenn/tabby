@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.auth import RegisterRequest
-from app.schemas.expense import CategoryUpdate, ExpenseCreate
+from app.schemas.expense import CategoryUpdate, ExpenseCreate, ExpenseUpdate, SplitItem
 from app.schemas.group import GroupCreate, SettleRequest
 from app.schemas.personal import PersonalExpenseUpdate
 from app.schemas.recurring import PersonalRecurringCreate, RecurringExpenseCreate
@@ -79,6 +79,27 @@ def test_personal_recurring_amount_must_be_positive():
             category_id=uuid4(),
             day_of_period=5,
         )
+
+
+def test_expense_update_custom_splits_must_match_amount():
+    user_id = uuid4()
+    with pytest.raises(ValidationError):
+        ExpenseUpdate(
+            amount=20,
+            split_type="custom",
+            splits=[SplitItem(user_id=user_id, amount=10)],
+        )
+
+
+def test_expense_update_custom_splits_ok():
+    user_id = uuid4()
+    req = ExpenseUpdate(
+        amount=20,
+        split_type="custom",
+        splits=[SplitItem(user_id=user_id, amount=20)],
+    )
+    assert req.splits is not None
+    assert req.splits[0].amount == 20
 
 
 def test_category_update_name_stripped():

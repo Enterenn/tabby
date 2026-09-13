@@ -271,6 +271,7 @@ class _GroupDetailSheet extends StatelessWidget {
                 expense: expenses[i],
                 currentUserId: currentUserId,
                 ownerId: group.ownerId,
+                groupId: group.id,
               ),
             ),
             _GroupedSection(
@@ -369,11 +370,13 @@ class _ExpenseTile extends StatelessWidget {
     required this.expense,
     required this.currentUserId,
     required this.ownerId,
+    required this.groupId,
   });
 
   final Expense expense;
   final String currentUserId;
   final String? ownerId;
+  final String groupId;
 
   @override
   Widget build(BuildContext context) {
@@ -386,8 +389,6 @@ class _ExpenseTile extends StatelessWidget {
     final payerLabel = expense.paidBy == currentUserId
         ? context.l10n.you
         : expense.paidByName;
-    final metaLine =
-        '$payerLabel - ${_formatRelativeDate(context, expense.expenseDate)}';
 
     final canManage = canManagePaidRecord(
       userId: currentUserId,
@@ -398,6 +399,10 @@ class _ExpenseTile extends StatelessWidget {
     final canConfirm = expense.canConfirm(currentUserId);
 
     return InkWell(
+      onTap: () => context.push(
+        '/groups/$groupId/expenses/${expense.id}',
+        extra: context.read<GroupDetailCubit>(),
+      ),
       onLongPress: canManage || canConfirm
           ? () => _showExpenseActions(context)
           : null,
@@ -435,20 +440,6 @@ class _ExpenseTile extends StatelessWidget {
                                 height: 1.2,
                               ),
                             ),
-                            ExpressiveBadge(
-                              label: context.categoryName(expense.category),
-                              color: catColor,
-                              textColor: onCat,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              labelStyle: tt.labelSmall?.copyWith(
-                                color: onCat,
-                                fontWeight: FontWeight.w600,
-                                height: 1.1,
-                              ),
-                            ),
                             if (expense.isPending)
                               ExpressiveBadge(
                                 label: context.l10n.repaymentPending,
@@ -468,7 +459,7 @@ class _ExpenseTile extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          metaLine,
+                          context.l10n.paidByPerson(payerLabel),
                           style: tt.bodySmall?.copyWith(
                             color: cs.onSurfaceVariant,
                             height: 1.25,
@@ -532,7 +523,6 @@ class _ExpenseTile extends StatelessWidget {
 
   void _showExpenseActions(BuildContext context) {
     final cubit = context.read<GroupDetailCubit>();
-    final state = cubit.state as GroupDetailLoaded;
     final title = context.expenseName(expense);
 
     showTabbyActionSheet(
@@ -543,7 +533,11 @@ class _ExpenseTile extends StatelessWidget {
             icon: Symbols.edit_rounded,
             label: context.l10n.editExpense,
             subtitle: title,
-            onTap: () => _showEditDialog(context, state, cubit),
+            onTap: () => _editGroupExpense(
+              context,
+              groupId: groupId,
+              expense: expense,
+            ),
           ),
         if (!expense.isPending) const TabbyActionSheetItem.divider(),
         TabbyActionSheetItem(
@@ -563,20 +557,6 @@ class _ExpenseTile extends StatelessWidget {
     );
   }
 
-  void _showEditDialog(
-    BuildContext context,
-    GroupDetailLoaded state,
-    GroupDetailCubit cubit,
-  ) {
-    showTabbyDialog(
-      context: context,
-      builder: (ctx) => _EditExpenseDialog(
-        expense: expense,
-        members: state.group.members,
-        cubit: cubit,
-      ),
-    );
-  }
 }
 
 // ─── Total card ───────────────────────────────────────────────────────────────
@@ -711,166 +691,4 @@ class _CostColumn extends StatelessWidget {
       ],
     );
   }
-}
-
-// ─── Edit expense dialog ──────────────────────────────────────────────────────
-
-class _EditExpenseDialog extends StatefulWidget {
-  const _EditExpenseDialog({
-    required this.expense,
-    required this.members,
-    required this.cubit,
-  });
-  final Expense expense;
-  final List<GroupMember> members;
-  final GroupDetailCubit cubit;
-
-  @override
-  State<_EditExpenseDialog> createState() => _EditExpenseDialogState();
-}
-
-class _EditExpenseDialogState extends State<_EditExpenseDialog> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _amountCtrl;
-  late String _paidBy;
-  late DateTime _date;
-  bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.expense.name);
-    _amountCtrl = TextEditingController(
-      text: widget.expense.amount.toStringAsFixed(2),
-    );
-    _paidBy = widget.expense.paidBy;
-    _date = widget.expense.expenseDate;
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _amountCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) setState(() => _date = picked);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    final cs = Theme.of(context).colorScheme;
-    final dateLabel =
-        '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
-
-    return TabbyFormDialog(
-      title: context.l10n.editExpense,
-      submitLabel: context.l10n.save,
-      cancelLabel: context.l10n.cancel,
-      loading: _loading,
-      onSubmit: _submit,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameCtrl,
-              decoration: InputDecoration(labelText: context.l10n.name),
-            ),
-            const SizedBox(height: 12),
-            TabbyAmountField(
-              controller: _amountCtrl,
-              label: context.l10n.amount,
-            ),
-            const SizedBox(height: 12),
-            Text(context.l10n.paidBy, style: tt.labelMedium),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              initialValue: _paidBy,
-              decoration: const InputDecoration(),
-              items: widget.members
-                  .map(
-                    (m) => DropdownMenuItem(
-                      value: m.user.id,
-                      child: Text(m.user.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _paidBy = v ?? _paidBy),
-            ),
-            const SizedBox(height: 12),
-            Text(context.l10n.date, style: tt.labelMedium),
-            const SizedBox(height: 6),
-            InkWell(
-              onTap: _pickDate,
-              borderRadius: context.tabbyShapes.radiusMedium,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: context.tabbyShapes.radiusMedium,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.calendar_month_rounded,
-                      size: 18,
-                      color: cs.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(dateLabel, style: tt.bodyMedium),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _submit() async {
-    final name = _nameCtrl.text.trim();
-    final amount = TabbyAmountField.parse(_amountCtrl.text);
-    if (name.isEmpty || amount == null || amount <= 0) return;
-
-    setState(() => _loading = true);
-    final err = await widget.cubit.updateExpense(
-      expenseId: widget.expense.id,
-      name: name,
-      amount: amount,
-      paidBy: _paidBy,
-      expenseDate: _date,
-    );
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (err != null) {
-      showTabbySnack(context, context.l10nError(err));
-    } else {
-      Navigator.pop(context);
-    }
-  }
-}
-
-String _formatRelativeDate(BuildContext context, DateTime date) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final expenseDay = DateTime(date.year, date.month, date.day);
-  final days = today.difference(expenseDay).inDays;
-
-  if (days <= 0) return context.l10n.today;
-  if (days == 1) return context.l10n.daysAgoOne;
-  return context.l10n.daysAgo(days);
 }

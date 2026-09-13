@@ -19,6 +19,22 @@ import '../../../shared/models/group.dart';
 import '../cubit/group_detail_cubit.dart';
 
 part 'group_detail_widgets.dart';
+part 'expense_detail_screen.dart';
+
+Future<void> _editGroupExpense(
+  BuildContext context, {
+  required String groupId,
+  required Expense expense,
+}) async {
+  final updated = await showAddExpenseSheet(
+    context,
+    groupId: groupId,
+    editing: expense,
+  );
+  if (updated == true && context.mounted) {
+    context.read<GroupDetailCubit>().refresh();
+  }
+}
 
 class GroupDetailScreen extends StatelessWidget {
   const GroupDetailScreen({super.key, required this.groupId});

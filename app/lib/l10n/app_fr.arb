@@ -170,6 +170,13 @@
   "expenseNameHint": "Courses, resto…",
   "amount": "Montant",
   "paidBy": "Payé par",
+  "paidByPerson": "Payé par {name}",
+  "@paidByPerson": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "participants": "Participants",
   "date": "Date",
   "today": "Aujourd'hui",
   "daysAgoOne": "Il y a 1 jour",
@@ -335,6 +342,7 @@
 
   "newExpense": "Nouvelle dépense",
   "newExpenseSubtitle": "Saisis le montant et les détails ci-dessous",
+  "editExpenseSubtitle": "Modifie le montant et les détails ci-dessous",
   "chooseAGroup": "Choisis un groupe",
   "chooseACategory": "Choisis une catégorie",
   "invalidAmount": "Montant invalide",

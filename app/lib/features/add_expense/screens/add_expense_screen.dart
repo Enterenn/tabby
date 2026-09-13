@@ -11,20 +11,23 @@ import '../../../l10n/l10n.dart';
 import '../../../features/home/cubit/home_cubit.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/models/category.dart';
+import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
 import '../../../shared/widgets/category_editor_sheet.dart';
 import '../cubit/add_expense_cubit.dart';
 
 part 'add_expense_widgets.dart';
 
-/// Ouvre la feuille de création de dépense.
+/// Ouvre la feuille de création (ou d'édition) de dépense.
 /// [groupId] renseigné → groupe prérempli et verrouillé.
+/// [editing] renseigné → même feuille, déjà remplie.
 Future<bool?> showAddExpenseSheet(
   BuildContext context, {
   String? groupId,
   bool forMe = false,
+  Expense? editing,
 }) {
-  final lock = groupId != null && groupId.isNotEmpty;
+  final lock = (groupId != null && groupId.isNotEmpty) || editing != null;
   final home = context.read<HomeCubit>();
   return showTabbySheet<bool>(
     context,
@@ -35,6 +38,8 @@ Future<bool?> showAddExpenseSheet(
       child: _AddExpenseSheet(
         onCreated: home.loadGroups,
         initialForMe: forMe,
+        editing: editing,
+        groupId: groupId,
       ),
     ),
   );
@@ -46,10 +51,14 @@ class _AddExpenseSheet extends StatefulWidget {
   const _AddExpenseSheet({
     required this.onCreated,
     this.initialForMe = false,
+    this.editing,
+    this.groupId,
   });
 
   final VoidCallback onCreated;
   final bool initialForMe;
+  final Expense? editing;
+  final String? groupId;
 
   @override
   State<_AddExpenseSheet> createState() => _AddExpenseSheetState();
@@ -73,6 +82,33 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   String? _splitGroupId;
 
   AddExpenseReady? _lastReady;
+  bool _didPrefillSplitAmounts = false;
+
+  bool get _isEditing => widget.editing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final editing = widget.editing;
+    if (editing == null) return;
+    _nameCtrl.text = editing.name;
+    _amountCtrl.text = editing.amount.toStringAsFixed(2);
+    _selectedCategory = editing.category;
+    _selectedPayerId = editing.paidBy;
+    _expenseDate = editing.expenseDate;
+    _forMe = false;
+    _recurring = false;
+    _splitMode = _looksEqualSplit(editing)
+        ? ExpenseSplitMode.equal
+        : ExpenseSplitMode.amounts;
+    _splitGroupId = widget.groupId;
+    for (final split in editing.splits) {
+      if (split.amount > 0.005) {
+        _includedIds.add(split.userId);
+        _shareCounts[split.userId] = 1;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -97,6 +133,22 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         m.user.id,
         () => _includedIds.contains(m.user.id) ? 1 : 0,
       );
+    }
+    final editing = widget.editing;
+    if (editing != null && !_didPrefillSplitAmounts) {
+      _didPrefillSplitAmounts = true;
+      final splitByUser = {for (final s in editing.splits) s.userId: s.amount};
+      for (final m in members) {
+        final amount = splitByUser[m.user.id] ?? 0;
+        _splitCtrls[m.user.id]?.text = amount.toStringAsFixed(2);
+        if (amount > 0.005) {
+          _includedIds.add(m.user.id);
+          if ((_shareCounts[m.user.id] ?? 0) <= 0) _shareCounts[m.user.id] = 1;
+        } else {
+          _includedIds.remove(m.user.id);
+          _shareCounts[m.user.id] = 0;
+        }
+      }
     }
   }
 
@@ -259,16 +311,30 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
             .toList();
       }
 
-      ok = await context.read<AddExpenseCubit>().submit(
-            groupId: ready!.group!.id,
-            name: name,
-            amount: amount,
-            categoryId: _selectedCategory!.id,
-            paidBy: payerId,
-            expenseDate: _expenseDate,
-            customSplits: _recurring ? null : splits,
-            recurring: _recurring,
-          );
+      final editing = widget.editing;
+      if (editing != null) {
+        ok = await context.read<AddExpenseCubit>().update(
+              groupId: ready!.group!.id,
+              expenseId: editing.id,
+              name: name,
+              amount: amount,
+              categoryId: _selectedCategory!.id,
+              paidBy: payerId,
+              expenseDate: _expenseDate,
+              customSplits: splits,
+            );
+      } else {
+        ok = await context.read<AddExpenseCubit>().submit(
+              groupId: ready!.group!.id,
+              name: name,
+              amount: amount,
+              categoryId: _selectedCategory!.id,
+              paidBy: payerId,
+              expenseDate: _expenseDate,
+              customSplits: _recurring ? null : splits,
+              recurring: _recurring,
+            );
+      }
     }
 
     if (ok && mounted) {
@@ -325,6 +391,14 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                 ready.group!.members.isNotEmpty) {
               _selectedPayerId = _defaultPayerId(ready.group!.members);
             }
+            if (_selectedCategory != null) {
+              for (final category in ready.categories) {
+                if (category.id == _selectedCategory!.id) {
+                  _selectedCategory = category;
+                  break;
+                }
+              }
+            }
             if (ready.group != null) {
               _syncSplitMembers(ready.group!.members, ready.group!.id);
             }
@@ -334,15 +408,21 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
               child: Column(
                 children: [
                   ExpressiveSheetHeader(
-                    title: context.l10n.newExpense,
-                    subtitle: context.l10n.newExpenseSubtitle,
+                    title: _isEditing
+                        ? context.l10n.editExpense
+                        : context.l10n.newExpense,
+                    subtitle: _isEditing
+                        ? context.l10n.editExpenseSubtitle
+                        : context.l10n.newExpenseSubtitle,
                     onClose: () => Navigator.of(context).pop(),
                   ),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       children: [
-                        if (!ready.groupLocked && !widget.initialForMe) ...[
+                        if (!ready.groupLocked &&
+                            !widget.initialForMe &&
+                            !_isEditing) ...[
                           ExpressiveButtonGroup<bool>(
                             value: _forMe,
                             onChanged: (v) => setState(() => _forMe = v),
@@ -382,7 +462,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                         decimal: true,
                                       ),
                                       textAlign: TextAlign.end,
-                                      autofocus: true,
+                                      autofocus: !_isEditing,
                                       cursorColor: cs.onTertiaryContainer,
                                       style: type.figureHero.copyWith(
                                         color: cs.onTertiaryContainer,
@@ -601,21 +681,22 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                             ),
                           ),
 
-                          // 8. Récurrence
-                          const SizedBox(height: 16),
-                          _RecurringTile(
-                            value: _recurring,
-                            expenseDate: _expenseDate,
-                            onChanged: (v) => setState(() {
-                              _recurring = v;
-                              if (v) {
-                                _splitMode = ExpenseSplitMode.equal;
-                                _includedIds.addAll(
-                                  ready.group!.members.map((m) => m.user.id),
-                                );
-                              }
-                            }),
-                          ),
+                          if (!_isEditing) ...[
+                            const SizedBox(height: 16),
+                            _RecurringTile(
+                              value: _recurring,
+                              expenseDate: _expenseDate,
+                              onChanged: (v) => setState(() {
+                                _recurring = v;
+                                if (v) {
+                                  _splitMode = ExpenseSplitMode.equal;
+                                  _includedIds.addAll(
+                                    ready.group!.members.map((m) => m.user.id),
+                                  );
+                                }
+                              }),
+                            ),
+                          ],
                           ],
                         ],
                         if (_forMe) ...[
@@ -678,4 +759,19 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       },
     );
   }
+}
+
+bool _looksEqualSplit(Expense expense) {
+  final active = [
+    for (final split in expense.splits)
+      if (split.amount > 0.005) split.amount,
+  ];
+  if (active.length <= 1) return true;
+  var minAmount = active.first;
+  var maxAmount = active.first;
+  for (final amount in active) {
+    if (amount < minAmount) minAmount = amount;
+    if (amount > maxAmount) maxAmount = amount;
+  }
+  return maxAmount - minAmount <= 0.02;
 }

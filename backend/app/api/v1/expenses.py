@@ -219,16 +219,47 @@ async def update_expense(
     if body.expense_date is not None:
         expense.expense_date = body.expense_date
     if body.amount is not None:
-        from decimal import Decimal, ROUND_HALF_UP
         new_amount = Decimal(str(body.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         expense.amount = new_amount
-        # Recalcule la répartition égale avec le nouveau montant
-        n = len(expense.splits)
-        if n > 0:
-            per_person = (new_amount / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            remainder = new_amount - per_person * n
-            for i, split in enumerate(expense.splits):
-                split.amount = per_person + (remainder if i == 0 else Decimal("0"))
+        if body.splits is None:
+            n = len(expense.splits)
+            if n > 0:
+                per_person = (new_amount / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                remainder = new_amount - per_person * n
+                for i, split in enumerate(expense.splits):
+                    split.amount = per_person + (remainder if i == 0 else Decimal("0"))
+
+    if body.splits is not None:
+        effective = Decimal(str(expense.amount)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        total_splits = sum(
+            Decimal(str(item.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            for item in body.splits
+        )
+        if abs(total_splits - effective) > Decimal("0.01"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Splits sum must equal expense amount",
+            )
+        expense.splits.clear()
+        for item in body.splits:
+            split_member = await db.get(GroupMember, (group_id, item.user_id))
+            if split_member is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Split user is not a member of this group",
+                )
+            expense.splits.append(
+                ExpenseSplit(
+                    id=uuid.uuid4(),
+                    expense_id=expense.id,
+                    user_id=item.user_id,
+                    amount=Decimal(str(item.amount)).quantize(
+                        Decimal("0.01"), rounding=ROUND_HALF_UP
+                    ),
+                )
+            )
 
     await db.flush()
 

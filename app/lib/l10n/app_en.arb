@@ -138,6 +138,8 @@
   "expenseNameHint": "Groceries, dinner…",
   "amount": "Amount",
   "paidBy": "Paid by",
+  "paidByPerson": "Paid by {name}",
+  "participants": "Participants",
   "date": "Date",
   "today": "Today",
   "daysAgoOne": "1 day ago",
@@ -253,6 +255,7 @@
 
   "newExpense": "New expense",
   "newExpenseSubtitle": "Enter the amount and details below",
+  "editExpenseSubtitle": "Update the amount and details below",
   "chooseAGroup": "Choose a group",
   "chooseACategory": "Choose a category",
   "invalidAmount": "Invalid amount",

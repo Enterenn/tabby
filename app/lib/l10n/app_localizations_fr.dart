@@ -427,6 +427,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get paidBy => 'Payé par';
 
   @override
+  String paidByPerson(String name) {
+    return 'Payé par $name';
+  }
+
+  @override
+  String get participants => 'Participants';
+
+  @override
   String get date => 'Date';
 
   @override
@@ -770,6 +778,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get newExpenseSubtitle =>
       'Saisis le montant et les détails ci-dessous';
+
+  @override
+  String get editExpenseSubtitle =>
+      'Modifie le montant et les détails ci-dessous';
 
   @override
   String get chooseAGroup => 'Choisis un groupe';
