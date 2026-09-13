@@ -227,16 +227,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _expenseDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) setState(() => _expenseDate = picked);
-  }
-
   String? _defaultPayerId(List<GroupMember> members) {
     final me = tokenStorage.userId;
     if (me != null && members.any((m) => m.user.id == me)) return me;
@@ -627,9 +617,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                 Expanded(
                                   child: ExpressiveSheetSection(
                                     label: context.l10n.date,
-                                    child: _DateField(
-                                      date: _expenseDate,
-                                      onTap: _pickDate,
+                                    child: TabbyDateField.sheet(
+                                      value: _expenseDate,
+                                      onChanged: (d) =>
+                                          setState(() => _expenseDate = d),
                                     ),
                                   ),
                                 ),
@@ -712,9 +703,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
                             label: context.l10n.date,
-                            child: _DateField(
-                              date: _expenseDate,
-                              onTap: _pickDate,
+                            child: TabbyDateField.sheet(
+                              value: _expenseDate,
+                              onChanged: (d) =>
+                                  setState(() => _expenseDate = d),
                             ),
                           ),
                           const SizedBox(height: 16),

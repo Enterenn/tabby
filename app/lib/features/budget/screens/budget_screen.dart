@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/format/date.dart';
 import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
@@ -13,6 +14,7 @@ import '../../../shared/models/group.dart';
 import '../../../shared/models/personal_expense.dart';
 import '../../../shared/models/spend_scope.dart';
 import '../../../shared/models/stats.dart';
+import '../../personal/widgets/personal_expense_edit_dialog.dart';
 import '../cubit/budget_cubit.dart';
 
 part 'budget_widgets.dart';

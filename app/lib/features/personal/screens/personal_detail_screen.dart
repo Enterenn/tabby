@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/format/date.dart';
 import '../../../core/format/money.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../design_system/design_system.dart';
@@ -10,6 +11,7 @@ import '../../../l10n/l10n.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/personal_expense.dart';
 import '../cubit/personal_detail_cubit.dart';
+import '../widgets/personal_expense_edit_dialog.dart';
 
 class PersonalDetailScreen extends StatelessWidget {
   const PersonalDetailScreen({super.key});
@@ -185,7 +187,7 @@ class _ExpenseTile extends StatelessWidget {
         ),
         title: Text(expense.name, style: tt.titleSmall),
         subtitle: Text(
-          '${context.categoryName(expense.category)} · ${_formatDate(context, expense.expenseDate)}',
+          '${context.categoryName(expense.category)} · ${formatRelativeDate(context, expense.expenseDate)}',
         ),
         trailing: ExpressiveFigure(
           value: formatMoney(context, expense.amount),
@@ -216,11 +218,26 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   void _showEditDialog(BuildContext context) {
+    final cubit = context.read<PersonalDetailCubit>();
     showTabbyFormDialog(
       context: context,
-      builder: (_) => BlocProvider.value(
-        value: context.read<PersonalDetailCubit>(),
-        child: _EditDialog(expense: expense, categories: categories),
+      builder: (_) => PersonalExpenseEditDialog(
+        expense: expense,
+        categories: categories,
+        onSave: ({
+          required name,
+          required amount,
+          required categoryId,
+          required expenseDate,
+        }) {
+          return cubit.updateExpense(
+            expenseId: expense.id,
+            name: name,
+            amount: amount,
+            categoryId: categoryId,
+            expenseDate: expenseDate,
+          );
+        },
       ),
     );
   }
@@ -239,157 +256,4 @@ class _ExpenseTile extends StatelessWidget {
     if (!context.mounted || err == null) return;
     showTabbySnack(context, context.l10nError(err));
   }
-}
-
-class _EditDialog extends StatefulWidget {
-  const _EditDialog({required this.expense, required this.categories});
-
-  final PersonalExpense expense;
-  final List<Category> categories;
-
-  @override
-  State<_EditDialog> createState() => _EditDialogState();
-}
-
-class _EditDialogState extends State<_EditDialog> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _amountCtrl;
-  late Category _category;
-  late DateTime _date;
-  bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.expense.name);
-    _amountCtrl = TextEditingController(
-      text: widget.expense.amount.toStringAsFixed(2),
-    );
-    _category = widget.categories.firstWhere(
-      (c) => c.id == widget.expense.category.id,
-      orElse: () => widget.expense.category,
-    );
-    _date = widget.expense.expenseDate;
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _amountCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) setState(() => _date = picked);
-  }
-
-  Future<void> _save() async {
-    final amount = TabbyAmountField.parse(_amountCtrl.text);
-    final name = _nameCtrl.text.trim();
-    if (name.isEmpty || amount == null || amount <= 0) return;
-    setState(() => _loading = true);
-    final err = await context.read<PersonalDetailCubit>().updateExpense(
-          expenseId: widget.expense.id,
-          name: name,
-          amount: amount,
-          categoryId: _category.id,
-          expenseDate: _date,
-        );
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (err == null) {
-      Navigator.of(context).pop();
-      return;
-    }
-    showTabbySnack(context, context.l10nError(err));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    final dateLabel =
-        '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
-
-    return TabbyFormDialog(
-      title: context.l10n.editExpense,
-      submitLabel: context.l10n.save,
-      cancelLabel: context.l10n.cancel,
-      loading: _loading,
-      scrollable: true,
-      onSubmit: _save,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _nameCtrl,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(labelText: context.l10n.name),
-          ),
-          const SizedBox(height: 12),
-          TabbyAmountField(
-            controller: _amountCtrl,
-            label: context.l10n.amount,
-          ),
-          const SizedBox(height: 12),
-          Text(context.l10n.category, style: tt.labelLarge),
-          const SizedBox(height: 6),
-          DropdownButtonFormField<Category>(
-            initialValue: _category,
-            items: [
-              if (!widget.categories.any((c) => c.id == _category.id))
-                _category,
-              ...widget.categories,
-            ]
-                .map(
-                  (c) => DropdownMenuItem(
-                    value: c,
-                    child: Row(
-                      children: [
-                        c.iconWidget(size: 18, color: c.resolvedColor),
-                        const SizedBox(width: 8),
-                        Text(context.categoryName(c)),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (c) {
-              if (c != null) setState(() => _category = c);
-            },
-          ),
-          const SizedBox(height: 12),
-          Text(context.l10n.date, style: tt.labelLarge),
-          const SizedBox(height: 6),
-          InkWell(
-            onTap: _pickDate,
-            borderRadius: context.tabbyShapes.radiusMedium,
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Symbols.calendar_month_rounded, size: 18),
-              ),
-              child: Text(dateLabel, style: tt.bodyMedium),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-String _formatDate(BuildContext context, DateTime date) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final expenseDay = DateTime(date.year, date.month, date.day);
-  final days = today.difference(expenseDay).inDays;
-
-  if (days <= 0) return context.l10n.today;
-  if (days == 1) return context.l10n.daysAgoOne;
-  return context.l10n.daysAgo(days);
 }
