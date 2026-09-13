@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/api_client.dart';
@@ -126,6 +127,12 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+              const SizedBox(height: 24),
+              _ActionTile(
+                icon: Symbols.category_rounded,
+                label: context.l10n.myCategories,
+                onTap: () => context.push('/profile/categories'),
               ),
               const SizedBox(height: 24),
               Text(
