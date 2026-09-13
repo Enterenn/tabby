@@ -62,17 +62,64 @@ docker compose version
 
 ---
 
-## Partie 4 — Récupérer ton code depuis GitHub
+## Partie 4 — Récupérer le backend depuis GitHub (sparse-checkout)
+
+Le dépôt GitHub contient aussi l'app Flutter et la doc. Le LXC n'exécute
+que l'API : on clone le même repo, mais on ne matérialise que `backend/`.
+Les blobs Flutter ne sont pas téléchargés.
 
 ```bash
-git clone <URL_DE_TON_REPO>
+git clone --filter=blob:none --sparse <URL_DE_TON_REPO> tabby
 ```
-*Remplace `<URL_DE_TON_REPO>` par l'URL de ton repo GitHub (ex. `https://github.com/tonpseudo/tabby.git`). Ça télécharge tout ton code dans un nouveau dossier.*
+*Remplace `<URL_DE_TON_REPO>` par l'URL de ton repo GitHub (ex. `https://github.com/tonpseudo/tabby.git`). `--filter=blob:none` évite de télécharger les fichiers dont tu n'as pas besoin. `--sparse` active le checkout partiel.*
 
 ```bash
-cd tabby/backend
+cd tabby
+git sparse-checkout set backend
 ```
-*Adapte `tabby` si ton dossier a un autre nom — tape `ls` après le `git clone` pour voir le nom exact du dossier créé.*
+*Seul le dossier `backend/` apparaît dans le working tree. `app/` et `docs/` restent dans l'historique Git mais ne sont pas écrits sur le disque.*
+
+```bash
+ls
+```
+*Tu dois voir `backend/` (et éventuellement `.git`). Pas de dossier `app/`.*
+
+```bash
+cd backend
+```
+*Toutes les commandes des parties suivantes se tapent depuis ce dossier.*
+
+### Clone déjà présent (conversion sans recréer les volumes)
+
+Si le LXC a déjà un `git clone` complet et que Docker tourne, ne reclones
+pas : tu garderais le même `.env` et les mêmes volumes Postgres.
+
+**Avant** le sparse-checkout, vérifie que les secrets sont bien dans `backend/`
+(ils ne sont pas dans Git) :
+
+```bash
+ls -la backend/.env backend/firebase.json
+```
+
+S'ils manquent, **arrête-toi** et récupère-les (backup, ou depuis les
+conteneurs encore en cours — voir « En cas de blocage »). Ne fais pas
+`docker compose down` ni `up -d` tant qu'ils ne sont pas revenus.
+
+```bash
+cd /chemin/vers/tabby
+```
+*Adapte le chemin (`pwd` depuis `backend/` puis `cd ..` si besoin).*
+
+```bash
+git sparse-checkout init --cone
+git sparse-checkout set backend
+```
+*Git retire `app/` et `docs/` du disque. `backend/.env`, `backend/firebase.json` et les volumes Docker (`postgres_data`, `uploads_data`) ne bougent pas s'ils étaient déjà là.*
+
+```bash
+ls
+```
+*Attendu : `backend/` seulement (plus `app/`). Ensuite `cd backend` comme d'habitude.*
 
 ---
 
@@ -125,6 +172,15 @@ docker compose exec api alembic upgrade head
 *Cette commande crée toutes les tables (utilisateurs, groupes, dépenses...) et ajoute les 8 catégories par défaut (Loyer, Courses, etc.). Tu dois voir des lignes défiler sans message d'erreur en rouge à la fin.*
 
 **Après chaque `git pull`** qui modifie le backend, relance la même commande pour appliquer les nouvelles migrations (ex. colonne `brand_id` sur les cartes fidélité). Le conteneur API applique aussi les migrations au démarrage, mais un `docker compose up -d --build` après pull reste la bonne habitude.
+
+Mise à jour type (depuis `backend/`) :
+
+```bash
+git -C .. pull --ff-only
+docker compose up -d --build
+docker compose exec api alembic upgrade head
+```
+*`git -C ..` pull depuis la racine du clone (là où vit `.git`), pas depuis `backend/`. Le sparse-checkout ne récupère toujours que `backend/`.*
 
 Test rapide que l'API répond bien :
 ```bash
@@ -221,3 +277,58 @@ Colle-moi directement :
 - le message d'erreur complet affiché.
 
 Pas besoin de comprendre le message toi-même — je le lirai pour toi.
+
+### `.env` / `firebase.json` introuvables alors que l'API tourne
+
+Ne fais **pas** `docker compose down` ni `up -d` : les conteneurs ont encore
+les secrets en mémoire. Recrée les fichiers depuis Docker, **sans les
+afficher** (ne les colle pas dans un chat) :
+
+```bash
+cd ~/tabby/backend
+
+# Chercher une copie oubliée ailleurs sur le LXC
+find /root /opt /home -name '.env' -o -name 'firebase.json' -o -name '*firebase-adminsdk*.json' 2>/dev/null
+
+# Recréer .env depuis les conteneurs en cours
+python3 - <<'PY'
+import json, subprocess, pathlib
+def env_of(name):
+    out = subprocess.check_output(
+        ["docker", "inspect", name, "--format", "{{json .Config.Env}}"],
+        text=True,
+    )
+    return dict(item.split("=", 1) for item in json.loads(out))
+api, db = env_of("backend-api-1"), env_of("backend-db-1")
+pw = db.get("POSTGRES_PASSWORD") or ""
+if not pw:
+    url = api.get("DATABASE_URL", "")
+    if "://" in url and "@" in url:
+        creds = url.split("://", 1)[1].split("@", 1)[0]
+        if ":" in creds:
+            pw = creds.split(":", 1)[1]
+pathlib.Path(".env").write_text(
+    "SECRET_KEY=" + api.get("SECRET_KEY", "") + "\n"
+    + "POSTGRES_PASSWORD=" + pw + "\n"
+    + "DEBUG=" + api.get("DEBUG", "false") + "\n"
+    + "PUBLIC_ORIGIN=" + api.get("PUBLIC_ORIGIN", "") + "\n"
+    + "DATABASE_URL=postgresql+asyncpg://tabby:CHANGE_ME@localhost:5432/tabby\n",
+    encoding="utf-8",
+)
+print("wrote .env (keys present:", bool(api.get("SECRET_KEY")), bool(pw), ")")
+PY
+
+# Recopier Firebase depuis le conteneur (si le fichier n'est pas vide)
+docker cp backend-api-1:/run/secrets/firebase.json ./firebase.json
+wc -c .env firebase.json
+```
+
+Vérifie ensuite, toujours sans afficher les valeurs :
+
+```bash
+grep -E '^(SECRET_KEY|POSTGRES_PASSWORD|PUBLIC_ORIGIN|DEBUG)=' .env | sed 's/=.*/=***set***/'
+```
+
+Si `SECRET_KEY` ou `POSTGRES_PASSWORD` sortent vides, les conteneurs avaient
+déjà été lancés sans `.env` : il faut retrouver un backup, pas en générer
+de nouveaux (le volume Postgres garde l'ancien mot de passe).

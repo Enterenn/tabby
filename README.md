@@ -53,8 +53,17 @@ La documentation Swagger est accessible sur `http://localhost:8000/docs` **uniqu
 
 ### Déploiement sur home server (LXC Proxmox)
 
+Le dépôt reste un monorepo (app + backend + docs). Sur le LXC, on ne
+checkout que `backend/` — l'app Flutter n'est jamais matérialisée.
+
 1. Créer un conteneur LXC sur Proxmox, installer Docker.
-2. Cloner le repo sur le LXC et aller dans `backend/`.
+2. Cloner en sparse-checkout (détail : `docs/tabby-tutoriel-deploiement.md` partie 4) :
+   ```bash
+   git clone --filter=blob:none --sparse <URL_DU_REPO> tabby
+   cd tabby
+   git sparse-checkout set backend
+   cd backend
+   ```
 3. Configurer le `.env` : `SECRET_KEY` et `POSTGRES_PASSWORD` obligatoires.
    `python -c "import secrets; print(secrets.token_urlsafe(48)); print(secrets.token_urlsafe(24))"`
 4. `docker compose up -d` puis `docker compose exec api alembic upgrade head`.
