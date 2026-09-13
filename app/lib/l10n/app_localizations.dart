@@ -1478,6 +1478,12 @@ abstract class AppLocalizations {
   /// **'Égale'**
   String get splitEqual;
 
+  /// No description provided for @splitShares.
+  ///
+  /// In fr, this message translates to:
+  /// **'Parts'**
+  String get splitShares;
+
   /// No description provided for @splitCustom.
   ///
   /// In fr, this message translates to:

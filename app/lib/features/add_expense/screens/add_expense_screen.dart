@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/format/split_shares.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/expressive_shapes.dart';
 import '../../../l10n/l10n.dart';
@@ -52,11 +53,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   Category? _selectedCategory;
   String? _selectedPayerId;
   DateTime _expenseDate = DateTime.now();
-  bool _customSplit = false;
+  ExpenseSplitMode _splitMode = ExpenseSplitMode.equal;
   bool _recurring = false;
   bool _forMe = false;
 
   final Map<String, TextEditingController> _splitCtrls = {};
+  final Map<String, int> _shareCounts = {};
 
   AddExpenseReady? _lastReady;
 
@@ -83,6 +85,21 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     }
   }
 
+  void _initShares(List<GroupMember> members) {
+    for (final m in members) {
+      _shareCounts.putIfAbsent(m.user.id, () => 1);
+    }
+  }
+
+  Map<String, double> _shareAmounts(List<GroupMember> members) =>
+      amountsFromShares(
+        total: _expenseAmount,
+        userIds: members.map((m) => m.user.id).toList(),
+        shares: _shareCounts,
+      );
+
+  int get _shareSum => _shareCounts.values.fold(0, (sum, n) => sum + n);
+
   double get _splitsTotal => _splitCtrls.values.fold(0.0, (acc, ctrl) {
         return acc + (double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0.0);
       });
@@ -107,7 +124,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     setState(() {
       _selectedCategory = null;
       _selectedPayerId = null;
-      _customSplit = false;
+      _splitMode = ExpenseSplitMode.equal;
     });
     await context.read<AddExpenseCubit>().selectGroup(id);
   }
@@ -128,7 +145,15 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       showTabbySnack(context, context.l10n.invalidAmount);
       return;
     }
-    if (_customSplit && !_recurring && !_splitsValid) {
+    if (_splitMode == ExpenseSplitMode.amounts &&
+        !_recurring &&
+        !_splitsValid) {
+      showTabbySnack(context, context.l10n.splitsMustMatch);
+      return;
+    }
+    if (_splitMode == ExpenseSplitMode.shares &&
+        !_recurring &&
+        _shareSum <= 0) {
       showTabbySnack(context, context.l10n.splitsMustMatch);
       return;
     }
@@ -148,13 +173,18 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
           _selectedPayerId ?? ready!.group!.members.first.user.id;
 
       List<Map<String, dynamic>>? splits;
-      if (_customSplit) {
+      if (_splitMode == ExpenseSplitMode.amounts) {
         splits = _splitCtrls.entries.map((e) {
           return {
             'user_id': e.key,
             'amount': double.tryParse(e.value.text.replaceAll(',', '.')) ?? 0.0,
           };
         }).toList();
+      } else if (_splitMode == ExpenseSplitMode.shares) {
+        final amounts = _shareAmounts(ready!.group!.members);
+        splits = amounts.entries
+            .map((e) => {'user_id': e.key, 'amount': e.value})
+            .toList();
       }
 
       ok = await context.read<AddExpenseCubit>().submit(
@@ -449,23 +479,30 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                               absorbing: _recurring,
                               child: Opacity(
                                 opacity: _recurring ? 0.45 : 1,
-                                child: ExpressiveButtonGroup<bool>(
-                                  value: _customSplit,
+                                child: ExpressiveButtonGroup<ExpenseSplitMode>(
+                                  value: _splitMode,
                                   onChanged: (v) {
                                     setState(() {
-                                      _customSplit = v;
-                                      if (_customSplit) {
+                                      _splitMode = v;
+                                      if (v == ExpenseSplitMode.amounts) {
                                         _initSplitCtrls(ready.group!.members);
+                                      }
+                                      if (v == ExpenseSplitMode.shares) {
+                                        _initShares(ready.group!.members);
                                       }
                                     });
                                   },
                                   segments: [
                                     ExpressiveButtonGroupSegment(
-                                      value: false,
+                                      value: ExpenseSplitMode.equal,
                                       label: context.l10n.splitEqual,
                                     ),
                                     ExpressiveButtonGroupSegment(
-                                      value: true,
+                                      value: ExpenseSplitMode.shares,
+                                      label: context.l10n.splitShares,
+                                    ),
+                                    ExpressiveButtonGroupSegment(
+                                      value: ExpenseSplitMode.amounts,
                                       label: context.l10n.splitCustom,
                                     ),
                                   ],
@@ -473,7 +510,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                               ),
                             ),
                           ),
-                          if (_customSplit) ...[
+                          if (_splitMode == ExpenseSplitMode.amounts) ...[
                             const SizedBox(height: 12),
                             _CustomSplitSection(
                               members: ready.group!.members,
@@ -484,6 +521,17 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                               onChanged: () => setState(() {}),
                             ),
                           ],
+                          if (_splitMode == ExpenseSplitMode.shares) ...[
+                            const SizedBox(height: 12),
+                            _ShareSplitSection(
+                              members: ready.group!.members,
+                              shares: _shareCounts,
+                              amounts: _shareAmounts(ready.group!.members),
+                              onChanged: (userId, value) {
+                                setState(() => _shareCounts[userId] = value);
+                              },
+                            ),
+                          ],
 
                           // 8. Récurrence
                           const SizedBox(height: 16),
@@ -492,7 +540,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                             expenseDate: _expenseDate,
                             onChanged: (v) => setState(() {
                               _recurring = v;
-                              if (v) _customSplit = false;
+                              if (v) _splitMode = ExpenseSplitMode.equal;
                             }),
                           ),
                           ],

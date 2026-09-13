@@ -253,6 +253,7 @@
   "optional": "Optional",
   "split": "Split",
   "splitEqual": "Equal",
+  "splitShares": "Shares",
   "splitCustom": "Amounts",
   "scheduleRecurrence": "Schedule recurrence",
   "splitTotal": "Allocated total",

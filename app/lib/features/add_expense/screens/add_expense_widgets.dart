@@ -101,6 +101,85 @@ class _CustomSplitSection extends StatelessWidget {
   }
 }
 
+// ─── Share split (2 parts / 1 part) ───────────────────────────────────────────
+
+class _ShareSplitSection extends StatelessWidget {
+  const _ShareSplitSection({
+    required this.members,
+    required this.shares,
+    required this.amounts,
+    required this.onChanged,
+  });
+
+  final List<GroupMember> members;
+  final Map<String, int> shares;
+  final Map<String, double> amounts;
+  final void Function(String userId, int value) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return ExpressiveTonalCard(
+      variant: ExpressiveTonalVariant.neutral,
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          ...members.map((m) {
+            final count = shares[m.user.id] ?? 1;
+            final amount = amounts[m.user.id] ?? 0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  ExpressiveAvatar(
+                    label: m.user.name,
+                    size: 32,
+                    color: cs.primaryContainer,
+                    textColor: cs.onPrimaryContainer,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(m.user.name, style: tt.bodyMedium),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed:
+                        count <= 0 ? null : () => onChanged(m.user.id, count - 1),
+                    icon: const Icon(Symbols.remove_rounded, size: 20),
+                  ),
+                  Text(
+                    '$count',
+                    style: tt.titleMedium,
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed:
+                        count >= 99 ? null : () => onChanged(m.user.id, count + 1),
+                    icon: const Icon(Symbols.add_rounded, size: 20),
+                  ),
+                  SizedBox(
+                    width: 72,
+                    child: Text(
+                      '${amount.toStringAsFixed(2)} €',
+                      textAlign: TextAlign.right,
+                      style: tt.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Category rail (une seule catégorie par dépense) ─────────────────────────
 
 class _CategoryRail extends StatelessWidget {

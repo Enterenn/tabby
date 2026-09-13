@@ -773,6 +773,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get splitEqual => 'Égale';
 
   @override
+  String get splitShares => 'Parts';
+
+  @override
   String get splitCustom => 'Montants';
 
   @override

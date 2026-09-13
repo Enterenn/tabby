@@ -335,6 +335,7 @@
   "optional": "Facultatif",
   "split": "Répartition",
   "splitEqual": "Égale",
+  "splitShares": "Parts",
   "splitCustom": "Montants",
   "scheduleRecurrence": "Programmer la récurrence",
   "splitTotal": "Total réparti",

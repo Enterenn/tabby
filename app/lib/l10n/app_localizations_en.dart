@@ -766,6 +766,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splitEqual => 'Equal';
 
   @override
+  String get splitShares => 'Shares';
+
+  @override
   String get splitCustom => 'Amounts';
 
   @override
