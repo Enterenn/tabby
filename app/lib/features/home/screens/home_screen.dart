@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../design_system/design_system.dart';
+import '../../personal/widgets/personal_card.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/group_card.dart';
 import '../widgets/new_group_sheet.dart';
@@ -164,6 +165,9 @@ class _HomeViewState extends State<_HomeView> {
                               duration: 350.ms,
                               curve: Curves.easeOut,
                             ),
+                      ],
+                      PersonalCard(monthTotal: state.personalMonthTotal),
+                      if (hasGroups) ...[
                         const SizedBox(height: 4),
                         _GroupsSectionHeader(
                           key: _headerLinkKey,

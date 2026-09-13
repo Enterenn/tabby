@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tabby/data/groups_repository.dart';
+import 'package:tabby/data/personal_expenses_repository.dart';
 import 'package:tabby/features/home/cubit/home_cubit.dart';
 import 'package:tabby/shared/models/group.dart';
+import 'package:tabby/shared/models/personal_expense.dart';
 
 class _FakeGroupsRepository extends GroupsRepository {
   _FakeGroupsRepository(this.items) : super(dio: Dio());
@@ -11,6 +13,13 @@ class _FakeGroupsRepository extends GroupsRepository {
 
   @override
   Future<List<Group>> list() async => items;
+}
+
+class _FakePersonalRepository extends PersonalExpensesRepository {
+  _FakePersonalRepository() : super(dio: Dio());
+
+  @override
+  Future<List<PersonalExpense>> list({int? year, int? month}) async => const [];
 }
 
 class _FailingGroupsRepository extends GroupsRepository {
@@ -47,6 +56,7 @@ void main() {
     );
     final cubit = HomeCubit(
       groups: _FakeGroupsRepository([older, newer, pinned]),
+      personal: _FakePersonalRepository(),
     );
 
     await cubit.loadGroups();
@@ -60,7 +70,10 @@ void main() {
   });
 
   test('maps a network failure', () async {
-    final cubit = HomeCubit(groups: _FailingGroupsRepository());
+    final cubit = HomeCubit(
+      groups: _FailingGroupsRepository(),
+      personal: _FakePersonalRepository(),
+    );
     await cubit.loadGroups();
     expect(cubit.state, isA<HomeError>());
     expect((cubit.state as HomeError).message, 'errorNetwork');
@@ -68,7 +81,10 @@ void main() {
   });
 
   test('reset returns to initial', () async {
-    final cubit = HomeCubit(groups: _FakeGroupsRepository([_group('a')]));
+    final cubit = HomeCubit(
+      groups: _FakeGroupsRepository([_group('a')]),
+      personal: _FakePersonalRepository(),
+    );
     await cubit.loadGroups();
     cubit.reset();
     expect(cubit.state, isA<HomeInitial>());

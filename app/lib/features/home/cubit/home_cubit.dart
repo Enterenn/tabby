@@ -1,27 +1,54 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/api/api_failure.dart';
 import '../../../data/repositories.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/personal_expense.dart';
 
 part 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit({GroupsRepository? groups})
-      : _groups = groups ?? groupsRepository,
-        super(HomeInitial());
+  HomeCubit({
+    GroupsRepository? groups,
+    PersonalExpensesRepository? personal,
+  })  : _groups = groups ?? groupsRepository,
+        _personal = personal ?? personalExpensesRepository,
+        super(HomeInitial()) {
+    _personalSub = _personal.changes.listen((_) {
+      if (!isClosed && state is HomeLoaded) loadGroups(silent: true);
+    });
+  }
 
   final GroupsRepository _groups;
+  final PersonalExpensesRepository _personal;
+  StreamSubscription<void>? _personalSub;
 
   void reset() {
     if (!isClosed) emit(HomeInitial());
   }
 
-  Future<void> loadGroups() async {
-    emit(HomeLoading());
+  @override
+  Future<void> close() {
+    _personalSub?.cancel();
+    return super.close();
+  }
+
+  Future<void> loadGroups({bool silent = false}) async {
+    if (!silent) emit(HomeLoading());
     try {
-      final groups = await _groups.list()..sort(_compareGroups);
-      if (!isClosed) emit(HomeLoaded(groups));
+      final groupsFuture = _groups.list();
+      final personalFuture = () async {
+        try {
+          return await _personal.list();
+        } catch (_) {
+          return const <PersonalExpense>[];
+        }
+      }();
+      final groups = await groupsFuture..sort(_compareGroups);
+      final personal = await personalFuture;
+      if (!isClosed) emit(HomeLoaded(groups, personalExpenses: personal));
     } catch (e) {
       if (!isClosed) emit(HomeError(ApiFailure.from(e).message));
     }
