@@ -37,7 +37,7 @@ dependencies:
   go_router: ^18.0.1
   dio: ^5.11.1
   equatable: ^2.1.0
-  flutter_secure_storage: ^11.1.0
+  flutter_secure_storage: ^11.1.1
   material_symbols_icons: ^4.2960.0
   flutter_svg: ^2.3.0
   mobile_scanner: ^7.4.1
@@ -45,8 +45,8 @@ dependencies:
   qr: ^3.0.2
   intl: ^0.20.2
   connectivity_plus: ^7.3.1
-  firebase_core: ^3.14.0
-  firebase_messaging: ^15.2.5
+  firebase_core: ^4.14.0
+  firebase_messaging: ^16.6.0
   flutter_animate: ^4.5.2
   animations: ^3.0.0
   material_color_utilities: ^0.13.0
