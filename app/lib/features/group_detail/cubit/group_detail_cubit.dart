@@ -126,6 +126,24 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
     }
   }
 
+  Future<String?> confirmExpense(String expenseId) async {
+    final prev = state;
+    if (prev is! GroupDetailLoaded) return null;
+    try {
+      final updated = await _expenses.confirm(
+        groupId: _groupId,
+        expenseId: expenseId,
+      );
+      final expenses =
+          prev.expenses.map((e) => e.id == expenseId ? updated : e).toList();
+      final balances = await _groups.balances(_groupId);
+      if (!isClosed) emit(prev.copyWith(expenses: expenses, balances: balances));
+      return null;
+    } catch (e) {
+      return ApiFailure.from(e).message;
+    }
+  }
+
   Future<String?> updateExpense({
     required String expenseId,
     String? name,

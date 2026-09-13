@@ -110,6 +110,7 @@ class ExpenseResponse(BaseModel):
     paid_by_name: str
     expense_date: date
     created_at: datetime
+    status: str = "confirmed"
     splits: list[ExpenseSplitResponse] = []
 
     model_config = {"from_attributes": True}

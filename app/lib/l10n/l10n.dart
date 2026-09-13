@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/auth/password_policy.dart';
 import '../shared/models/category.dart';
+import '../shared/models/expense.dart';
 import 'app_localizations.dart';
 
 export 'app_localizations.dart';
@@ -13,6 +14,8 @@ extension TabbyL10n on BuildContext {
 
   /// Nom affiché : traduit pour les catégories par défaut, brut pour les custom.
   String categoryName(Category category) => category.localizedName(l10n);
+
+  String expenseName(Expense expense) => expense.localizedName(l10n);
 }
 
 extension CategoryL10n on Category {
@@ -27,6 +30,7 @@ extension CategoryL10n on Category {
       'Abonnements' => l10n.defaultCategorySubscriptions,
       'Santé' => l10n.defaultCategoryHealth,
       'Autre' => l10n.defaultCategoryOther,
+      'Remboursement' => l10n.defaultCategoryRepayment,
       _ => switch (icon) {
           'home' => l10n.defaultCategoryHousing,
           'shopping_cart' => l10n.defaultCategoryGroceries,
@@ -36,9 +40,20 @@ extension CategoryL10n on Category {
           'subscriptions' => l10n.defaultCategorySubscriptions,
           'local_hospital' => l10n.defaultCategoryHealth,
           'category' => l10n.defaultCategoryOther,
+          'payments' => l10n.defaultCategoryRepayment,
           _ => name,
         },
     };
+  }
+}
+
+extension ExpenseNameL10n on Expense {
+  String localizedName(AppLocalizations l10n) {
+    if (name == 'Remboursement' ||
+        (category.isDefault && category.name == 'Remboursement')) {
+      return l10n.defaultCategoryRepayment;
+    }
+    return name;
   }
 }
 
@@ -62,6 +77,9 @@ String localizeApiError(AppLocalizations l10n, String? raw) {
     'errorUnauthorized' => l10n.errorUnauthorized,
     'errorForbidden' => l10n.errorForbidden,
     'errorConflict' => l10n.errorConflict,
+    'A repayment is already waiting for confirmation' =>
+      l10n.errorSettlePending,
+    'Only the reimbursed member can confirm' => l10n.errorForbidden,
     'errorValidation' => l10n.errorValidation,
     'Invalid email or password' => l10n.errorInvalidCredentials,
     'Email already registered' => l10n.errorEmailTaken,

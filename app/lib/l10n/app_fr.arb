@@ -125,6 +125,11 @@
     }
   },
   "settleSaved": "Remboursement enregistré ✓",
+  "settlePending": "En attente de confirmation",
+  "repaymentPending": "En attente",
+  "confirmRepayment": "Confirmer le remboursement",
+  "repaymentConfirmed": "Remboursement confirmé ✓",
+  "errorSettlePending": "Un remboursement est déjà en attente de confirmation.",
   "settled": "Soldé",
   "joinedOn": "Rejoint le {date}",
   "@joinedOn": {
@@ -368,6 +373,7 @@
   "defaultCategorySubscriptions": "Abonnements",
   "defaultCategoryHealth": "Santé",
   "defaultCategoryOther": "Autre",
+  "defaultCategoryRepayment": "Remboursement",
   "invalid": "Invalide",
   "required": "Requis",
 

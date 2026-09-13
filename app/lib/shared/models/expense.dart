@@ -16,6 +16,8 @@ class ExpenseSplit extends Equatable {
   List<Object?> get props => [userId, amount];
 }
 
+enum ExpenseStatus { confirmed, pending }
+
 class Expense extends Equatable {
   const Expense({
     required this.id,
@@ -27,6 +29,7 @@ class Expense extends Equatable {
     required this.expenseDate,
     required this.createdAt,
     required this.splits,
+    this.status = ExpenseStatus.confirmed,
   });
 
   final String id;
@@ -38,6 +41,13 @@ class Expense extends Equatable {
   final DateTime expenseDate;
   final DateTime createdAt;
   final List<ExpenseSplit> splits;
+  final ExpenseStatus status;
+
+  bool get isPending => status == ExpenseStatus.pending;
+  bool get isConfirmed => !isPending;
+
+  bool canConfirm(String userId) =>
+      isPending && splits.any((s) => s.userId == userId);
 
   factory Expense.fromJson(Map<String, dynamic> json) => Expense(
         id: json['id'] as String,
@@ -48,6 +58,9 @@ class Expense extends Equatable {
         paidByName: json['paid_by_name'] as String,
         expenseDate: DateTime.parse(json['expense_date'] as String),
         createdAt: DateTime.parse(json['created_at'] as String),
+        status: json['status'] == 'pending'
+            ? ExpenseStatus.pending
+            : ExpenseStatus.confirmed,
         splits: (json['splits'] as List)
             .map((s) => ExpenseSplit.fromJson(s as Map<String, dynamic>))
             .toList(),
@@ -62,5 +75,5 @@ class Expense extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, name, amount, category, paidBy, expenseDate, createdAt];
+      [id, name, amount, category, paidBy, expenseDate, createdAt, status];
 }

@@ -14,7 +14,16 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, require_group_member, require_group_owner
 from app.core.rate_limit import limiter
 from app.core.uploads import avatar_public_url
-from app.models.models import Expense, ExpenseSplit, Group, GroupInvite, GroupMember, User
+from app.core.fcm import send_settle_request_notification
+from app.models.models import (
+    DeviceToken,
+    Expense,
+    ExpenseSplit,
+    Group,
+    GroupInvite,
+    GroupMember,
+    User,
+)
 from app.schemas.group import (
     BalanceEntry,
     GroupCreate,
@@ -39,19 +48,27 @@ def _invite_code() -> str:
     return "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(8))
 
 
+def _confirmed(expenses: list[Expense]) -> list[Expense]:
+    return [e for e in expenses if e.status != "pending"]
+
+
+def _to_records(expenses: list[Expense]) -> list[ExpenseRecord]:
+    return [
+        ExpenseRecord(
+            paid_by=str(e.paid_by),
+            splits=[(str(s.user_id), Decimal(str(s.amount))) for s in e.splits],
+        )
+        for e in _confirmed(expenses)
+    ]
+
+
 def _group_response(
     group: Group,
     members: list[GroupMember],
     expenses: list[Expense],
     current_user_id: uuid.UUID,
 ) -> GroupResponse:
-    records = [
-        ExpenseRecord(
-            paid_by=str(e.paid_by),
-            splits=[(str(s.user_id), Decimal(str(s.amount))) for s in e.splits],
-        )
-        for e in expenses
-    ]
+    records = _to_records(expenses)
     debts = compute_balances(records)
     balance = user_balance(str(current_user_id), debts)
     membership = next((m for m in members if m.user_id == current_user_id), None)
@@ -292,13 +309,7 @@ async def get_group_balances(
     members = members_result.scalars().all()
     name_map = {str(m.user.id): m.user.name for m in members}
 
-    records = [
-        ExpenseRecord(
-            paid_by=str(e.paid_by),
-            splits=[(str(s.user_id), Decimal(str(s.amount))) for s in e.splits],
-        )
-        for e in expenses
-    ]
+    records = _to_records(expenses)
     debts = compute_balances(records)
 
     return [
@@ -320,12 +331,14 @@ async def settle_debt(
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
-    """Enregistre un remboursement entre deux membres en créant une dépense spéciale."""
+    """Crée un remboursement. En attente si c'est le débiteur qui le déclare."""
     from app.models.models import Category
 
-    # Chercher/créer la catégorie "Remboursement"
     cat_result = await db.execute(
-        select(Category).where(Category.name == "Remboursement")
+        select(Category).where(
+            Category.name == "Remboursement",
+            Category.is_default.is_(True),
+        )
     )
     category = cat_result.scalar_one_or_none()
     if category is None:
@@ -367,6 +380,25 @@ async def settle_debt(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Amount must be greater than zero",
         )
+
+    pending = await db.execute(
+        select(Expense)
+        .join(ExpenseSplit)
+        .where(
+            Expense.group_id == group_id,
+            Expense.status == "pending",
+            Expense.paid_by == from_user_id,
+            ExpenseSplit.user_id == to_user_id,
+        )
+    )
+    if pending.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A repayment is already waiting for confirmation",
+        )
+
+    # Le créancier qui déclare le settle le confirme tout de suite.
+    status_value = "confirmed" if current_user.id == to_user_id else "pending"
     expense = Expense(
         id=uuid.uuid4(),
         group_id=group_id,
@@ -375,11 +407,11 @@ async def settle_debt(
         name="Remboursement",
         amount=amount,
         expense_date=datetime.now(timezone.utc).date(),
+        status=status_value,
     )
     db.add(expense)
     await db.flush()
 
-    # Split : 100% à to_user (celui qui est remboursé)
     db.add(ExpenseSplit(
         id=uuid.uuid4(),
         expense_id=expense.id,
@@ -387,7 +419,27 @@ async def settle_debt(
         amount=amount,
     ))
     await db.flush()
-    return {"ok": True}
+
+    if status_value == "pending":
+        try:
+            group = await db.get(Group, group_id)
+            tokens_result = await db.execute(
+                select(DeviceToken.token).where(DeviceToken.user_id == to_user_id)
+            )
+            tokens = [t for (t,) in tokens_result.all()]
+            if group and tokens:
+                send_settle_request_notification(
+                    tokens=tokens,
+                    group_name=group.name,
+                    amount=float(amount),
+                    group_id=str(group_id),
+                    payer_name=current_user.name,
+                )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).error("[FCM] settle notification error: %s", exc)
+
+    return {"ok": True, "status": status_value}
 
 
 @router.post("/{group_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
@@ -403,13 +455,7 @@ async def leave_group(
         .options(selectinload(Expense.splits))
     )
     expenses = exp_result.scalars().all()
-    records = [
-        ExpenseRecord(
-            paid_by=str(e.paid_by),
-            splits=[(str(s.user_id), Decimal(str(s.amount))) for s in e.splits],
-        )
-        for e in expenses
-    ]
+    records = _to_records(expenses)
     debts = compute_balances(records)
     balance = user_balance(str(current_user.id), debts)
     if abs(balance) > 0.01:

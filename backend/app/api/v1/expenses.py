@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import ensure_can_manage_paid, get_current_user, require_group_member
-from app.core.fcm import send_expense_notification
+from app.core.fcm import send_expense_notification, send_settle_confirmed_notification
 from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember, User
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, ExpenseUpdate, CategoryResponse, SplitItem
 
@@ -32,6 +32,7 @@ def _to_response(expense: Expense) -> ExpenseResponse:
         paid_by_name=expense.paid_by_user.name,
         expense_date=expense.expense_date,
         created_at=expense.created_at,
+        status=expense.status,
         splits=[
             ExpenseSplitResponse(user_id=str(s.user_id), amount=float(s.amount))
             for s in expense.splits
@@ -196,6 +197,11 @@ async def update_expense(
     expense = expense.scalar_one_or_none()
     if expense is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
+    if expense.status == "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot edit a repayment waiting for confirmation",
+        )
     await ensure_can_manage_paid(db, group_id, current_user, expense.paid_by)
 
     if body.name is not None:
@@ -238,6 +244,63 @@ async def update_expense(
     return _to_response(result.scalar_one())
 
 
+@router.post(
+    "/{group_id}/expenses/{expense_id}/confirm",
+    response_model=ExpenseResponse,
+)
+async def confirm_expense(
+    group_id: uuid.UUID,
+    expense_id: uuid.UUID,
+    current_user: User = Depends(require_group_member),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Expense)
+        .where(Expense.id == expense_id, Expense.group_id == group_id)
+        .options(
+            selectinload(Expense.category),
+            selectinload(Expense.paid_by_user),
+            selectinload(Expense.splits),
+        )
+    )
+    expense = result.scalar_one_or_none()
+    if expense is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
+    if expense.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This expense does not wait for confirmation",
+        )
+    recipient_ids = {s.user_id for s in expense.splits}
+    if current_user.id not in recipient_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the reimbursed member can confirm",
+        )
+    expense.status = "confirmed"
+    await db.flush()
+
+    try:
+        group = await db.get(Group, group_id)
+        tokens_result = await db.execute(
+            select(DeviceToken.token).where(DeviceToken.user_id == expense.paid_by)
+        )
+        tokens = [t for (t,) in tokens_result.all()]
+        if group and tokens:
+            send_settle_confirmed_notification(
+                tokens=tokens,
+                group_name=group.name,
+                amount=float(expense.amount),
+                group_id=str(group_id),
+                confirmer_name=current_user.name,
+            )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("[FCM] confirm notification error: %s", exc)
+
+    return _to_response(expense)
+
+
 @router.delete(
     "/{group_id}/expenses/{expense_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -248,8 +311,18 @@ async def delete_expense(
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
-    expense = await db.get(Expense, expense_id)
-    if expense is None or expense.group_id != group_id:
+    result = await db.execute(
+        select(Expense)
+        .where(Expense.id == expense_id, Expense.group_id == group_id)
+        .options(selectinload(Expense.splits))
+    )
+    expense = result.scalar_one_or_none()
+    if expense is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
-    await ensure_can_manage_paid(db, group_id, current_user, expense.paid_by)
+    recipient_ids = {s.user_id for s in expense.splits}
+    can_reject_pending = (
+        expense.status == "pending" and current_user.id in recipient_ids
+    )
+    if not can_reject_pending:
+        await ensure_can_manage_paid(db, group_id, current_user, expense.paid_by)
     await db.delete(expense)

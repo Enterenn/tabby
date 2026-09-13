@@ -32,6 +32,7 @@ async def user_share_by_category(
             ExpenseSplit.user_id == user_id,
             extract("year", Expense.expense_date) == year,
             extract("month", Expense.expense_date) == month,
+            Expense.status != "pending",
         )
         .group_by(Expense.category_id)
         .order_by(func.sum(ExpenseSplit.amount).desc())
@@ -66,6 +67,7 @@ async def user_share_for_pairs(
             ExpenseSplit.user_id == user_id,
             extract("year", Expense.expense_date) == year,
             extract("month", Expense.expense_date) == month,
+            Expense.status != "pending",
         )
         .group_by(Expense.group_id, Expense.category_id)
     )

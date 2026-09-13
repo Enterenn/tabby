@@ -734,6 +734,36 @@ abstract class AppLocalizations {
   /// **'Remboursement enregistré ✓'**
   String get settleSaved;
 
+  /// No description provided for @settlePending.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente de confirmation'**
+  String get settlePending;
+
+  /// No description provided for @repaymentPending.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente'**
+  String get repaymentPending;
+
+  /// No description provided for @confirmRepayment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmer le remboursement'**
+  String get confirmRepayment;
+
+  /// No description provided for @repaymentConfirmed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Remboursement confirmé ✓'**
+  String get repaymentConfirmed;
+
+  /// No description provided for @errorSettlePending.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un remboursement est déjà en attente de confirmation.'**
+  String get errorSettlePending;
+
   /// No description provided for @settled.
   ///
   /// In fr, this message translates to:
@@ -1645,6 +1675,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Autre'**
   String get defaultCategoryOther;
+
+  /// No description provided for @defaultCategoryRepayment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Remboursement'**
+  String get defaultCategoryRepayment;
 
   /// No description provided for @invalid.
   ///

@@ -97,9 +97,14 @@ class _BalanceTile extends StatelessWidget {
           amount: entry.amount,
         );
     if (!context.mounted) return;
+    final waiting = err == null && entry.fromUserId == currentUserId;
     showTabbySnack(
       context,
-      err != null ? context.l10nError(err) : context.l10n.settleSaved,
+      err != null
+          ? context.l10nError(err)
+          : waiting
+              ? context.l10n.settlePending
+              : context.l10n.settleSaved,
     );
   }
 }
@@ -390,113 +395,161 @@ class _ExpenseTile extends StatelessWidget {
       paidBy: expense.paidBy,
     );
 
+    final canConfirm = expense.canConfirm(currentUserId);
+
     return InkWell(
-      onLongPress: canManage ? () => _showExpenseActions(context) : null,
+      onLongPress: canManage || canConfirm
+          ? () => _showExpenseActions(context)
+          : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TabbyCategoryGlyph(
-              icon: expense.category.flutterIcon,
-              background: catColor,
-              foreground: onCat,
-              size: 40,
-              iconSize: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Opacity(
+              opacity: expense.isPending ? 0.48 : 1,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  TabbyCategoryGlyph(
+                    icon: expense.category.flutterIcon,
+                    background: catColor,
+                    foreground: onCat,
+                    size: 40,
+                    iconSize: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              context.expenseName(expense),
+                              style: tt.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
+                              ),
+                            ),
+                            ExpressiveBadge(
+                              label: context.categoryName(expense.category),
+                              color: catColor,
+                              textColor: onCat,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              labelStyle: tt.labelSmall?.copyWith(
+                                color: onCat,
+                                fontWeight: FontWeight.w600,
+                                height: 1.1,
+                              ),
+                            ),
+                            if (expense.isPending)
+                              ExpressiveBadge(
+                                label: context.l10n.repaymentPending,
+                                color: cs.surfaceContainerHighest,
+                                textColor: cs.onSurfaceVariant,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                labelStyle: tt.labelSmall?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.1,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          metaLine,
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        expense.name,
-                        style: tt.bodyLarge?.copyWith(
+                        '${expense.amount.toStringAsFixed(2)} €',
+                        style: tt.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          height: 1.2,
+                          color: cs.onSurface,
                         ),
                       ),
-                      ExpressiveBadge(
-                        label: context.categoryName(expense.category),
-                        color: catColor,
-                        textColor: onCat,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                      if (currentUserId.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          context.l10n.yourShareAmount(
+                            expense.shareFor(currentUserId).toStringAsFixed(2),
+                          ),
+                          style: tt.labelSmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            height: 1.2,
+                          ),
                         ),
-                        labelStyle: tt.labelSmall?.copyWith(
-                          color: onCat,
-                          fontWeight: FontWeight.w600,
-                          height: 1.1,
-                        ),
-                      ),
+                      ],
                     ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    metaLine,
-                    style: tt.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      height: 1.25,
-                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${expense.amount.toStringAsFixed(2)} €',
-                  style: tt.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
-                  ),
+            if (canConfirm) ...[
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.tonal(
+                  onPressed: () => _confirmRepayment(context),
+                  child: Text(context.l10n.confirmRepayment),
                 ),
-                if (currentUserId.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    context.l10n.yourShareAmount(
-                      expense.shareFor(currentUserId).toStringAsFixed(2),
-                    ),
-                    style: tt.labelSmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                      height: 1.2,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
+  Future<void> _confirmRepayment(BuildContext context) async {
+    final err = await context.read<GroupDetailCubit>().confirmExpense(expense.id);
+    if (!context.mounted) return;
+    showTabbySnack(
+      context,
+      err != null ? context.l10nError(err) : context.l10n.repaymentConfirmed,
+    );
+  }
+
   void _showExpenseActions(BuildContext context) {
     final cubit = context.read<GroupDetailCubit>();
     final state = cubit.state as GroupDetailLoaded;
+    final title = context.expenseName(expense);
 
     showTabbyActionSheet(
       context,
       actions: [
-        TabbyActionSheetItem(
-          icon: Symbols.edit_rounded,
-          label: context.l10n.editExpense,
-          subtitle: expense.name,
-          onTap: () => _showEditDialog(context, state, cubit),
-        ),
-        const TabbyActionSheetItem.divider(),
+        if (!expense.isPending)
+          TabbyActionSheetItem(
+            icon: Symbols.edit_rounded,
+            label: context.l10n.editExpense,
+            subtitle: title,
+            onTap: () => _showEditDialog(context, state, cubit),
+          ),
+        if (!expense.isPending) const TabbyActionSheetItem.divider(),
         TabbyActionSheetItem(
           icon: Symbols.delete_rounded,
           label: context.l10n.delete,
-          subtitle: expense.name,
+          subtitle: title,
           danger: true,
           onTap: () async {
             final err = await cubit.deleteExpense(expense.id);
@@ -536,44 +589,81 @@ class _TotalHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+    final confirmed = expenses.where((e) => e.isConfirmed);
+    final total = confirmed.fold<double>(0, (sum, e) => sum + e.amount);
     final myShare = currentUserId.isEmpty
         ? 0.0
-        : expenses.fold<double>(0, (sum, e) => sum + e.shareFor(currentUserId));
+        : confirmed.fold<double>(0, (sum, e) => sum + e.shareFor(currentUserId));
+
+    final yourShare = formatMoney(context, myShare);
+    final groupTotal = formatMoney(context, total);
+    const gap = 16.0;
 
     return ExpressiveTonalCard(
       variant: ExpressiveTonalVariant.coral,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final figureStyle = _heroAmountStyle(context);
+          final sideBySide = _measureText(context, yourShare, figureStyle) +
+                  _measureText(context, groupTotal, figureStyle) +
+                  gap <=
+              constraints.maxWidth;
+          if (sideBySide) {
+            return Row(
+              children: [
+                Expanded(
+                  child: _CostColumn(
+                    label: context.l10n.yourShare,
+                    value: yourShare,
+                  ),
+                ),
+                const SizedBox(width: gap),
+                Expanded(
+                  child: _CostColumn(
+                    label: context.l10n.totalExpenses,
+                    value: groupTotal,
+                    alignEnd: true,
+                  ),
+                ),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _CostColumn(
-                  label: context.l10n.yourShare,
-                  value: formatMoney(context, myShare),
-                ),
+              _CostColumn(
+                label: context.l10n.yourShare,
+                value: yourShare,
               ),
-              Expanded(
-                child: _CostColumn(
-                  label: context.l10n.totalExpenses,
-                  value: formatMoney(context, total),
-                  alignEnd: true,
-                ),
+              const SizedBox(height: 12),
+              _CostColumn(
+                label: context.l10n.totalExpenses,
+                value: groupTotal,
               ),
             ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            context.l10n.expenseCount(expenses.length),
-            style: tt.bodyMedium,
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+}
+
+TextStyle _heroAmountStyle(BuildContext context) {
+  final base = context.tabbyType.figureMedium;
+  return base.copyWith(
+    fontSize: 28,
+    height: 32 / 28,
+  );
+}
+
+double _measureText(BuildContext context, String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    maxLines: 1,
+  )..layout();
+  return painter.width;
 }
 
 class _CostColumn extends StatelessWidget {
@@ -596,18 +686,26 @@ class _CostColumn extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: tt.labelMedium?.copyWith(
-            letterSpacing: 1.4,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+          style: tt.labelSmall?.copyWith(
+            fontSize: 10,
+            letterSpacing: 1.0,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 8),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-          child: Text(
-            value,
-            style: context.tabbyType.figureMedium,
+        SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: _heroAmountStyle(context),
+            ),
           ),
         ),
       ],

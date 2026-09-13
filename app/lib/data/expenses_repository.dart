@@ -60,6 +60,16 @@ class ExpensesRepository {
     return Expense.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<Expense> confirm({
+    required String groupId,
+    required String expenseId,
+  }) async {
+    final response = await _dio.post(
+      '/groups/$groupId/expenses/$expenseId/confirm',
+    );
+    return Expense.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> delete({required String groupId, required String expenseId}) {
     return _dio.delete('/groups/$groupId/expenses/$expenseId');
   }

@@ -159,6 +159,13 @@ class Expense(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     expense_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(
+        Text,
+        CheckConstraint("status IN ('confirmed', 'pending')", name="ck_expense_status"),
+        nullable=False,
+        default="confirmed",
+        server_default="confirmed",
+    )
     recurring_source_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("recurring_expense.id"), nullable=True
     )

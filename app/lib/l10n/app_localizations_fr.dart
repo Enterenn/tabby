@@ -350,6 +350,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settleSaved => 'Remboursement enregistré ✓';
 
   @override
+  String get settlePending => 'En attente de confirmation';
+
+  @override
+  String get repaymentPending => 'En attente';
+
+  @override
+  String get confirmRepayment => 'Confirmer le remboursement';
+
+  @override
+  String get repaymentConfirmed => 'Remboursement confirmé ✓';
+
+  @override
+  String get errorSettlePending =>
+      'Un remboursement est déjà en attente de confirmation.';
+
+  @override
   String get settled => 'Soldé';
 
   @override
@@ -857,6 +873,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get defaultCategoryOther => 'Autre';
+
+  @override
+  String get defaultCategoryRepayment => 'Remboursement';
 
   @override
   String get invalid => 'Invalide';

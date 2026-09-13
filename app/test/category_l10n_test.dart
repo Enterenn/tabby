@@ -33,6 +33,11 @@ void main() {
       'Subscriptions',
     );
     expect(_cat(name: 'Autre', isDefault: true).localizedName(en), 'Other');
+    expect(
+      _cat(name: 'Remboursement', isDefault: true, icon: 'payments')
+          .localizedName(en),
+      'Repayment',
+    );
   });
 
   test('default categories stay French in French', () {

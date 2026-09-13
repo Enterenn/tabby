@@ -53,7 +53,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
       if (isClosed) return;
       emit(AuthAuthenticated(user));
-      FcmService.instance.init();
+      await FcmService.instance.init();
     } on DioException catch (e) {
       final fail = ApiFailure.fromDio(e, fallback: 'errorNetwork');
       if (fail.isUnauthorized) {
@@ -108,7 +108,7 @@ class AuthCubit extends Cubit<AuthState> {
       _offerBiometrics = !biometricSettings.enabled && !biometricSettings.prompted;
       if (isClosed) return;
       emit(AuthAuthenticated(user));
-      FcmService.instance.init();
+      await FcmService.instance.init();
     } on DioException catch (e) {
       if (!isClosed) {
         emit(AuthError(

@@ -66,6 +66,76 @@ def send_expense_notification(
             ),
         ),
     )
+    _send_multicast(message)
+
+
+def send_settle_request_notification(
+    *,
+    tokens: Sequence[str],
+    group_name: str,
+    amount: float,
+    group_id: str,
+    payer_name: str,
+) -> None:
+    """Demande de confirmation de remboursement au créancier."""
+    if not tokens or not _init():
+        return
+    _send_multicast(
+        messaging.MulticastMessage(
+            tokens=list(tokens),
+            notification=messaging.Notification(
+                title=group_name,
+                body=(
+                    f"{payer_name} t'a envoyé un remboursement de "
+                    f"{amount:.2f} € — confirme-le"
+                ),
+            ),
+            data={"group_id": group_id},
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    sound="default",
+                    click_action="FLUTTER_NOTIFICATION_CLICK",
+                ),
+            ),
+        )
+    )
+
+
+def send_settle_confirmed_notification(
+    *,
+    tokens: Sequence[str],
+    group_name: str,
+    amount: float,
+    group_id: str,
+    confirmer_name: str,
+) -> None:
+    """Le payeur apprend que son remboursement a été confirmé."""
+    if not tokens or not _init():
+        return
+    _send_multicast(
+        messaging.MulticastMessage(
+            tokens=list(tokens),
+            notification=messaging.Notification(
+                title=group_name,
+                body=(
+                    f"{confirmer_name} a confirmé ton remboursement de "
+                    f"{amount:.2f} €"
+                ),
+            ),
+            data={"group_id": group_id},
+            android=messaging.AndroidConfig(
+                priority="high",
+                notification=messaging.AndroidNotification(
+                    sound="default",
+                    click_action="FLUTTER_NOTIFICATION_CLICK",
+                ),
+            ),
+        )
+    )
+
+
+def _send_multicast(message: messaging.MulticastMessage) -> None:
     try:
         response = messaging.send_each_for_multicast(message)
         logger.info(
