@@ -339,9 +339,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmSettle => 'Confirm repayment';
 
   @override
-  String settleBody(String from, String amount, String to) {
-    return '$from pays $amount € back to $to.';
+  String settleBody(String from, String to) {
+    return '$from pays $to back.';
   }
+
+  @override
+  String settleMaxAmount(String amount) {
+    return 'Maximum $amount';
+  }
+
+  @override
+  String get settleAmountExceeds => 'Amount cannot exceed the debt.';
 
   @override
   String get settleSaved => 'Repayment saved ✓';

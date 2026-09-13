@@ -116,14 +116,20 @@
   "inviteSomeone": "Inviter quelqu'un",
   "settle": "Régler",
   "confirmSettle": "Confirmer le remboursement",
-  "settleBody": "{from} rembourse {amount} € à {to}.",
+  "settleBody": "{from} rembourse {to}.",
   "@settleBody": {
     "placeholders": {
       "from": { "type": "String" },
-      "amount": { "type": "String" },
       "to": { "type": "String" }
     }
   },
+  "settleMaxAmount": "Maximum {amount}",
+  "@settleMaxAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "settleAmountExceeds": "Le montant ne peut pas dépasser la dette.",
   "settleSaved": "Remboursement enregistré ✓",
   "settlePending": "En attente de confirmation",
   "repaymentPending": "En attente",

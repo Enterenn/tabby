@@ -64,22 +64,15 @@ class _BalanceTile extends StatelessWidget {
   }
 
   Future<void> _confirmSettle(BuildContext context) async {
-    final ok = await showTabbyConfirm(
-      context,
-      title: context.l10n.confirmSettle,
-      body: context.l10n.settleBody(
-        entry.fromUserName,
-        entry.amount.toStringAsFixed(2),
-        entry.toUserName,
-      ),
-      cancelLabel: context.l10n.cancel,
-      confirmLabel: context.l10n.confirm,
+    final amount = await showTabbyFormDialog<double>(
+      context: context,
+      builder: (_) => _SettleDialog(entry: entry),
     );
-    if (!ok || !context.mounted) return;
+    if (amount == null || !context.mounted) return;
     final err = await context.read<GroupDetailCubit>().settle(
           fromUserId: entry.fromUserId,
           toUserId: entry.toUserId,
-          amount: entry.amount,
+          amount: amount,
         );
     if (!context.mounted) return;
     final waiting = err == null && entry.fromUserId == currentUserId;
@@ -90,6 +83,105 @@ class _BalanceTile extends StatelessWidget {
           : waiting
               ? context.l10n.settlePending
               : context.l10n.settleSaved,
+    );
+  }
+}
+
+// ─── Settle dialog ────────────────────────────────────────────────────────────
+
+class _SettleDialog extends StatefulWidget {
+  const _SettleDialog({required this.entry});
+  final BalanceEntry entry;
+
+  @override
+  State<_SettleDialog> createState() => _SettleDialogState();
+}
+
+class _SettleDialogState extends State<_SettleDialog> {
+  late final TextEditingController _amountCtrl;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountCtrl = TextEditingController(
+      text: widget.entry.amount.toStringAsFixed(2),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _amountCtrl.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _amountCtrl.text.length,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final amount = TabbyAmountField.parse(_amountCtrl.text);
+    if (amount == null || amount <= 0) {
+      setState(() => _error = context.l10n.invalidAmount);
+      return;
+    }
+    // Cap: no overpayment beyond the current debt (1 cent tolerance).
+    if (amount > widget.entry.amount + 0.005) {
+      setState(() => _error = context.l10n.settleAmountExceeds);
+      return;
+    }
+    Navigator.pop(context, amount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+    final entry = widget.entry;
+    final maxLabel = context.l10n.settleMaxAmount(
+      formatMoney(context, entry.amount),
+    );
+
+    return TabbyFormDialog(
+      title: context.l10n.confirmSettle,
+      submitLabel: context.l10n.confirm,
+      cancelLabel: context.l10n.cancel,
+      onSubmit: _submit,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.settleBody(entry.fromUserName, entry.toUserName),
+            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 16),
+          TabbyAmountField(
+            controller: _amountCtrl,
+            label: context.l10n.amount,
+            autofocus: true,
+            onChanged: (_) {
+              if (_error != null) setState(() => _error = null);
+            },
+            onFieldSubmitted: (_) => _submit(),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            maxLabel,
+            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: tt.bodySmall?.copyWith(color: cs.error),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

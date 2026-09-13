@@ -725,8 +725,20 @@ abstract class AppLocalizations {
   /// No description provided for @settleBody.
   ///
   /// In fr, this message translates to:
-  /// **'{from} rembourse {amount} € à {to}.'**
-  String settleBody(String from, String amount, String to);
+  /// **'{from} rembourse {to}.'**
+  String settleBody(String from, String to);
+
+  /// No description provided for @settleMaxAmount.
+  ///
+  /// In fr, this message translates to:
+  /// **'Maximum {amount}'**
+  String settleMaxAmount(String amount);
+
+  /// No description provided for @settleAmountExceeds.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le montant ne peut pas dépasser la dette.'**
+  String get settleAmountExceeds;
 
   /// No description provided for @settleSaved.
   ///

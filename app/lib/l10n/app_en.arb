@@ -111,7 +111,20 @@
   "inviteSomeone": "Invite someone",
   "settle": "Settle",
   "confirmSettle": "Confirm repayment",
-  "settleBody": "{from} pays {amount} € back to {to}.",
+  "settleBody": "{from} pays {to} back.",
+  "@settleBody": {
+    "placeholders": {
+      "from": { "type": "String" },
+      "to": { "type": "String" }
+    }
+  },
+  "settleMaxAmount": "Maximum {amount}",
+  "@settleMaxAmount": {
+    "placeholders": {
+      "amount": { "type": "String" }
+    }
+  },
+  "settleAmountExceeds": "Amount cannot exceed the debt.",
   "settleSaved": "Repayment saved ✓",
   "settlePending": "Waiting for confirmation",
   "repaymentPending": "Pending",
