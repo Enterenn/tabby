@@ -226,7 +226,7 @@
 
   "recurringTitle": "Dépenses récurrentes",
   "noRecurring": "Aucune dépense récurrente",
-  "noRecurringHint": "Active « Répéter chaque mois » lors de\nl'ajout d'une dépense",
+  "noRecurringHint": "Active « Répéter chaque mois » en ajoutant\nune dépense partagée ou Pour moi.",
   "deleteRecurringTitle": "Supprimer la récurrence ?",
   "deleteRecurringBody": "Les dépenses déjà créées ne sont pas supprimées.",
   "recurringMonthly": "Mensuelle",

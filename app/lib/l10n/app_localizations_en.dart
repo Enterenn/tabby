@@ -557,7 +557,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noRecurringHint =>
-      'Turn on “Repeat every month” when\nadding an expense';
+      'Turn on “Repeat every month” when adding\na shared or For me expense.';
 
   @override
   String get deleteRecurringTitle => 'Delete this recurrence?';

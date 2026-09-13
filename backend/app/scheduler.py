@@ -9,9 +9,24 @@ from sqlalchemy import extract, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import async_session_factory
-from app.models.models import Expense, ExpenseSplit, GroupMember, RecurringExpense
+from app.models.models import (
+    Expense,
+    ExpenseSplit,
+    GroupMember,
+    PersonalExpense,
+    PersonalRecurring,
+    RecurringExpense,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def period_expense_date(today: date, day_of_period: int) -> date | None:
+    """Date du mois courant, ou None si le jour n'est pas encore passé."""
+    if today.day < day_of_period:
+        return None
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    return date(today.year, today.month, min(day_of_period, last_day))
 
 
 async def generate_recurring_expenses() -> int:
@@ -38,11 +53,10 @@ async def generate_recurring_expenses() -> int:
         recurrings = result.scalars().all()
 
         for rec in recurrings:
-            # Pas encore le jour du mois
-            if today.day < rec.day_of_period:
+            expense_date = period_expense_date(today, rec.day_of_period)
+            if expense_date is None:
                 continue
 
-            # Vérifier qu'aucune dépense n'a été générée ce mois-ci
             already = await db.execute(
                 select(Expense).where(
                     Expense.recurring_source_id == rec.id,
@@ -51,14 +65,8 @@ async def generate_recurring_expenses() -> int:
                 )
             )
             if already.scalar_one_or_none() is not None:
-                continue  # déjà générée
+                continue
 
-            # Calculer la date réelle (protège les mois courts : fév n'a pas le 30)
-            last_day = calendar.monthrange(today.year, today.month)[1]
-            expense_day = min(rec.day_of_period, last_day)
-            expense_date = date(today.year, today.month, expense_day)
-
-            # Récupérer les membres du groupe
             members_result = await db.execute(
                 select(GroupMember).where(GroupMember.group_id == rec.group_id)
             )
@@ -97,6 +105,43 @@ async def generate_recurring_expenses() -> int:
             logger.info(
                 "Generated recurring expense '%s' for %s/%s (group %s)",
                 rec.name, today.year, today.month, rec.group_id,
+            )
+
+        personal_result = await db.execute(
+            select(PersonalRecurring).where(PersonalRecurring.active.is_(True))
+        )
+        for rec in personal_result.scalars().all():
+            expense_date = period_expense_date(today, rec.day_of_period)
+            if expense_date is None:
+                continue
+
+            already = await db.execute(
+                select(PersonalExpense).where(
+                    PersonalExpense.recurring_source_id == rec.id,
+                    extract("year", PersonalExpense.expense_date) == today.year,
+                    extract("month", PersonalExpense.expense_date) == today.month,
+                )
+            )
+            if already.scalar_one_or_none() is not None:
+                continue
+
+            db.add(
+                PersonalExpense(
+                    id=_uuid.uuid4(),
+                    user_id=rec.user_id,
+                    category_id=rec.category_id,
+                    name=rec.name,
+                    amount=Decimal(str(rec.amount)).quantize(
+                        Decimal("0.01"), rounding=ROUND_HALF_UP
+                    ),
+                    expense_date=expense_date,
+                    recurring_source_id=rec.id,
+                )
+            )
+            generated += 1
+            logger.info(
+                "Generated personal recurring '%s' for %s/%s (user %s)",
+                rec.name, today.year, today.month, rec.user_id,
             )
 
         await db.commit()

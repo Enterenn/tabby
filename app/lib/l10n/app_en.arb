@@ -184,7 +184,7 @@
 
   "recurringTitle": "Recurring expenses",
   "noRecurring": "No recurring expenses",
-  "noRecurringHint": "Turn on “Repeat every month” when\nadding an expense",
+  "noRecurringHint": "Turn on “Repeat every month” when adding\na shared or For me expense.",
   "deleteRecurringTitle": "Delete this recurrence?",
   "deleteRecurringBody": "Expenses already created will not be deleted.",
   "recurringMonthly": "Monthly",

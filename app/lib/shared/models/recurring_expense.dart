@@ -6,6 +6,7 @@ class RecurringExpense extends Equatable {
     required this.id,
     required this.groupId,
     required this.groupName,
+    this.isPersonal = false,
     required this.name,
     required this.amount,
     required this.category,
@@ -20,6 +21,7 @@ class RecurringExpense extends Equatable {
   final String id;
   final String groupId;
   final String groupName;
+  final bool isPersonal;
   final String name;
   final double amount;
   final Category category;
@@ -33,8 +35,9 @@ class RecurringExpense extends Equatable {
   factory RecurringExpense.fromJson(Map<String, dynamic> json) =>
       RecurringExpense(
         id: json['id'] as String,
-        groupId: json['group_id'] as String,
-        groupName: json['group_name'] as String,
+        groupId: json['group_id'] as String? ?? '',
+        groupName: json['group_name'] as String? ?? '',
+        isPersonal: json['is_personal'] as bool? ?? false,
         name: json['name'] as String,
         amount: (json['amount'] as num).toDouble(),
         category: Category.fromJson(json['category'] as Map<String, dynamic>),
@@ -63,6 +66,6 @@ class RecurringExpense extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, groupId, name, amount, active, dayOfPeriod, frequency,
+        id, groupId, name, amount, active, dayOfPeriod, frequency, isPersonal,
       ];
 }

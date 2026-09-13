@@ -10,7 +10,7 @@ from app.schemas.auth import RegisterRequest
 from app.schemas.expense import ExpenseCreate
 from app.schemas.group import GroupCreate, SettleRequest
 from app.schemas.personal import PersonalExpenseUpdate
-from app.schemas.recurring import RecurringExpenseCreate
+from app.schemas.recurring import PersonalRecurringCreate, RecurringExpenseCreate
 
 _VALID_PASSWORD = "Abcdef1!"
 
@@ -68,4 +68,24 @@ def test_recurring_amount_must_be_positive():
             category_id=uuid4(),
             paid_by=uuid4(),
             day_of_period=1,
+        )
+
+
+def test_personal_recurring_amount_must_be_positive():
+    with pytest.raises(ValidationError):
+        PersonalRecurringCreate(
+            name="Netflix",
+            amount=0,
+            category_id=uuid4(),
+            day_of_period=5,
+        )
+
+
+def test_personal_recurring_day_must_be_in_month():
+    with pytest.raises(ValidationError):
+        PersonalRecurringCreate(
+            name="Netflix",
+            amount=13,
+            category_id=uuid4(),
+            day_of_period=31,
         )

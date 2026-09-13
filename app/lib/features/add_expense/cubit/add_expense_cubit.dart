@@ -196,16 +196,26 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required double amount,
     required String categoryId,
     required DateTime expenseDate,
+    bool recurring = false,
   }) async {
     if (state is! AddExpenseReady) return false;
     emit(const AddExpenseSubmitting());
     try {
-      await personalExpensesRepository.create(
-        name: name,
-        amount: amount,
-        categoryId: categoryId,
-        expenseDate: expenseDate,
-      );
+      if (recurring) {
+        await recurringRepository.createPersonal(
+          name: name,
+          amount: amount,
+          categoryId: categoryId,
+          dayOfPeriod: expenseDate.day.clamp(1, 28),
+        );
+      } else {
+        await personalExpensesRepository.create(
+          name: name,
+          amount: amount,
+          categoryId: categoryId,
+          expenseDate: expenseDate,
+        );
+      }
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (e) {

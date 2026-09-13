@@ -32,6 +32,21 @@ class RecurringRepository {
     });
   }
 
+  Future<void> createPersonal({
+    required String name,
+    required double amount,
+    required String categoryId,
+    required int dayOfPeriod,
+  }) {
+    return _dio.post('/recurring-expenses', data: {
+      'name': name,
+      'amount': amount,
+      'category_id': categoryId,
+      'day_of_period': dayOfPeriod,
+      'frequency': 'monthly',
+    });
+  }
+
   Future<RecurringExpense> toggle({
     required String groupId,
     required String id,
@@ -41,8 +56,17 @@ class RecurringRepository {
     return RecurringExpense.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<RecurringExpense> togglePersonal(String id) async {
+    final response = await _dio.patch('/recurring-expenses/$id/toggle');
+    return RecurringExpense.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> delete({required String groupId, required String id}) {
     return _dio.delete('/groups/$groupId/recurring-expenses/$id');
+  }
+
+  Future<void> deletePersonal(String id) {
+    return _dio.delete('/recurring-expenses/$id');
   }
 }
 

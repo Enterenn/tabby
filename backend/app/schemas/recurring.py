@@ -33,8 +33,9 @@ class RecurringExpenseCreate(BaseModel):
 
 class RecurringExpenseResponse(BaseModel):
     id: str
-    group_id: str
-    group_name: str
+    group_id: str | None = None
+    group_name: str | None = None
+    is_personal: bool = False
     name: str
     amount: float
     category: CategoryResponse
@@ -46,3 +47,33 @@ class RecurringExpenseResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PersonalRecurringCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    amount: float = Field(gt=0)
+    category_id: uuid.UUID
+    day_of_period: int
+    frequency: str = "monthly"
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        name = value.strip()
+        if not name:
+            raise ValueError("Name is required")
+        return name
+
+    @field_validator("day_of_period")
+    @classmethod
+    def validate_day(cls, v: int) -> int:
+        if not 1 <= v <= 28:
+            raise ValueError("day_of_period must be between 1 and 28")
+        return v
+
+    @field_validator("frequency")
+    @classmethod
+    def validate_frequency(cls, v: str) -> str:
+        if v not in ("monthly",):
+            raise ValueError("Only 'monthly' frequency is supported")
+        return v

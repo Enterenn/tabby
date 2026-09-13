@@ -1109,7 +1109,7 @@ abstract class AppLocalizations {
   /// No description provided for @noRecurringHint.
   ///
   /// In fr, this message translates to:
-  /// **'Active « Répéter chaque mois » lors de\nl\'ajout d\'une dépense'**
+  /// **'Active « Répéter chaque mois » en ajoutant\nune dépense partagée ou Pour moi.'**
   String get noRecurringHint;
 
   /// No description provided for @deleteRecurringTitle.

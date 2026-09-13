@@ -76,11 +76,12 @@ class _RecurringView extends StatelessWidget {
                   separatorBuilder: (context, _) => const SizedBox(height: 8),
                   itemBuilder: (context, i) {
                     final item = items[i];
-                    final canManage = canManagePaidRecord(
-                      userId: tokenStorage.userId,
-                      ownerId: _ownerIdFor(context, item.groupId),
-                      paidBy: item.paidBy,
-                    );
+                    final canManage = item.isPersonal ||
+                        canManagePaidRecord(
+                          userId: tokenStorage.userId,
+                          ownerId: _ownerIdFor(context, item.groupId),
+                          paidBy: item.paidBy,
+                        );
                     return _RecurringCard(
                       item: item,
                       canManage: canManage,
@@ -170,7 +171,9 @@ class _RecurringCard extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  item.groupName,
+                  item.isPersonal
+                      ? context.l10n.scopePersonal
+                      : item.groupName,
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],

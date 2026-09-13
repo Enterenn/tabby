@@ -561,7 +561,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get noRecurringHint =>
-      'Active « Répéter chaque mois » lors de\nl\'ajout d\'une dépense';
+      'Active « Répéter chaque mois » en ajoutant\nune dépense partagée ou Pour moi.';
 
   @override
   String get deleteRecurringTitle => 'Supprimer la récurrence ?';

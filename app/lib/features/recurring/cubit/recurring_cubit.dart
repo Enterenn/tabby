@@ -50,8 +50,9 @@ class RecurringCubit extends Cubit<RecurringState> {
     final current = state;
     if (current is! RecurringLoaded) return 'errorUnexpected';
     try {
-      final updated =
-          await _recurring.toggle(groupId: item.groupId, id: item.id);
+      final updated = item.isPersonal
+          ? await _recurring.togglePersonal(item.id)
+          : await _recurring.toggle(groupId: item.groupId, id: item.id);
       if (!isClosed) {
         emit(RecurringLoaded([
           for (final existing in current.items)
@@ -68,7 +69,11 @@ class RecurringCubit extends Cubit<RecurringState> {
     final current = state;
     if (current is! RecurringLoaded) return 'errorUnexpected';
     try {
-      await _recurring.delete(groupId: item.groupId, id: item.id);
+      if (item.isPersonal) {
+        await _recurring.deletePersonal(item.id);
+      } else {
+        await _recurring.delete(groupId: item.groupId, id: item.id);
+      }
       if (!isClosed) {
         emit(RecurringLoaded(
           current.items.where((e) => e.id != item.id).toList(),

@@ -43,6 +43,9 @@ class User(Base):
     personal_expenses: Mapped[list["PersonalExpense"]] = relationship(
         back_populates="user", passive_deletes=True
     )
+    personal_recurrings: Mapped[list["PersonalRecurring"]] = relationship(
+        back_populates="user", passive_deletes=True
+    )
     personal_categories: Mapped[list["Category"]] = relationship(back_populates="user")
     budgets: Mapped[list["Budget"]] = relationship(back_populates="user", passive_deletes=True)
     device_tokens: Mapped[list["DeviceToken"]] = relationship(back_populates="user", passive_deletes=True)
@@ -136,6 +139,7 @@ class Category(Base):
     expenses: Mapped[list["Expense"]] = relationship(back_populates="category")
     recurring_expenses: Mapped[list["RecurringExpense"]] = relationship(back_populates="category")
     personal_expenses: Mapped[list["PersonalExpense"]] = relationship(back_populates="category")
+    personal_recurrings: Mapped[list["PersonalRecurring"]] = relationship(back_populates="category")
     budgets: Mapped[list["Budget"]] = relationship(back_populates="category")
 
 
@@ -217,6 +221,34 @@ class RecurringExpense(Base):
     generated_expenses: Mapped[list["Expense"]] = relationship(back_populates="recurring_source")
 
 
+class PersonalRecurring(Base):
+    __tablename__ = "personal_recurring"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    frequency: Mapped[str] = mapped_column(
+        Text,
+        CheckConstraint("frequency IN ('monthly', 'yearly')", name="ck_personal_recurring_frequency"),
+        nullable=False,
+    )
+    day_of_period: Mapped[int] = mapped_column(Integer, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="personal_recurrings")
+    category: Mapped["Category"] = relationship(back_populates="personal_recurrings")
+    generated_expenses: Mapped[list["PersonalExpense"]] = relationship(
+        back_populates="recurring_source"
+    )
+
+
 class PersonalExpense(Base):
     __tablename__ = "personal_expense"
 
@@ -230,10 +262,16 @@ class PersonalExpense(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     expense_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    recurring_source_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("personal_recurring.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="personal_expenses")
     category: Mapped["Category"] = relationship(back_populates="personal_expenses")
+    recurring_source: Mapped["PersonalRecurring | None"] = relationship(
+        back_populates="generated_expenses"
+    )
 
 
 class Budget(Base):

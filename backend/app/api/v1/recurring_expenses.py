@@ -14,11 +14,16 @@ from app.models.models import (
     Category,
     Expense,
     GroupMember,
+    PersonalRecurring,
     RecurringExpense,
     User,
 )
 from app.schemas.expense import CategoryResponse
-from app.schemas.recurring import RecurringExpenseCreate, RecurringExpenseResponse
+from app.schemas.recurring import (
+    PersonalRecurringCreate,
+    RecurringExpenseCreate,
+    RecurringExpenseResponse,
+)
 
 router = APIRouter(prefix="/groups", tags=["recurring-expenses"])
 
@@ -47,6 +52,32 @@ def _to_response(r: RecurringExpense) -> RecurringExpenseResponse:
         day_of_period=r.day_of_period,
         active=r.active,
         created_at=r.created_at,
+        is_personal=False,
+    )
+
+
+def _to_personal_response(r: PersonalRecurring) -> RecurringExpenseResponse:
+    return RecurringExpenseResponse(
+        id=str(r.id),
+        group_id=None,
+        group_name=None,
+        is_personal=True,
+        name=r.name,
+        amount=float(r.amount),
+        category=CategoryResponse(
+            id=str(r.category.id),
+            name=r.category.name,
+            icon=r.category.icon,
+            color=r.category.color,
+            is_default=r.category.is_default,
+            sort_order=r.category.sort_order,
+        ),
+        paid_by=str(r.user_id),
+        paid_by_name=r.user.name,
+        frequency=r.frequency,
+        day_of_period=r.day_of_period,
+        active=r.active,
+        created_at=r.created_at,
     )
 
 
@@ -54,6 +85,11 @@ _LOAD = [
     selectinload(RecurringExpense.group),
     selectinload(RecurringExpense.category),
     selectinload(RecurringExpense.paid_by_user),
+]
+
+_PERSONAL_LOAD = [
+    selectinload(PersonalRecurring.category),
+    selectinload(PersonalRecurring.user),
 ]
 
 
@@ -174,13 +210,105 @@ async def list_all_recurring(
     )
     group_ids = [row[0] for row in memberships.all()]
 
-    if not group_ids:
-        return []
+    group_items: list[RecurringExpenseResponse] = []
+    if group_ids:
+        result = await db.execute(
+            select(RecurringExpense)
+            .where(RecurringExpense.group_id.in_(group_ids))
+            .options(*_LOAD)
+            .order_by(RecurringExpense.active.desc(), RecurringExpense.created_at.desc())
+        )
+        group_items = [_to_response(r) for r in result.scalars().all()]
 
-    result = await db.execute(
-        select(RecurringExpense)
-        .where(RecurringExpense.group_id.in_(group_ids))
-        .options(*_LOAD)
-        .order_by(RecurringExpense.active.desc(), RecurringExpense.created_at.desc())
+    personal_result = await db.execute(
+        select(PersonalRecurring)
+        .where(PersonalRecurring.user_id == current_user.id)
+        .options(*_PERSONAL_LOAD)
+        .order_by(PersonalRecurring.active.desc(), PersonalRecurring.created_at.desc())
     )
-    return [_to_response(r) for r in result.scalars().all()]
+    personal_items = [_to_personal_response(r) for r in personal_result.scalars().all()]
+
+    return sorted(
+        group_items + personal_items,
+        key=lambda r: (r.active, r.created_at),
+        reverse=True,
+    )
+
+
+@global_router.post(
+    "",
+    response_model=RecurringExpenseResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_personal_recurring(
+    body: PersonalRecurringCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    category = await db.get(Category, body.category_id)
+    if category is None:
+        raise HTTPException(status_code=404, detail="Category not found")
+    if category.user_id is not None and category.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Category not available")
+
+    rec = PersonalRecurring(
+        id=uuid.uuid4(),
+        user_id=current_user.id,
+        category_id=category.id,
+        name=body.name,
+        amount=Decimal(str(body.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+        frequency=body.frequency,
+        day_of_period=body.day_of_period,
+        active=True,
+    )
+    db.add(rec)
+    await db.flush()
+    result = await db.execute(
+        select(PersonalRecurring)
+        .where(PersonalRecurring.id == rec.id)
+        .options(*_PERSONAL_LOAD)
+    )
+    return _to_personal_response(result.scalar_one())
+
+
+@global_router.patch(
+    "/{rec_id}/toggle",
+    response_model=RecurringExpenseResponse,
+)
+async def toggle_personal_recurring(
+    rec_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(PersonalRecurring)
+        .where(
+            PersonalRecurring.id == rec_id,
+            PersonalRecurring.user_id == current_user.id,
+        )
+        .options(*_PERSONAL_LOAD)
+    )
+    rec = result.scalar_one_or_none()
+    if rec is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    rec.active = not rec.active
+    await db.flush()
+    return _to_personal_response(rec)
+
+
+@global_router.delete("/{rec_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_personal_recurring(
+    rec_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(PersonalRecurring).where(
+            PersonalRecurring.id == rec_id,
+            PersonalRecurring.user_id == current_user.id,
+        )
+    )
+    rec = result.scalar_one_or_none()
+    if rec is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    await db.delete(rec)

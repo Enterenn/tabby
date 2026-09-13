@@ -141,6 +141,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
             amount: amount,
             categoryId: _selectedCategory!.id,
             expenseDate: _expenseDate,
+            recurring: _recurring,
           );
     } else {
       final payerId =
@@ -516,6 +517,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                 ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 16),
+                          _RecurringTile(
+                            value: _recurring,
+                            expenseDate: _expenseDate,
+                            onChanged: (v) => setState(() => _recurring = v),
                           ),
                         ],
 
