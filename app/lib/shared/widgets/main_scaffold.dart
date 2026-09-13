@@ -39,7 +39,10 @@ class MainScaffold extends StatelessWidget {
 
     return Scaffold(
       extendBody: true,
-      body: ConnectivityBanner(child: child),
+      body: Padding(
+        padding: EdgeInsets.only(bottom: context.tabBarClearance),
+        child: ConnectivityBanner(child: child),
+      ),
       bottomNavigationBar: _NavFade(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),

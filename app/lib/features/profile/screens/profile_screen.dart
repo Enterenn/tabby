@@ -26,7 +26,7 @@ class ProfileScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(context.l10n.profile)),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
               TabbyListCard(
                 padding: const EdgeInsets.all(20),

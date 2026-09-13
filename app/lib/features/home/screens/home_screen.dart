@@ -141,7 +141,7 @@ class _HomeViewState extends State<_HomeView> {
                   onRefresh: () => context.read<HomeCubit>().loadGroups(),
                   child: ListView(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
                       if (!hasGroups)
                         _HomeHeader(isEmpty: true)
@@ -199,7 +199,7 @@ class _HomeViewState extends State<_HomeView> {
                   Positioned(
                     left: 16,
                     right: 16,
-                    bottom: 100,
+                    bottom: 16,
                     child: IgnorePointer(
                       ignoring: _headerLinkVisible,
                       child: AnimatedOpacity(

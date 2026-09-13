@@ -26,6 +26,13 @@ extension TabbyThemeContext on BuildContext {
 
   TabbySemanticColors get tabbySemantic =>
       Theme.of(this).extension<TabbySemanticColors>()!;
+
+  /// Hauteur réelle de la navbar flottante, inset système compris.
+  /// Aligné sur [MainScaffold] : pad 20+16, barre 72.
+  double get tabBarClearance {
+    const chrome = 20.0 + 72.0 + 16.0;
+    return chrome + MediaQuery.viewPaddingOf(this).bottom;
+  }
 }
 
 // ─── Shapes M3 Expressive ─────────────────────────────────────────────────────
