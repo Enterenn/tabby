@@ -20,6 +20,7 @@ part 'add_expense_widgets.dart';
 Future<bool?> showAddExpenseSheet(
   BuildContext context, {
   String? groupId,
+  bool forMe = false,
 }) {
   final lock = groupId != null && groupId.isNotEmpty;
   final home = context.read<HomeCubit>();
@@ -29,7 +30,10 @@ Future<bool?> showAddExpenseSheet(
     builder: (_) => BlocProvider(
       create: (_) => AddExpenseCubit()
         ..load(groupId: groupId, lockGroup: lock),
-      child: _AddExpenseSheet(onCreated: home.loadGroups),
+      child: _AddExpenseSheet(
+        onCreated: home.loadGroups,
+        initialForMe: forMe,
+      ),
     ),
   );
 }
@@ -37,9 +41,13 @@ Future<bool?> showAddExpenseSheet(
 // ─── Sheet (stateful: owns all form state) ────────────────────────────────────
 
 class _AddExpenseSheet extends StatefulWidget {
-  const _AddExpenseSheet({required this.onCreated});
+  const _AddExpenseSheet({
+    required this.onCreated,
+    this.initialForMe = false,
+  });
 
   final VoidCallback onCreated;
+  final bool initialForMe;
 
   @override
   State<_AddExpenseSheet> createState() => _AddExpenseSheetState();
@@ -55,10 +63,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   DateTime _expenseDate = DateTime.now();
   ExpenseSplitMode _splitMode = ExpenseSplitMode.equal;
   bool _recurring = false;
-  bool _forMe = false;
+  late bool _forMe = widget.initialForMe;
 
   final Map<String, TextEditingController> _splitCtrls = {};
   final Map<String, int> _shareCounts = {};
+  final Set<String> _includedIds = {};
+  String? _splitGroupId;
 
   AddExpenseReady? _lastReady;
 
@@ -72,31 +82,80 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     super.dispose();
   }
 
-  void _initSplitCtrls(List<GroupMember> members) {
-    final amount = double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0;
-    final n = members.length;
-    final perPerson = n > 0 ? (amount / n) : 0.0;
-
-    for (final m in members) {
-      if (!_splitCtrls.containsKey(m.user.id)) {
-        _splitCtrls[m.user.id] = TextEditingController();
-      }
-      _splitCtrls[m.user.id]!.text = perPerson.toStringAsFixed(2);
+  void _syncSplitMembers(List<GroupMember> members, String groupId) {
+    if (_splitGroupId != groupId) {
+      _splitGroupId = groupId;
+      _includedIds
+        ..clear()
+        ..addAll(members.map((m) => m.user.id));
     }
-  }
-
-  void _initShares(List<GroupMember> members) {
     for (final m in members) {
-      _shareCounts.putIfAbsent(m.user.id, () => 1);
-    }
-  }
-
-  Map<String, double> _shareAmounts(List<GroupMember> members) =>
-      amountsFromShares(
-        total: _expenseAmount,
-        userIds: members.map((m) => m.user.id).toList(),
-        shares: _shareCounts,
+      _splitCtrls.putIfAbsent(m.user.id, () => TextEditingController());
+      _shareCounts.putIfAbsent(
+        m.user.id,
+        () => _includedIds.contains(m.user.id) ? 1 : 0,
       );
+    }
+  }
+
+  void _fillEqualAmounts(List<GroupMember> members) {
+    final amounts = _previewAmounts(members);
+    for (final m in members) {
+      final ctrl = _splitCtrls.putIfAbsent(
+        m.user.id,
+        () => TextEditingController(),
+      );
+      ctrl.text = (amounts[m.user.id] ?? 0).toStringAsFixed(2);
+    }
+  }
+
+  void _setIncluded(String userId, bool included) {
+    if (included) {
+      _includedIds.add(userId);
+      if ((_shareCounts[userId] ?? 0) <= 0) _shareCounts[userId] = 1;
+    } else {
+      _includedIds.remove(userId);
+      _shareCounts[userId] = 0;
+      _splitCtrls[userId]?.text = '0.00';
+    }
+  }
+
+  void _selectAll(List<GroupMember> members, {required bool included}) {
+    for (final m in members) {
+      _setIncluded(m.user.id, included);
+    }
+    if (_splitMode == ExpenseSplitMode.amounts) {
+      if (included) {
+        _fillEqualAmounts(members);
+      } else {
+        for (final m in members) {
+          _splitCtrls[m.user.id]?.text = '0.00';
+        }
+      }
+    }
+  }
+
+  Map<String, double> _previewAmounts(List<GroupMember> members) {
+    if (_splitMode == ExpenseSplitMode.amounts) {
+      return {
+        for (final m in members)
+          m.user.id: double.tryParse(
+                _splitCtrls[m.user.id]?.text.replaceAll(',', '.') ?? '',
+              ) ??
+              0,
+      };
+    }
+    return amountsFromShares(
+      total: _expenseAmount,
+      userIds: members.map((m) => m.user.id).toList(),
+      shares: {
+        for (final m in members)
+          m.user.id: _splitMode == ExpenseSplitMode.shares
+              ? (_shareCounts[m.user.id] ?? 0)
+              : (_includedIds.contains(m.user.id) ? 1 : 0),
+      },
+    );
+  }
 
   int get _shareSum => _shareCounts.values.fold(0, (sum, n) => sum + n);
 
@@ -125,6 +184,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       _selectedCategory = null;
       _selectedPayerId = null;
       _splitMode = ExpenseSplitMode.equal;
+      _splitGroupId = null;
     });
     await context.read<AddExpenseCubit>().selectGroup(id);
   }
@@ -143,6 +203,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     final amount = TabbyAmountField.parse(_amountCtrl.text);
     if (amount == null || amount <= 0) {
       showTabbySnack(context, context.l10n.invalidAmount);
+      return;
+    }
+    if (!_forMe &&
+        !_recurring &&
+        _includedIds.isEmpty) {
+      showTabbySnack(context, context.l10n.splitNeedSomeone);
       return;
     }
     if (_splitMode == ExpenseSplitMode.amounts &&
@@ -173,16 +239,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
           _selectedPayerId ?? ready!.group!.members.first.user.id;
 
       List<Map<String, dynamic>>? splits;
-      if (_splitMode == ExpenseSplitMode.amounts) {
-        splits = _splitCtrls.entries.map((e) {
-          return {
-            'user_id': e.key,
-            'amount': double.tryParse(e.value.text.replaceAll(',', '.')) ?? 0.0,
-          };
-        }).toList();
-      } else if (_splitMode == ExpenseSplitMode.shares) {
-        final amounts = _shareAmounts(ready!.group!.members);
+      if (!_recurring) {
+        final amounts = _previewAmounts(ready!.group!.members);
         splits = amounts.entries
+            .where((e) => e.value > 0)
             .map((e) => {'user_id': e.key, 'amount': e.value})
             .toList();
       }
@@ -210,7 +270,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
     final type = context.tabbyType;
-    final shapes = context.tabbyShapes;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -254,6 +313,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                 ready.group!.members.isNotEmpty) {
               _selectedPayerId = ready.group!.members.first.user.id;
             }
+            if (ready.group != null) {
+              _syncSplitMembers(ready.group!.members, ready.group!.id);
+            }
 
             return Form(
               key: _formKey,
@@ -268,7 +330,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       children: [
-                        if (!ready.groupLocked) ...[
+                        if (!ready.groupLocked && !widget.initialForMe) ...[
                           ExpressiveButtonGroup<bool>(
                             value: _forMe,
                             onChanged: (v) => setState(() => _forMe = v),
@@ -424,114 +486,108 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                         style: tt.bodyLarge,
                                       ),
                                     )
-                                  : DropdownButtonFormField<String>(
-                                      key: ValueKey(ready.group?.id),
-                                      initialValue: ready.group?.id,
-                                      isExpanded: true,
-                                      hint: Text(context.l10n.chooseGroup),
-                                      items: ready.groups
-                                          .map((g) => DropdownMenuItem(
-                                                value: g.id,
-                                                child: Text(g.name),
-                                              ))
-                                          .toList(),
-                                      onChanged: _onGroupChanged,
+                                  : ExpressiveDropdown<String>(
+                                      selected: ready.group?.id,
+                                      hintText: context.l10n.chooseGroup,
+                                      leadingIcon: Icon(
+                                        Symbols.group_rounded,
+                                        size: 20,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                      entries: [
+                                        for (final g in ready.groups)
+                                          ExpressiveDropdownEntry(
+                                            value: g.id,
+                                            label: g.name,
+                                          ),
+                                      ],
+                                      onSelected: _onGroupChanged,
                                     ),
                           ),
 
                           if (ready.group != null) ...[
                             const SizedBox(height: 24),
-                            ExpressiveSheetSection(
-                              label: context.l10n.paidBy,
-                            child: _PayerDropdown(
-                              members: ready.group!.members,
-                              selectedId: _selectedPayerId,
-                              onChanged: (id) =>
-                                  setState(() => _selectedPayerId = id),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-                          ExpressiveSheetSection(
-                            label: context.l10n.date,
-                            child: InkWell(
-                              onTap: _pickDate,
-                              borderRadius: shapes.radiusLarge,
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  prefixIcon: Icon(
-                                    Symbols.calendar_month_rounded,
-                                    size: 18,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: ExpressiveSheetSection(
+                                    label: context.l10n.paidBy,
+                                    child: _PayerDropdown(
+                                      members: ready.group!.members,
+                                      selectedId: _selectedPayerId,
+                                      onChanged: (id) => setState(
+                                        () => _selectedPayerId = id,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
-                                  style: tt.bodyMedium,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ExpressiveSheetSection(
+                                    label: context.l10n.date,
+                                    child: _DateField(
+                                      date: _expenseDate,
+                                      onTap: _pickDate,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ),
 
                           const SizedBox(height: 24),
-                          ExpressiveSheetSection(
-                            label: context.l10n.split,
-                            child: AbsorbPointer(
-                              absorbing: _recurring,
-                              child: Opacity(
-                                opacity: _recurring ? 0.45 : 1,
-                                child: ExpressiveButtonGroup<ExpenseSplitMode>(
-                                  value: _splitMode,
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _splitMode = v;
-                                      if (v == ExpenseSplitMode.amounts) {
-                                        _initSplitCtrls(ready.group!.members);
-                                      }
-                                      if (v == ExpenseSplitMode.shares) {
-                                        _initShares(ready.group!.members);
-                                      }
-                                    });
-                                  },
-                                  segments: [
-                                    ExpressiveButtonGroupSegment(
-                                      value: ExpenseSplitMode.equal,
-                                      label: context.l10n.splitEqual,
-                                    ),
-                                    ExpressiveButtonGroupSegment(
-                                      value: ExpenseSplitMode.shares,
-                                      label: context.l10n.splitShares,
-                                    ),
-                                    ExpressiveButtonGroupSegment(
-                                      value: ExpenseSplitMode.amounts,
-                                      label: context.l10n.splitCustom,
-                                    ),
-                                  ],
+                          AbsorbPointer(
+                            absorbing: _recurring,
+                            child: Opacity(
+                              opacity: _recurring ? 0.45 : 1,
+                              child: _SplitParticipants(
+                                mode: _splitMode,
+                                members: ready.group!.members,
+                                includedIds: _includedIds,
+                                amounts: _previewAmounts(ready.group!.members),
+                                shares: _shareCounts,
+                                splitCtrls: _splitCtrls,
+                                total: _expenseAmount,
+                                splitsTotal: _splitsTotal,
+                                isValid: _splitsValid,
+                                onToggle: (id) => setState(() {
+                                  _setIncluded(
+                                    id,
+                                    !_includedIds.contains(id),
+                                  );
+                                }),
+                                onSelectAll: () => setState(
+                                  () => _selectAll(
+                                    ready.group!.members,
+                                    included: true,
+                                  ),
                                 ),
+                                onSelectNone: () => setState(
+                                  () => _selectAll(
+                                    ready.group!.members,
+                                    included: false,
+                                  ),
+                                ),
+                                onModeChanged: (v) => setState(() {
+                                  _splitMode = v;
+                                  if (v == ExpenseSplitMode.amounts) {
+                                    _fillEqualAmounts(ready.group!.members);
+                                  }
+                                }),
+                                onShareChanged: (userId, value) {
+                                  setState(() {
+                                    _shareCounts[userId] = value;
+                                    if (value <= 0) {
+                                      _includedIds.remove(userId);
+                                    } else {
+                                      _includedIds.add(userId);
+                                    }
+                                  });
+                                },
+                                onAmountChanged: () => setState(() {}),
                               ),
                             ),
                           ),
-                          if (_splitMode == ExpenseSplitMode.amounts) ...[
-                            const SizedBox(height: 12),
-                            _CustomSplitSection(
-                              members: ready.group!.members,
-                              splitCtrls: _splitCtrls,
-                              total: _expenseAmount,
-                              splitsTotal: _splitsTotal,
-                              isValid: _splitsValid,
-                              onChanged: () => setState(() {}),
-                            ),
-                          ],
-                          if (_splitMode == ExpenseSplitMode.shares) ...[
-                            const SizedBox(height: 12),
-                            _ShareSplitSection(
-                              members: ready.group!.members,
-                              shares: _shareCounts,
-                              amounts: _shareAmounts(ready.group!.members),
-                              onChanged: (userId, value) {
-                                setState(() => _shareCounts[userId] = value);
-                              },
-                            ),
-                          ],
 
                           // 8. Récurrence
                           const SizedBox(height: 16),
@@ -540,7 +596,12 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                             expenseDate: _expenseDate,
                             onChanged: (v) => setState(() {
                               _recurring = v;
-                              if (v) _splitMode = ExpenseSplitMode.equal;
+                              if (v) {
+                                _splitMode = ExpenseSplitMode.equal;
+                                _includedIds.addAll(
+                                  ready.group!.members.map((m) => m.user.id),
+                                );
+                              }
                             }),
                           ),
                           ],
@@ -549,21 +610,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                           const SizedBox(height: 24),
                           ExpressiveSheetSection(
                             label: context.l10n.date,
-                            child: InkWell(
+                            child: _DateField(
+                              date: _expenseDate,
                               onTap: _pickDate,
-                              borderRadius: shapes.radiusLarge,
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  prefixIcon: Icon(
-                                    Symbols.calendar_month_rounded,
-                                    size: 18,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${_expenseDate.day.toString().padLeft(2, '0')}/${_expenseDate.month.toString().padLeft(2, '0')}/${_expenseDate.year}',
-                                  style: tt.bodyMedium,
-                                ),
-                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
