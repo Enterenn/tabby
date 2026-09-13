@@ -122,6 +122,7 @@ abstract final class AppTheme {
         ),
       ),
 
+      hintColor: scheme.onSurfaceVariant.withValues(alpha: 0.42),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHighest,
@@ -142,6 +143,13 @@ abstract final class AppTheme {
         errorBorder: OutlineInputBorder(
           borderRadius: shapes.radiusLarge,
           borderSide: BorderSide(color: scheme.error),
+        ),
+        hintStyle: TabbyTypographyTokens.flex(
+          fontSize: 14,
+          wght: 400,
+          rond: 0,
+          grad: grad,
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.42),
         ),
         labelStyle: TabbyTypographyTokens.flex(
           fontSize: 14,

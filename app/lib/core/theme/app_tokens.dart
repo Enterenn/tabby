@@ -457,41 +457,29 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     );
   }
 
+  /// Pastilles saturées uniquement — pas de containers (icône = blanc ou noir).
   static List<Color> _paletteFrom(ColorScheme s) => [
         s.primary,
         s.secondary,
-        s.tertiary,
-        s.primaryContainer,
-        s.secondaryContainer,
-        s.tertiaryContainer,
-        s.inversePrimary,
         s.error,
+        const Color(0xFFE67E22),
+        const Color(0xFF27AE60),
+        const Color(0xFF2980B9),
+        const Color(0xFF8E44AD),
+        const Color(0xFF16A085),
+        const Color(0xFF7F8C8D),
       ];
 
-  /// Couleur de segment / icône harmonisée au thème (indépendante du hex DB).
-  Color chartColorFor(Category category) {
-    final index =
-        category.sortOrder >= 0 ? category.sortOrder : category.id.hashCode.abs();
-    return chartPalette[index % chartPalette.length];
-  }
+  /// Fond de pastille = hex de la catégorie (même couleur partout).
+  Color chartColorFor(Category category) => category.resolvedColor;
 
-  /// Paire `on*` d'une couleur issue du [ColorScheme] / des palettes.
-  Color onFor(Color color, ColorScheme scheme) {
-    if (color == scheme.primary) return scheme.onPrimary;
-    if (color == scheme.secondary) return scheme.onSecondary;
-    if (color == scheme.tertiary) return scheme.onTertiary;
-    if (color == scheme.error) return scheme.onError;
-    if (color == scheme.primaryContainer) return scheme.onPrimaryContainer;
-    if (color == scheme.secondaryContainer) return scheme.onSecondaryContainer;
-    if (color == scheme.tertiaryContainer) return scheme.onTertiaryContainer;
-    if (color == scheme.errorContainer) return scheme.onErrorContainer;
-    if (color == scheme.inversePrimary) return scheme.onPrimary;
-    if (color == success) return onSuccess;
-    if (color == successContainer) return onSuccessContainer;
-    if (color == warning) return onWarning;
-    if (color == warningContainer) return onWarningContainer;
-    return scheme.onSurface;
-  }
+  /// Icône / texte : blanc ou noir selon la luminance, jamais la même teinte.
+  Color onFor(Color color, ColorScheme _) => contrastOn(color);
+
+  static Color contrastOn(Color color) =>
+      color.computeLuminance() > 0.55
+          ? const Color(0xFF1C1B1F)
+          : const Color(0xFFFFFFFF);
 
   /// Retourne la couleur de solde (+/-) selon le montant.
   Color balanceColor(double amount) {
