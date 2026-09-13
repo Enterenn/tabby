@@ -15,6 +15,7 @@ class _BudgetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
           child: ExpressiveHeroBanner(
@@ -62,7 +63,8 @@ class _BudgetContent extends StatelessWidget {
           ),
         ),
 
-        if (state.groups.length > 1)
+        if (state.groups.length > 1 &&
+            state.selectedScope != SpendScope.personal)
           SliverToBoxAdapter(
             child: _GroupFilter(
               groups: state.groups,
@@ -76,6 +78,11 @@ class _BudgetContent extends StatelessWidget {
             selectedCategoryId: state.selectedCategoryId,
           ),
         ),
+
+        if (state.selectedScope == SpendScope.personal)
+          SliverToBoxAdapter(
+            child: _PersonalExpensesSection(state: state),
+          ),
 
         SliverToBoxAdapter(
           child: Padding(
@@ -800,4 +807,304 @@ class _BudgetDialogState extends State<_BudgetDialog> {
       ),
     );
   }
+}
+
+// ─── Personal purchases (Pour moi) ────────────────────────────────────────────
+
+class _PersonalExpensesSection extends StatelessWidget {
+  const _PersonalExpensesSection({required this.state});
+
+  final BudgetLoaded state;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final cs = context.tabbyColors;
+    final items = state.visiblePersonalExpenses;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.l10n.personalPurchases, style: tt.titleMedium),
+          const SizedBox(height: 8),
+          if (items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.noPersonalPurchases,
+                    style: tt.bodyMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.l10n.noPersonalPurchasesHint,
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...items.map(
+              (expense) => _PersonalExpenseTile(expense: expense, state: state),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PersonalExpenseTile extends StatelessWidget {
+  const _PersonalExpenseTile({required this.expense, required this.state});
+
+  final PersonalExpense expense;
+  final BudgetLoaded state;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final cs = context.tabbyColors;
+    final catColor = expense.category.resolvedColor;
+    final onCat = expense.category.onResolvedColor;
+
+    return TabbyListCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      onTap: () => _showActions(context),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Row(
+        children: [
+          TabbyCategoryGlyph(
+            icon: expense.category.flutterIcon,
+            background: catColor,
+            foreground: onCat,
+            size: 40,
+            iconSize: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  expense.name,
+                  style: tt.titleSmall,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${expense.category.name} · ${_formatPersonalDate(context, expense.expenseDate)}',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          ExpressiveFigure(
+            value: formatMoney(context, expense.amount),
+            size: ExpressiveFigureSize.small,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActions(BuildContext context) {
+    showTabbyActionSheet(
+      context,
+      title: expense.name,
+      actions: [
+        TabbyActionSheetItem(
+          label: context.l10n.editExpense,
+          icon: Symbols.edit_rounded,
+          onTap: () => _showEditDialog(context),
+        ),
+        TabbyActionSheetItem(
+          label: context.l10n.delete,
+          icon: Symbols.delete_rounded,
+          danger: true,
+          onTap: () => _confirmDelete(context),
+        ),
+      ],
+    );
+  }
+
+  void _showEditDialog(BuildContext context) {
+    showTabbyFormDialog(
+      context: context,
+      builder: (_) => BlocProvider.value(
+        value: context.read<BudgetCubit>(),
+        child: _EditPersonalDialog(
+          expense: expense,
+          categories: state.allCategories,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showTabbyConfirm(
+      context,
+      title: context.l10n.deletePersonalTitle,
+      body: context.l10n.deletePersonalBody(expense.name),
+      confirmLabel: context.l10n.delete,
+      danger: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    final err = await context.read<BudgetCubit>().deletePersonal(expense.id);
+    if (!context.mounted || err == null) return;
+    showTabbySnack(context, context.l10nError(err));
+  }
+}
+
+class _EditPersonalDialog extends StatefulWidget {
+  const _EditPersonalDialog({
+    required this.expense,
+    required this.categories,
+  });
+
+  final PersonalExpense expense;
+  final List<Category> categories;
+
+  @override
+  State<_EditPersonalDialog> createState() => _EditPersonalDialogState();
+}
+
+class _EditPersonalDialogState extends State<_EditPersonalDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _amountCtrl;
+  late Category _category;
+  late DateTime _date;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.expense.name);
+    _amountCtrl = TextEditingController(
+      text: widget.expense.amount.toStringAsFixed(2),
+    );
+    _category = widget.categories.firstWhere(
+      (c) => c.id == widget.expense.category.id,
+      orElse: () => widget.expense.category,
+    );
+    _date = widget.expense.expenseDate;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _date = picked);
+  }
+
+  Future<void> _save() async {
+    final amount = TabbyAmountField.parse(_amountCtrl.text);
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty || amount == null || amount <= 0) return;
+    setState(() => _loading = true);
+    final ok = await context.read<BudgetCubit>().updatePersonal(
+          expenseId: widget.expense.id,
+          name: name,
+          amount: amount,
+          categoryId: _category.id,
+          expenseDate: _date,
+        );
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (ok) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final dateLabel =
+        '${_date.day.toString().padLeft(2, '0')}/${_date.month.toString().padLeft(2, '0')}/${_date.year}';
+
+    return TabbyFormDialog(
+      title: context.l10n.editExpense,
+      submitLabel: context.l10n.save,
+      cancelLabel: context.l10n.cancel,
+      loading: _loading,
+      scrollable: true,
+      onSubmit: _save,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nameCtrl,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(labelText: context.l10n.name),
+          ),
+          const SizedBox(height: 12),
+          TabbyAmountField(
+            controller: _amountCtrl,
+            label: context.l10n.amount,
+          ),
+          const SizedBox(height: 12),
+          Text(context.l10n.category, style: tt.labelLarge),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<Category>(
+            value: _category,
+            items: [
+              if (!widget.categories.any((c) => c.id == _category.id))
+                _category,
+              ...widget.categories,
+            ]
+                .map(
+                  (c) => DropdownMenuItem(
+                    value: c,
+                    child: Row(
+                      children: [
+                        c.iconWidget(size: 18, color: c.resolvedColor),
+                        const SizedBox(width: 8),
+                        Text(c.name),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (c) {
+              if (c != null) setState(() => _category = c);
+            },
+          ),
+          const SizedBox(height: 12),
+          Text(context.l10n.date, style: tt.labelLarge),
+          const SizedBox(height: 6),
+          InkWell(
+            onTap: _pickDate,
+            borderRadius: context.tabbyShapes.radiusMedium,
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Symbols.calendar_month_rounded, size: 18),
+              ),
+              child: Text(dateLabel, style: tt.bodyMedium),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatPersonalDate(BuildContext context, DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final expenseDay = DateTime(date.year, date.month, date.day);
+  final days = today.difference(expenseDay).inDays;
+
+  if (days <= 0) return context.l10n.today;
+  if (days == 1) return context.l10n.daysAgoOne;
+  return context.l10n.daysAgo(days);
 }

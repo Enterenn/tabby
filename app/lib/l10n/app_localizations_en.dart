@@ -609,6 +609,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scopePersonal => 'For me';
 
   @override
+  String get personalPurchases => 'Your purchases';
+
+  @override
+  String get noPersonalPurchases => 'No For me purchases this month';
+
+  @override
+  String get noPersonalPurchasesHint => 'Tap + in the bar, then For me.';
+
+  @override
+  String get deletePersonalTitle => 'Delete this purchase?';
+
+  @override
+  String deletePersonalBody(String name) {
+    return '“$name” will be removed from your budget.';
+  }
+
+  @override
   String get expenseShared => 'Shared';
 
   @override

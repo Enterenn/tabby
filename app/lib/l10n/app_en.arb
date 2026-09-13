@@ -201,6 +201,16 @@
   "scopeAll": "All",
   "scopeGroups": "Groups",
   "scopePersonal": "For me",
+  "personalPurchases": "Your purchases",
+  "noPersonalPurchases": "No For me purchases this month",
+  "noPersonalPurchasesHint": "Tap + in the bar, then For me.",
+  "deletePersonalTitle": "Delete this purchase?",
+  "deletePersonalBody": "“{name}” will be removed from your budget.",
+  "@deletePersonalBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "expenseShared": "Shared",
   "expenseForMe": "For me",
   "categoryNamePrivacyHint": "The name is yours. If you use it on a shared expense, group members will see that name — not your For me purchases.",

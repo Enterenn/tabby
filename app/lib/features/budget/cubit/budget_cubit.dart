@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,6 +8,7 @@ import '../../../data/repositories.dart';
 import '../../../shared/models/budget.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/personal_expense.dart';
 import '../../../shared/models/spend_scope.dart';
 import '../../../shared/models/stats.dart';
 
@@ -36,6 +39,7 @@ class BudgetLoaded extends BudgetState {
     this.selectedGroupId,
     this.selectedCategoryId,
     this.selectedScope = SpendScope.all,
+    this.personalExpenses = const [],
   });
 
   final List<Budget> budgets;
@@ -47,6 +51,14 @@ class BudgetLoaded extends BudgetState {
   final String? selectedGroupId; // null = tous les groupes
   final String? selectedCategoryId;
   final SpendScope selectedScope;
+  final List<PersonalExpense> personalExpenses;
+
+  List<PersonalExpense> get visiblePersonalExpenses {
+    if (selectedCategoryId == null) return personalExpenses;
+    return personalExpenses
+        .where((e) => e.category.id == selectedCategoryId)
+        .toList();
+  }
 
   BudgetLoaded copyWith({
     List<Budget>? budgets,
@@ -58,6 +70,7 @@ class BudgetLoaded extends BudgetState {
     String? selectedGroupId,
     String? selectedCategoryId,
     SpendScope? selectedScope,
+    List<PersonalExpense>? personalExpenses,
     bool clearGroup = false,
     bool clearCategory = false,
   }) => BudgetLoaded(
@@ -74,6 +87,7 @@ class BudgetLoaded extends BudgetState {
         ? null
         : (selectedCategoryId ?? this.selectedCategoryId),
     selectedScope: selectedScope ?? this.selectedScope,
+    personalExpenses: personalExpenses ?? this.personalExpenses,
   );
 
   int? get selectedCategoryIndex {
@@ -95,6 +109,7 @@ class BudgetLoaded extends BudgetState {
     selectedGroupId,
     selectedCategoryId,
     selectedScope,
+    personalExpenses,
   ];
 }
 
@@ -108,7 +123,25 @@ class BudgetError extends BudgetState {
 // ─── Cubit ────────────────────────────────────────────────────────────────────
 
 class BudgetCubit extends Cubit<BudgetState> {
-  BudgetCubit() : super(const BudgetInitial());
+  BudgetCubit() : super(const BudgetInitial()) {
+    _personalSub = personalExpensesRepository.changes.listen((_) {
+      if (isClosed || state is! BudgetLoaded) return;
+      final s = state as BudgetLoaded;
+      load(
+        year: s.selectedYear,
+        month: s.selectedMonth,
+        groupId: s.selectedGroupId,
+      );
+    });
+  }
+
+  StreamSubscription<void>? _personalSub;
+
+  @override
+  Future<void> close() {
+    _personalSub?.cancel();
+    return super.close();
+  }
 
   Future<void> load({
     int? year,
@@ -143,12 +176,17 @@ class BudgetCubit extends Cubit<BudgetState> {
           groupId: targetGroup,
           scope: prev?.selectedScope ?? SpendScope.all,
         ),
+        personalExpensesRepository.list(
+          year: targetYear,
+          month: targetMonth,
+        ),
       ]);
 
       final budgets = results[0] as List<Budget>;
       final groups = results[1] as List<Group>;
       final categories = results[2] as List<Category>;
       final stats = results[3] as MonthStats;
+      final personal = results[4] as List<PersonalExpense>;
 
       if (!isClosed) {
         emit(
@@ -162,6 +200,7 @@ class BudgetCubit extends Cubit<BudgetState> {
             selectedGroupId: targetGroup,
             selectedCategoryId: prev?.selectedCategoryId,
             selectedScope: prev?.selectedScope ?? SpendScope.all,
+            personalExpenses: personal,
           ),
         );
       }
@@ -201,7 +240,17 @@ class BudgetCubit extends Cubit<BudgetState> {
     if (state is! BudgetLoaded) return;
     final s = state as BudgetLoaded;
     if (s.selectedScope == scope) return;
-    emit(s.copyWith(selectedScope: scope));
+
+    final clearGroup = scope == SpendScope.personal && s.selectedGroupId != null;
+    emit(s.copyWith(selectedScope: scope, clearGroup: clearGroup));
+    if (clearGroup) {
+      await load(
+        year: s.selectedYear,
+        month: s.selectedMonth,
+        clearGroup: true,
+      );
+      return;
+    }
     try {
       final stats = await budgetsRepository.stats(
         year: s.selectedYear,
@@ -286,6 +335,37 @@ class BudgetCubit extends Cubit<BudgetState> {
     } catch (e) {
       if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
       return false;
+    }
+  }
+
+  Future<bool> updatePersonal({
+    required String expenseId,
+    required String name,
+    required double amount,
+    required String categoryId,
+    required DateTime expenseDate,
+  }) async {
+    try {
+      await personalExpensesRepository.update(
+        expenseId: expenseId,
+        name: name,
+        amount: amount,
+        categoryId: categoryId,
+        expenseDate: expenseDate,
+      );
+      return true;
+    } catch (e) {
+      if (!isClosed) emit(BudgetError(ApiFailure.from(e).message));
+      return false;
+    }
+  }
+
+  Future<String?> deletePersonal(String expenseId) async {
+    try {
+      await personalExpensesRepository.delete(expenseId);
+      return null;
+    } catch (e) {
+      return ApiFailure.from(e).message;
     }
   }
 

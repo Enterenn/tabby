@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 
 import '../core/api/api_client.dart';
@@ -9,9 +11,22 @@ class PersonalExpensesRepository {
   PersonalExpensesRepository({Dio? dio}) : _dio = dio ?? apiClient.dio;
 
   final Dio _dio;
+  final _changes = StreamController<void>.broadcast();
 
-  Future<List<PersonalExpense>> list() async {
-    final response = await _dio.get('/personal-expenses');
+  Stream<void> get changes => _changes.stream;
+
+  void _notify() {
+    if (!_changes.isClosed) _changes.add(null);
+  }
+
+  Future<List<PersonalExpense>> list({int? year, int? month}) async {
+    final response = await _dio.get(
+      '/personal-expenses',
+      queryParameters: {
+        if (year != null) 'year': year,
+        if (month != null) 'month': month,
+      },
+    );
     return parseJsonList(response.data, PersonalExpense.fromJson);
   }
 
@@ -30,11 +45,34 @@ class PersonalExpensesRepository {
         'expense_date': formatApiDate(expenseDate),
       },
     );
+    _notify();
     return PersonalExpense.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<void> delete(String expenseId) =>
-      _dio.delete('/personal-expenses/$expenseId');
+  Future<PersonalExpense> update({
+    required String expenseId,
+    String? name,
+    double? amount,
+    String? categoryId,
+    DateTime? expenseDate,
+  }) async {
+    final response = await _dio.patch(
+      '/personal-expenses/$expenseId',
+      data: {
+        if (name != null) 'name': name,
+        if (amount != null) 'amount': amount,
+        if (categoryId != null) 'category_id': categoryId,
+        if (expenseDate != null) 'expense_date': formatApiDate(expenseDate),
+      },
+    );
+    _notify();
+    return PersonalExpense.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> delete(String expenseId) async {
+    await _dio.delete('/personal-expenses/$expenseId');
+    _notify();
+  }
 }
 
 final personalExpensesRepository = PersonalExpensesRepository();

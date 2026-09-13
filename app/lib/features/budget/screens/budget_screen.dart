@@ -11,6 +11,7 @@ import '../../../design_system/design_system.dart';
 import '../../../shared/widgets/expressive/expressive_donut_chart.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/personal_expense.dart';
 import '../../../shared/models/spend_scope.dart';
 import '../../../shared/models/stats.dart';
 import '../cubit/budget_cubit.dart';
@@ -61,10 +62,17 @@ class _BudgetView extends StatelessWidget {
                 retryLabel: context.l10n.retry,
                 onRetry: () => context.read<BudgetCubit>().load(),
               ),
-            BudgetLoaded() => _BudgetContent(
-                state: state,
-                canCreate: true,
-                onCreateBudget: () => _showCreateDialog(context, state),
+            BudgetLoaded() => RefreshIndicator(
+                onRefresh: () => context.read<BudgetCubit>().load(
+                      year: state.selectedYear,
+                      month: state.selectedMonth,
+                      groupId: state.selectedGroupId,
+                    ),
+                child: _BudgetContent(
+                  state: state,
+                  canCreate: true,
+                  onCreateBudget: () => _showCreateDialog(context, state),
+                ),
               ),
             _ => const SizedBox.shrink(),
           },

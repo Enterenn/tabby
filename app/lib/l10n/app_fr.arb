@@ -248,6 +248,16 @@
   "scopeAll": "Tout",
   "scopeGroups": "Groupes",
   "scopePersonal": "Pour moi",
+  "personalPurchases": "Tes achats",
+  "noPersonalPurchases": "Aucun achat Pour moi ce mois",
+  "noPersonalPurchasesHint": "Le + au milieu, puis Pour moi.",
+  "deletePersonalTitle": "Supprimer cet achat ?",
+  "deletePersonalBody": "« {name} » sera retiré de ton budget.",
+  "@deletePersonalBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "expenseShared": "Partagée",
   "expenseForMe": "Pour moi",
   "categoryNamePrivacyHint": "Le nom est à toi. S’il est utilisé sur une dépense partagée, les membres du groupe le verront — pas tes achats Pour moi.",

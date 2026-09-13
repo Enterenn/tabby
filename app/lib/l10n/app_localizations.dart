@@ -1202,6 +1202,36 @@ abstract class AppLocalizations {
   /// **'Pour moi'**
   String get scopePersonal;
 
+  /// No description provided for @personalPurchases.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tes achats'**
+  String get personalPurchases;
+
+  /// No description provided for @noPersonalPurchases.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun achat Pour moi ce mois'**
+  String get noPersonalPurchases;
+
+  /// No description provided for @noPersonalPurchasesHint.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le + au milieu, puis Pour moi.'**
+  String get noPersonalPurchasesHint;
+
+  /// No description provided for @deletePersonalTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cet achat ?'**
+  String get deletePersonalTitle;
+
+  /// No description provided for @deletePersonalBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » sera retiré de ton budget.'**
+  String deletePersonalBody(String name);
+
   /// No description provided for @expenseShared.
   ///
   /// In fr, this message translates to:

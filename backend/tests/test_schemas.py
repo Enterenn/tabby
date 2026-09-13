@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from app.schemas.auth import RegisterRequest
 from app.schemas.expense import ExpenseCreate
 from app.schemas.group import GroupCreate, SettleRequest
+from app.schemas.personal import PersonalExpenseUpdate
 from app.schemas.recurring import RecurringExpenseCreate
 
 _VALID_PASSWORD = "Abcdef1!"
@@ -47,6 +48,16 @@ def test_settle_amount_must_be_positive():
             to_user_id=str(uuid4()),
             amount=-1,
         )
+
+
+def test_personal_expense_update_amount_must_be_positive():
+    with pytest.raises(ValidationError):
+        PersonalExpenseUpdate(amount=0)
+
+
+def test_personal_expense_update_name_stripped():
+    req = PersonalExpenseUpdate(name="  Pull  ")
+    assert req.name == "Pull"
 
 
 def test_recurring_amount_must_be_positive():
