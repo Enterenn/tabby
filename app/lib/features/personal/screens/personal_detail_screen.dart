@@ -99,21 +99,25 @@ class _LoadedBody extends StatelessWidget {
                         size: ExpressiveFigureSize.medium,
                         color: cs.onTertiaryContainer,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        context.l10n.expenseCount(expenses.length),
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onTertiaryContainer.withValues(alpha: 0.8),
-                        ),
-                      ),
                     ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
+                  child: Text(
+                    expenses.isEmpty
+                        ? context.l10n.expenses
+                        : context.l10n.expensesCount(expenses.length),
+                    style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
               if (expenses.isEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                     child: TabbyEmptyState(
                       icon: Symbols.receipt_long_rounded,
                       title: context.l10n.noPersonalPurchasesYet,
@@ -123,7 +127,7 @@ class _LoadedBody extends StatelessWidget {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
                   sliver: SliverList.separated(
                     itemCount: expenses.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),

@@ -222,6 +222,10 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
   bool get _splitsValid => (_expenseAmount - _splitsTotal).abs() < 0.02;
 
+  void _hideKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -418,6 +422,8 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                   ),
                   Expanded(
                     child: ListView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                       children: [
                         if (!ready.groupLocked &&
@@ -463,6 +469,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                       ),
                                       textAlign: TextAlign.end,
                                       autofocus: !_isEditing,
+                                      onTapOutside: (_) => _hideKeyboard(),
                                       cursorColor: cs.onTertiaryContainer,
                                       style: type.figureHero.copyWith(
                                         color: cs.onTertiaryContainer,
@@ -527,6 +534,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                             controller: _nameCtrl,
                             textCapitalization: TextCapitalization.sentences,
                             textInputAction: TextInputAction.next,
+                            onTapOutside: (_) => _hideKeyboard(),
                             decoration: InputDecoration(
                               hintText: context.l10n.expenseNameHint,
                             ),

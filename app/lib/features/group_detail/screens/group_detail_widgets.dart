@@ -579,12 +579,19 @@ class _TotalHero extends StatelessWidget {
     final groupTotal = formatMoney(context, total);
     const gap = 16.0;
 
+    final cs = context.tabbyColors;
+
     return ExpressiveTonalCard(
-      variant: ExpressiveTonalVariant.coral,
+      variant: ExpressiveTonalVariant.lime,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: LayoutBuilder(
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: cs.onTertiaryContainer),
+        child: LayoutBuilder(
         builder: (context, constraints) {
-          final figureStyle = _heroAmountStyle(context);
+          final figureStyle = _heroAmountStyle(
+            context,
+            color: cs.onTertiaryContainer,
+          );
           final sideBySide = _measureText(context, yourShare, figureStyle) +
                   _measureText(context, groupTotal, figureStyle) +
                   gap <=
@@ -624,16 +631,18 @@ class _TotalHero extends StatelessWidget {
             ],
           );
         },
+        ),
       ),
     );
   }
 }
 
-TextStyle _heroAmountStyle(BuildContext context) {
+TextStyle _heroAmountStyle(BuildContext context, {Color? color}) {
   final base = context.tabbyType.figureMedium;
   return base.copyWith(
     fontSize: 28,
     height: 32 / 28,
+    color: color,
   );
 }
 

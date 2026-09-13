@@ -593,23 +593,38 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
+    final shapes = context.tabbyShapes;
     final label =
         '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: context.tabbyShapes.radiusLarge,
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          prefixIcon: Icon(Symbols.calendar_month_rounded, size: 18),
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: tt.bodyMedium,
+    return Material(
+      color: cs.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: shapes.radiusLarge),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+          child: Row(
+            children: [
+              Icon(
+                Symbols.calendar_month_rounded,
+                size: 20,
+                color: cs.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.bodyMedium,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
