@@ -176,8 +176,8 @@ class ExpressiveHeroBanner extends StatelessWidget {
           cs.onPrimaryContainer,
         ),
       ExpressiveTonalVariant.coral => (
-          cs.secondaryContainer,
-          cs.onSecondaryContainer,
+          cs.tertiaryContainer,
+          cs.onTertiaryContainer,
         ),
       ExpressiveTonalVariant.lime => (
           cs.tertiaryContainer,

@@ -51,8 +51,8 @@ class _NewGroupSheet extends StatelessWidget {
                   icon: Symbols.group_add_rounded,
                   title: context.l10n.joinGroup,
                   subtitle: context.l10n.joinGroupSubtitle,
-                  color: cs.secondaryContainer,
-                  iconColor: cs.onSecondaryContainer,
+                  color: cs.tertiaryContainer,
+                  iconColor: cs.onTertiaryContainer,
                   onTap: () {
                     Navigator.pop(context);
                     context.push('/groups/join');

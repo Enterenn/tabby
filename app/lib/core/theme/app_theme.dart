@@ -270,23 +270,25 @@ abstract final class AppTheme {
     );
   }
 
-  /// Citron (tertiary) et vermillon (secondary) — hex POLA, non harmonisés.
+  /// Citron (tertiary + containers tonals) et vermillon (secondary plein).
+  ///
+  /// Les containers secondary suivent le citron pour que [FilledButton.tonal]
+  /// et les surfaces « coral » M3 sortent en lime, pas en vermillon.
   static ColorScheme _polaAccents(ColorScheme base) {
     final dark = base.brightness == Brightness.dark;
+    final lemonContainer =
+        dark ? AppColors.lemonContainerDark : AppColors.lemon;
+    final onLemonContainer =
+        dark ? AppColors.onLemonContainerDark : AppColors.onLemon;
     return base.copyWith(
       secondary: AppColors.vermillion,
       onSecondary: AppColors.onVermillion,
-      secondaryContainer: dark
-          ? AppColors.vermillionContainerDark
-          : AppColors.vermillionContainerLight,
-      onSecondaryContainer: dark
-          ? AppColors.onVermillionContainerDark
-          : AppColors.onVermillionContainerLight,
+      secondaryContainer: lemonContainer,
+      onSecondaryContainer: onLemonContainer,
       tertiary: dark ? AppColors.lemon : AppColors.lemonInk,
       onTertiary: dark ? AppColors.onLemon : AppColors.lemon,
-      tertiaryContainer: dark ? AppColors.lemonContainerDark : AppColors.lemon,
-      onTertiaryContainer:
-          dark ? AppColors.onLemonContainerDark : AppColors.onLemon,
+      tertiaryContainer: lemonContainer,
+      onTertiaryContainer: onLemonContainer,
     );
   }
 

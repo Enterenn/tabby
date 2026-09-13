@@ -38,9 +38,10 @@ class ExpressiveTonalCard extends StatelessWidget {
           cs.primaryContainer,
           cs.onPrimaryContainer,
         ),
+      // Coral → même surface citron que lime (plus de vermillon tonal).
       ExpressiveTonalVariant.coral => (
-          cs.secondaryContainer,
-          cs.onSecondaryContainer,
+          cs.tertiaryContainer,
+          cs.onTertiaryContainer,
         ),
       ExpressiveTonalVariant.lime => (
           cs.tertiaryContainer,
