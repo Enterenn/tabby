@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
@@ -43,9 +44,16 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
   static const _maxTilt = 0.18;
   static const _inspectPeek = 72.0;
   static const _inspectFalloff = 1.7;
-  static const _inspectLinger = Duration(milliseconds: 2000);
+  static const _inspectPress = Duration(milliseconds: 300);
+  static const _inspectLinger = Duration(milliseconds: 1500);
+  static const _inspectBaseShift = 28.0;
+  static const _inspectBackShift = 12.0;
   static const _ballotDuration = Duration(milliseconds: 700);
   static const _breezeCurve = Cubic(0.37, 0.0, 0.63, 1);
+  static const _spreadGain = 0.22;
+  static const _spreadPerGap = 12.0;
+  static const _spreadMaxTotal = 64.0;
+  static const _spreadOvershoot = 22.0;
 
   static final _snapSpring = SpringDescription.withDampingRatio(
     mass: 1,
@@ -53,15 +61,31 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
     ratio: 0.82,
   );
 
+  static final _spreadSpring = SpringDescription.withDampingRatio(
+    mass: 1,
+    stiffness: 300,
+    ratio: 0.52,
+  );
+
+  static final _packSpring = SpringDescription.withDampingRatio(
+    mass: 1,
+    stiffness: 380,
+    ratio: 0.78,
+  );
+
   late final AnimationController _slide;
   late final AnimationController _inspect;
   late final AnimationController _float;
+  late final AnimationController _spread;
   double _width = 0;
   double _focus = 0;
   int _lastFocusTick = -1;
   bool _flying = false;
   bool _inspecting = false;
   bool _lingering = false;
+  bool _spreading = false;
+  Duration? _spreadStamp;
+  double _spreadVelocity = 0;
   Timer? _lingerTimer;
 
   List<LoyaltyCard> get _cards => widget.cards;
@@ -73,11 +97,26 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
       _inspect.isAnimating ||
       _inspect.value.abs() > 0.001;
 
+  bool get _spreadLive =>
+      _spreading || _spread.isAnimating || _spread.value.abs() > 0.001;
+
+  double get _baseShift {
+    final inspect = _inspect.value.clamp(0.0, 1.0);
+    final back = _cards.isEmpty ? 0.0 : _intensity(0);
+    return inspect * _inspectBaseShift + back * _inspectBackShift;
+  }
+
+  double get _maxSpread {
+    final gaps = math.max(1, _cards.length - 1);
+    return math.min(_spreadMaxTotal, gaps * _spreadPerGap);
+  }
+
   @override
   void initState() {
     super.initState();
     _slide = AnimationController.unbounded(vsync: this);
     _inspect = AnimationController.unbounded(vsync: this);
+    _spread = AnimationController.unbounded(vsync: this);
     _float = AnimationController(
       vsync: this,
       duration: _ballotDuration,
@@ -90,6 +129,7 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
     _float.dispose();
     _slide.dispose();
     _inspect.dispose();
+    _spread.dispose();
     super.dispose();
   }
 
@@ -134,6 +174,7 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
     required double velocity,
   }) async {
     if (_width <= 0) return;
+    _resetSpread();
     setState(() => _flying = true);
     final target = (toRight ? 1 : -1) * _width * _flyExtent;
     final ms = (320 - velocity.abs() / 18).clamp(180, 360).round();
@@ -175,16 +216,73 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
     _cancelLinger();
     if (!mounted) return;
     setState(() => _inspecting = false);
-    _inspect.animateTo(
-      0,
-      duration: const Duration(milliseconds: 520),
-      curve: Curves.easeOutBack,
+    _inspect.animateWith(
+      SpringSimulation(_packSpring, _inspect.value, 0, 0),
+    );
+  }
+
+  void _resetSpread() {
+    _spreading = false;
+    _spreadStamp = null;
+    _spreadVelocity = 0;
+    _spread
+      ..stop()
+      ..value = 0;
+  }
+
+  bool get _canSpread {
+    if (_flying || _inspectLive || _cards.length < 2) return false;
+    if (_slide.value.abs() > 8) return false;
+    final scroll = Scrollable.maybeOf(context);
+    return scroll == null || scroll.position.pixels <= 0;
+  }
+
+  void _onSpreadPointerMove(PointerMoveEvent event) {
+    if (!_canSpread && !_spreading) return;
+    if (!_canSpread) {
+      _releaseSpread();
+      return;
+    }
+    final dy = event.delta.dy;
+    if (dy <= 0 && _spread.value <= 0) return;
+    final stamp = event.timeStamp;
+    final prev = _spreadStamp;
+    _spreadStamp = stamp;
+    if (prev != null) {
+      final dt = (stamp - prev).inMicroseconds / 1e6;
+      if (dt > 0.0005 && dt < 0.08) {
+        _spreadVelocity = (dy * _spreadGain) / dt;
+      }
+    }
+    _spread.stop();
+    _spreading = true;
+    final next = (_spread.value + dy * _spreadGain).clamp(0.0, _maxSpread);
+    _spread.value = next;
+  }
+
+  void _onSpreadPointerUp(PointerUpEvent event) => _releaseSpread();
+
+  void _onSpreadPointerCancel(PointerCancelEvent event) => _releaseSpread();
+
+  void _releaseSpread() {
+    if (!_spreading && _spread.value.abs() < 0.001) return;
+    _spreading = false;
+    final velocity = _spreadVelocity;
+    _spreadVelocity = 0;
+    _spreadStamp = null;
+    if (_spread.value.abs() < 0.001 && velocity.abs() < 8) {
+      _spread.value = 0;
+      return;
+    }
+    _spread.animateWith(
+      SpringSimulation(_spreadSpring, _spread.value, 0, velocity),
     );
   }
 
   void _onInspectStart(LongPressStartDetails details) {
     if (_flying || _cards.isEmpty || _slide.value.abs() > 8) return;
     _cancelLinger();
+    _resetSpread();
     _inspect.stop();
     _lastFocusTick = -1;
     _setFocus(_indexAt(details.localPosition.dy), snap: true);
@@ -279,9 +377,9 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
 
   double _extraFor(int revealed) {
     final intensity = _intensity(revealed);
-    if (intensity <= 0) return 0;
+    if (intensity.abs() < 0.001) return 0;
     final need = math.max(0.0, _inspectPeek - _restPeekOf(revealed));
-    return intensity * (need + 12);
+    return (intensity * (need + 12)).clamp(-10.0, double.infinity);
   }
 
   List<double> _restTops() {
@@ -296,10 +394,16 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
   List<double> _cardTops() {
     final n = _cards.length;
     final tops = List<double>.filled(n, 0);
+    if (n == 0) return tops;
+    final shift = _baseShift;
+    final spread = _spread.value.clamp(-_spreadOvershoot, _maxSpread);
+    final perGap = n > 1 ? spread / (n - 1) : 0.0;
+    tops[0] = shift;
     for (var i = 1; i < n; i++) {
       tops[i] = tops[i - 1] +
           LoyaltyWalletStack.peekForDepth(n - i) +
-          _extraFor(i - 1);
+          _extraFor(i - 1) +
+          perGap;
     }
     return tops;
   }
@@ -311,68 +415,95 @@ class _LoyaltyWalletStackState extends State<LoyaltyWalletStack>
     final cs = context.tabbyColors;
     final tt = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_cards.length > 1)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              context.l10n.walletHint,
-              style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            _width = constraints.maxWidth;
-            return AnimatedBuilder(
-              animation: Listenable.merge([_inspect, _float]),
-              builder: (context, _) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_inspect, _float, _spread]),
+      builder: (context, _) {
+        final inspectT = _inspect.value.clamp(0.0, 1.0);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_cards.length > 1)
+              IgnorePointer(
+                child: Opacity(
+                  opacity: 1 - inspectT,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      context.l10n.walletHint,
+                      style: tt.labelMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                _width = constraints.maxWidth;
                 final liveTops = _cardTops();
                 final height = (liveTops.isEmpty ? 0.0 : liveTops.last) +
                     LoyaltyWalletStack.fullHeight +
                     24;
-                return GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onLongPressStart: _onInspectStart,
-                  onLongPressMoveUpdate: _onInspectMove,
-                  onLongPressEnd: (_) => _onInspectEnd(),
-                  onLongPressCancel: _dismissInspect,
-                  child: SizedBox(
-                    height: height,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        for (var i = 0; i < _cards.length; i++)
-                          _WalletCardLayer(
-                            key: ValueKey(_cards[i].id),
-                            card: _cards[i],
-                            isFront: i == _frontIndex,
-                            top: liveTops[i],
-                            slide: i == _frontIndex ? _slide : null,
-                            width: _width,
-                            flying: _flying,
-                            instant: _inspectLive,
-                            inspect: _intensity(i),
-                            float: _floatWave,
-                            onTap: () => _onInspectTap(i),
-                            onHorizontalDragUpdate:
-                                i == _frontIndex ? _onDragUpdate : null,
-                            onHorizontalDragEnd:
-                                i == _frontIndex ? _onDragEnd : null,
-                            onHorizontalDragCancel:
-                                i == _frontIndex ? _onDragCancel : null,
-                          ),
-                      ],
+                return Listener(
+                  onPointerMove: _onSpreadPointerMove,
+                  onPointerUp: _onSpreadPointerUp,
+                  onPointerCancel: _onSpreadPointerCancel,
+                  child: RawGestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    gestures: {
+                      LongPressGestureRecognizer:
+                          GestureRecognizerFactoryWithHandlers<
+                              LongPressGestureRecognizer>(
+                        () => LongPressGestureRecognizer(
+                          duration: _inspectPress,
+                        ),
+                        (instance) {
+                          instance
+                            ..onLongPressStart = _onInspectStart
+                            ..onLongPressMoveUpdate = _onInspectMove
+                            ..onLongPressEnd = (_) {
+                              _onInspectEnd();
+                            }
+                            ..onLongPressCancel = _dismissInspect;
+                        },
+                      ),
+                    },
+                    child: SizedBox(
+                      height: height,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          for (var i = 0; i < _cards.length; i++)
+                            _WalletCardLayer(
+                              key: ValueKey(_cards[i].id),
+                              card: _cards[i],
+                              isFront: i == _frontIndex,
+                              top: liveTops[i],
+                              slide: i == _frontIndex ? _slide : null,
+                              width: _width,
+                              flying: _flying,
+                              instant: _inspectLive || _spreadLive,
+                              inspect: math.max(0.0, _intensity(i)),
+                              float: _floatWave,
+                              onTap: () => _onInspectTap(i),
+                              onHorizontalDragUpdate:
+                                  i == _frontIndex ? _onDragUpdate : null,
+                              onHorizontalDragEnd:
+                                  i == _frontIndex ? _onDragEnd : null,
+                              onHorizontalDragCancel:
+                                  i == _frontIndex ? _onDragCancel : null,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
-            );
-          },
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

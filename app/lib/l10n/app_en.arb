@@ -279,6 +279,7 @@
   "cardsViewWallet": "Stack",
   "cardsViewGrid": "Grid",
   "cardsViewCompact": "List",
+  "cardsCategoryFrequent": "Often",
   "cardsCategoryAll": "All",
   "cardsCategoryGroceries": "Groceries",
   "cardsCategoryPets": "Pets",

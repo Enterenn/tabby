@@ -1688,6 +1688,12 @@ abstract class AppLocalizations {
   /// **'Liste'**
   String get cardsViewCompact;
 
+  /// No description provided for @cardsCategoryFrequent.
+  ///
+  /// In fr, this message translates to:
+  /// **'Souvent'**
+  String get cardsCategoryFrequent;
+
   /// No description provided for @cardsCategoryAll.
   ///
   /// In fr, this message translates to:

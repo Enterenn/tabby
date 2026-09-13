@@ -49,6 +49,7 @@ class _CardsView extends StatefulWidget {
 class _CardsViewState extends State<_CardsView> {
   LoyaltyCardsView _view = LoyaltyCardsView.wallet;
   LoyaltyBrandCategory? _category;
+  bool _useFrequent = true;
 
   @override
   void initState() {
@@ -93,11 +94,24 @@ class _CardsViewState extends State<_CardsView> {
                 actionLabel: context.l10n.addCard,
                 onAction: () => _showCardSheet(context),
               ),
-            CardsLoaded(:final cards) => _CardsBody(
+            CardsLoaded(:final cards, :final frequent) => _CardsBody(
                 cards: cards,
+                frequent: frequent,
                 view: _view,
                 category: _category,
-                onCategory: (category) => setState(() => _category = category),
+                useFrequent: _useFrequent,
+                onFrequent: () => setState(() {
+                  _useFrequent = true;
+                  _category = null;
+                }),
+                onAll: () => setState(() {
+                  _useFrequent = false;
+                  _category = null;
+                }),
+                onCategory: (category) => setState(() {
+                  _useFrequent = false;
+                  _category = category;
+                }),
               ),
             _ => const SizedBox.shrink(),
           },
@@ -162,15 +176,23 @@ class _CardsViewMenu extends StatelessWidget {
 class _CardsBody extends StatefulWidget {
   const _CardsBody({
     required this.cards,
+    required this.frequent,
     required this.view,
     required this.category,
+    required this.useFrequent,
+    required this.onFrequent,
+    required this.onAll,
     required this.onCategory,
   });
 
   final List<LoyaltyCard> cards;
+  final List<LoyaltyCard> frequent;
   final LoyaltyCardsView view;
   final LoyaltyBrandCategory? category;
-  final ValueChanged<LoyaltyBrandCategory?> onCategory;
+  final bool useFrequent;
+  final VoidCallback onFrequent;
+  final VoidCallback onAll;
+  final ValueChanged<LoyaltyBrandCategory> onCategory;
 
   @override
   State<_CardsBody> createState() => _CardsBodyState();
@@ -183,7 +205,8 @@ class _CardsBodyState extends State<_CardsBody> {
   void didUpdateWidget(_CardsBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.category == widget.category &&
-        oldWidget.view == widget.view) {
+        oldWidget.view == widget.view &&
+        oldWidget.useFrequent == widget.useFrequent) {
       return;
     }
     if (!_scroll.hasClients || _scroll.offset == 0) return;
@@ -210,13 +233,20 @@ class _CardsBodyState extends State<_CardsBody> {
   Widget build(BuildContext context) {
     final present = LoyaltyBrandCategory.presentIn(widget.cards);
     final selected = _selectedOf(present);
-    final visible = selected == null
-        ? widget.cards
-        : widget.cards
-            .where((card) => LoyaltyBrandCategory.ofCard(card) == selected)
-            .toList();
-    final showChips = present.length >= 2;
-    final filterKey = '${widget.view.name}-${selected?.name ?? 'all'}';
+    final showFrequent = widget.frequent.isNotEmpty;
+    final frequentSelected = showFrequent && widget.useFrequent && selected == null;
+    final visible = frequentSelected
+        ? widget.frequent
+        : selected == null
+            ? widget.cards
+            : widget.cards
+                .where((card) => LoyaltyBrandCategory.ofCard(card) == selected)
+                .toList();
+    final showBrandChips = present.length >= 2;
+    final showChips = showFrequent || showBrandChips;
+    final filterKey = frequentSelected
+        ? '${widget.view.name}-frequent'
+        : '${widget.view.name}-${selected?.name ?? 'all'}';
 
     return Column(
       children: [
@@ -224,27 +254,38 @@ class _CardsBodyState extends State<_CardsBody> {
           _CategoryChips(
             present: present,
             selected: selected,
-            onSelected: widget.onCategory,
+            showFrequent: showFrequent,
+            frequentSelected: frequentSelected,
+            showBrandChips: showBrandChips,
+            onFrequent: widget.onFrequent,
+            onAll: widget.onAll,
+            onCategory: widget.onCategory,
           ),
         Expanded(
-          child: SingleChildScrollView(
-            controller: _scroll,
-            padding: EdgeInsets.fromLTRB(
-              LoyaltyCardLayout.screenHorizontalInset,
-              showChips ? 4 : 12,
-              LoyaltyCardLayout.screenHorizontalInset,
-              24,
-            ),
-            child: Column(
-              children: [
-                _cardsSwitcher(filterKey, visible),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () => _showCardSheet(context),
-                  child: Text(context.l10n.addCard),
-                ),
-                const SizedBox(height: 100),
-              ],
+          child: NotificationListener<OverscrollIndicatorNotification>(
+            onNotification: (notification) {
+              notification.disallowIndicator();
+              return false;
+            },
+            child: SingleChildScrollView(
+              controller: _scroll,
+              padding: EdgeInsets.fromLTRB(
+                LoyaltyCardLayout.screenHorizontalInset,
+                showChips ? 4 : 12,
+                LoyaltyCardLayout.screenHorizontalInset,
+                24,
+              ),
+              child: Column(
+                children: [
+                  _cardsSwitcher(filterKey, visible),
+                  const SizedBox(height: 20),
+                  FilledButton(
+                    onPressed: () => _showCardSheet(context),
+                    child: Text(context.l10n.addCard),
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              ),
             ),
           ),
         ),
@@ -361,34 +402,56 @@ class _CategoryChips extends StatelessWidget {
   const _CategoryChips({
     required this.present,
     required this.selected,
-    required this.onSelected,
+    required this.showFrequent,
+    required this.frequentSelected,
+    required this.showBrandChips,
+    required this.onFrequent,
+    required this.onAll,
+    required this.onCategory,
   });
 
   final List<LoyaltyBrandCategory> present;
   final LoyaltyBrandCategory? selected;
-  final ValueChanged<LoyaltyBrandCategory?> onSelected;
+  final bool showFrequent;
+  final bool frequentSelected;
+  final bool showBrandChips;
+  final VoidCallback onFrequent;
+  final VoidCallback onAll;
+  final ValueChanged<LoyaltyBrandCategory> onCategory;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(
-        children: [
-          _chip(
-            context,
-            label: context.l10n.cardsCategoryAll,
-            selected: selected == null,
-            onTap: () => onSelected(null),
-          ),
-          for (final category in present)
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surface,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        child: Row(
+          children: [
+            if (showFrequent)
+              _chip(
+                context,
+                label: context.l10n.cardsCategoryFrequent,
+                selected: frequentSelected,
+                onTap: onFrequent,
+              ),
             _chip(
               context,
-              label: _label(context, category),
-              selected: selected == category,
-              onTap: () => onSelected(category),
+              label: context.l10n.cardsCategoryAll,
+              selected: !frequentSelected && selected == null,
+              onTap: onAll,
             ),
-        ],
+            if (showBrandChips)
+              for (final category in present)
+                _chip(
+                  context,
+                  label: _label(context, category),
+                  selected: !frequentSelected && selected == category,
+                  onTap: () => onCategory(category),
+                ),
+          ],
+        ),
       ),
     );
   }
@@ -452,6 +515,7 @@ void _showCardSheet(BuildContext context, {LoyaltyCard? existing}) {
 
 void _openFullScreen(BuildContext context, LoyaltyCard card) {
   final cubit = context.read<CardsCubit>();
+  cubit.recordOpen(card.id);
   Navigator.of(context).push(
     PageRouteBuilder<void>(
       transitionDuration: const Duration(milliseconds: 420),

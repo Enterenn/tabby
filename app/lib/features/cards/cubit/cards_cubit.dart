@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/api/api_failure.dart';
 import '../../../data/repositories.dart';
 import '../../../shared/models/loyalty_card.dart';
+import '../../../shared/models/loyalty_card_usage.dart';
 
 // ─── States ───────────────────────────────────────────────────────────────────
 
@@ -22,10 +23,11 @@ class CardsLoading extends CardsState {
 }
 
 class CardsLoaded extends CardsState {
-  const CardsLoaded(this.cards);
+  const CardsLoaded(this.cards, {this.frequent = const []});
   final List<LoyaltyCard> cards;
+  final List<LoyaltyCard> frequent;
   @override
-  List<Object?> get props => [cards];
+  List<Object?> get props => [cards, frequent];
 }
 
 class CardsError extends CardsState {
@@ -44,7 +46,7 @@ class CardsCubit extends Cubit<CardsState> {
     emit(const CardsLoading());
     try {
       final cards = await cardsRepository.list();
-      if (!isClosed) emit(CardsLoaded(cards));
+      if (!isClosed) emit(await _loaded(cards, prune: true));
     } catch (e) {
       if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
     }
@@ -101,6 +103,7 @@ class CardsCubit extends Cubit<CardsState> {
   Future<bool> deleteCard(String id) async {
     try {
       await cardsRepository.delete(id);
+      await LoyaltyCardUsageStore.forget(id);
       await load();
       return true;
     } catch (e) {
@@ -111,12 +114,30 @@ class CardsCubit extends Cubit<CardsState> {
 
   Future<void> reorder(List<LoyaltyCard> newOrder) async {
     // Mise à jour optimiste locale
-    if (!isClosed) emit(CardsLoaded(newOrder));
+    if (!isClosed) emit(await _loaded(newOrder));
     try {
       await cardsRepository.reorder(newOrder);
     } catch (e) {
       if (!isClosed) emit(CardsError(ApiFailure.from(e).message));
       await load();
     }
+  }
+
+  Future<void> recordOpen(String cardId) async {
+    await LoyaltyCardUsageStore.recordOpen(cardId);
+    final current = state;
+    if (current is! CardsLoaded || isClosed) return;
+    emit(await _loaded(current.cards));
+  }
+
+  Future<CardsLoaded> _loaded(
+    List<LoyaltyCard> cards, {
+    bool prune = false,
+  }) async {
+    await LoyaltyCardUsageStore.load();
+    if (prune) {
+      await LoyaltyCardUsageStore.forgetMissing(cards.map((card) => card.id));
+    }
+    return CardsLoaded(cards, frequent: LoyaltyCardUsageStore.frequentOf(cards));
   }
 }

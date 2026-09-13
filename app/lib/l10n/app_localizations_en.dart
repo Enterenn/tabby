@@ -869,6 +869,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cardsViewCompact => 'List';
 
   @override
+  String get cardsCategoryFrequent => 'Often';
+
+  @override
   String get cardsCategoryAll => 'All';
 
   @override

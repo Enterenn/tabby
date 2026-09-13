@@ -878,6 +878,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cardsViewCompact => 'Liste';
 
   @override
+  String get cardsCategoryFrequent => 'Souvent';
+
+  @override
   String get cardsCategoryAll => 'Tout';
 
   @override
