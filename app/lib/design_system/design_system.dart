@@ -25,6 +25,7 @@ export 'inputs/tabby_password_field.dart';
 export 'identity/expressive_avatar.dart';
 export 'identity/expressive_badge.dart';
 export 'identity/tabby_category_glyph.dart';
+export 'identity/tabby_section_header.dart';
 export 'identity/tabby_invite_code.dart';
 export 'identity/tabby_logo.dart';
 export 'surfaces/tabby_list_card.dart';

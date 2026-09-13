@@ -245,22 +245,14 @@ class _GroupsSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              context.l10n.yourGroups,
-              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-          TextButton(
-            onPressed: onNewGroup,
-            child: Text(context.l10n.newGroup),
-          ),
-        ],
+    final space = context.tabbySpace;
+    return TabbySectionHeader(
+      title: context.l10n.yourGroups,
+      emphasized: true,
+      padding: EdgeInsets.fromLTRB(space.xs, 0, 0, space.sm),
+      trailing: TextButton(
+        onPressed: onNewGroup,
+        child: Text(context.l10n.newGroup),
       ),
     );
   }

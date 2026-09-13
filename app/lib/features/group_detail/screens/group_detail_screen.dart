@@ -134,7 +134,6 @@ class _LoadedBody extends StatelessWidget {
               if (balances.isNotEmpty) ...[
                 _SectionHeader(
                   title: context.l10n.toSettle,
-                  icon: Symbols.payments_rounded,
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

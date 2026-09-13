@@ -10,6 +10,7 @@ class _PersonalExpensesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final cs = context.tabbyColors;
+    final space = context.tabbySpace;
     final items = state.visiblePersonalExpenses;
 
     return Padding(
@@ -17,8 +18,10 @@ class _PersonalExpensesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.l10n.personalPurchases, style: tt.titleMedium),
-          const SizedBox(height: 8),
+          TabbySectionHeader(
+            title: context.l10n.personalPurchases,
+            padding: EdgeInsets.fromLTRB(4, space.md, 4, space.sm),
+          ),
           if (items.isEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),

@@ -106,14 +106,10 @@ class _LoadedBody extends StatelessWidget {
                 ),
               ),
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
-                  child: Text(
-                    expenses.isEmpty
-                        ? context.l10n.expenses
-                        : context.l10n.expensesCount(expenses.length),
-                    style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-                  ),
+                child: TabbySectionHeader(
+                  title: expenses.isEmpty
+                      ? context.l10n.expenses
+                      : context.l10n.expensesCount(expenses.length),
                 ),
               ),
               if (expenses.isEmpty)

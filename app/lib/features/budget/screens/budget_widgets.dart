@@ -85,23 +85,20 @@ class _BudgetContent extends StatelessWidget {
           ),
 
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 8, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.l10n.monthBudgets,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                if (canCreate)
-                  TextButton(
+          child: TabbySectionHeader(
+            title: context.l10n.monthBudgets,
+            padding: EdgeInsets.fromLTRB(
+              context.tabbySpace.lg,
+              context.tabbySpace.xl,
+              context.tabbySpace.sm,
+              context.tabbySpace.sm,
+            ),
+            trailing: canCreate
+                ? TextButton(
                     onPressed: onCreateBudget,
                     child: Text(context.l10n.newBudget),
-                  ),
-              ],
-            ),
+                  )
+                : null,
           ),
         ),
         if (state.budgets.isNotEmpty) ...[

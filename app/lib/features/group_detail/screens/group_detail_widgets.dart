@@ -2,17 +2,13 @@ part of 'group_detail_screen.dart';
 // ─── Section header ───────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.icon});
+  const _SectionHeader({required this.title});
   final String title;
-  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-        child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
-      ),
+      child: TabbySectionHeader(title: title),
     );
   }
 }
@@ -279,13 +275,7 @@ class _GroupedSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 8),
-            child: Text(
-              title,
-              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
+          TabbySectionHeader(title: title),
           if (emptyMessage != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
