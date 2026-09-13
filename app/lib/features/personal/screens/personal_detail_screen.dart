@@ -8,10 +8,22 @@ import '../../../core/theme/app_theme.dart';
 import '../../../design_system/design_system.dart';
 import '../../../features/add_expense/screens/add_expense_screen.dart';
 import '../../../l10n/l10n.dart';
-import '../../../shared/models/category.dart';
 import '../../../shared/models/personal_expense.dart';
 import '../cubit/personal_detail_cubit.dart';
-import '../widgets/personal_expense_edit_dialog.dart';
+
+Future<void> _editPersonalExpense(
+  BuildContext context, {
+  required PersonalExpense expense,
+}) async {
+  final updated = await showAddExpenseSheet(
+    context,
+    forMe: true,
+    editingPersonal: expense,
+  );
+  if (updated == true && context.mounted) {
+    context.read<PersonalDetailCubit>().load();
+  }
+}
 
 class PersonalDetailScreen extends StatelessWidget {
   const PersonalDetailScreen({super.key});
@@ -52,8 +64,8 @@ class _PersonalDetailView extends StatelessWidget {
                 onRetry: () => context.read<PersonalDetailCubit>().load(),
               ),
             ),
-          PersonalDetailLoaded(:final expenses, :final categories) =>
-            _LoadedBody(expenses: expenses, categories: categories),
+          PersonalDetailLoaded(:final expenses) =>
+            _LoadedBody(expenses: expenses),
           _ => const SizedBox.shrink(),
         };
       },
@@ -62,10 +74,9 @@ class _PersonalDetailView extends StatelessWidget {
 }
 
 class _LoadedBody extends StatelessWidget {
-  const _LoadedBody({required this.expenses, required this.categories});
+  const _LoadedBody({required this.expenses});
 
   final List<PersonalExpense> expenses;
-  final List<Category> categories;
 
   @override
   Widget build(BuildContext context) {
@@ -86,22 +97,31 @@ class _LoadedBody extends StatelessWidget {
                 child: ExpressiveTonalCard(
                   variant: ExpressiveTonalVariant.lime,
                   margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.yourShare,
-                        style: tt.labelLarge?.copyWith(
-                          color: cs.onTertiaryContainer.withValues(alpha: 0.8),
+                  child: DefaultTextStyle.merge(
+                    style: TextStyle(color: cs.onTertiaryContainer),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.yourShare.toUpperCase(),
+                          style: tt.labelSmall?.copyWith(
+                            fontSize: 10,
+                            letterSpacing: 1.0,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onTertiaryContainer,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      ExpressiveFigure(
-                        value: formatMoney(context, total),
-                        size: ExpressiveFigureSize.medium,
-                        color: cs.onTertiaryContainer,
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          formatMoney(context, total),
+                          style: context.tabbyType.figureMedium.copyWith(
+                            fontSize: 28,
+                            height: 32 / 28,
+                            color: cs.onTertiaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -129,10 +149,7 @@ class _LoadedBody extends StatelessWidget {
                   sliver: SliverList.separated(
                     itemCount: expenses.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (ctx, i) => _ExpenseTile(
-                      expense: expenses[i],
-                      categories: categories,
-                    ),
+                    itemBuilder: (ctx, i) => _ExpenseTile(expense: expenses[i]),
                   ),
                 ),
             ],
@@ -143,8 +160,9 @@ class _LoadedBody extends StatelessWidget {
                 icon: Symbols.receipt_long_rounded,
                 label: context.l10n.addExpense,
                 onSelected: () async {
-                  await showAddExpenseSheet(context, forMe: true);
-                  if (context.mounted) {
+                  final created =
+                      await showAddExpenseSheet(context, forMe: true);
+                  if (created == true && context.mounted) {
                     context.read<PersonalDetailCubit>().load();
                   }
                 },
@@ -158,14 +176,14 @@ class _LoadedBody extends StatelessWidget {
 }
 
 class _ExpenseTile extends StatelessWidget {
-  const _ExpenseTile({required this.expense, required this.categories});
+  const _ExpenseTile({required this.expense});
 
   final PersonalExpense expense;
-  final List<Category> categories;
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
     final catColor = expense.category.resolvedColor;
     final onCat = expense.category.onResolvedColor;
 
@@ -181,13 +199,22 @@ class _ExpenseTile extends StatelessWidget {
           size: 40,
           iconSize: 20,
         ),
-        title: Text(expense.name, style: tt.titleSmall),
+        title: Text(
+          expense.name,
+          style: tt.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            height: 1.2,
+          ),
+        ),
         subtitle: Text(
           '${context.categoryName(expense.category)} · ${formatRelativeDate(context, expense.expenseDate)}',
         ),
-        trailing: ExpressiveFigure(
-          value: formatMoney(context, expense.amount),
-          size: ExpressiveFigureSize.small,
+        trailing: Text(
+          formatMoney(context, expense.amount),
+          style: tt.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
         ),
       ),
     );
@@ -201,7 +228,7 @@ class _ExpenseTile extends StatelessWidget {
         TabbyActionSheetItem(
           label: context.l10n.editExpense,
           icon: Symbols.edit_rounded,
-          onTap: () => _showEditDialog(context),
+          onTap: () => _editPersonalExpense(context, expense: expense),
         ),
         TabbyActionSheetItem(
           label: context.l10n.delete,
@@ -210,31 +237,6 @@ class _ExpenseTile extends StatelessWidget {
           onTap: () => _confirmDelete(context),
         ),
       ],
-    );
-  }
-
-  void _showEditDialog(BuildContext context) {
-    final cubit = context.read<PersonalDetailCubit>();
-    showTabbyFormDialog(
-      context: context,
-      builder: (_) => PersonalExpenseEditDialog(
-        expense: expense,
-        categories: categories,
-        onSave: ({
-          required name,
-          required amount,
-          required categoryId,
-          required expenseDate,
-        }) {
-          return cubit.updateExpense(
-            expenseId: expense.id,
-            name: name,
-            amount: amount,
-            categoryId: categoryId,
-            expenseDate: expenseDate,
-          );
-        },
-      ),
     );
   }
 

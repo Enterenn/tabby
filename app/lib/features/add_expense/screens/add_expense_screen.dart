@@ -14,6 +14,7 @@ import '../../../design_system/design_system.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/expense.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/models/personal_expense.dart';
 import '../../../shared/widgets/category_editor_sheet.dart';
 import '../cubit/add_expense_cubit.dart';
 
@@ -24,14 +25,21 @@ part 'add_expense_meta.dart';
 
 /// Ouvre la feuille de création (ou d'édition) de dépense.
 /// [groupId] renseigné → groupe prérempli et verrouillé.
-/// [editing] renseigné → même feuille, déjà remplie.
+/// [editing] / [editingPersonal] → même feuille, déjà remplie.
 Future<bool?> showAddExpenseSheet(
   BuildContext context, {
   String? groupId,
   bool forMe = false,
   Expense? editing,
+  PersonalExpense? editingPersonal,
 }) {
-  final lock = (groupId != null && groupId.isNotEmpty) || editing != null;
+  assert(
+    editing == null || editingPersonal == null,
+    'Pass either a group or personal expense to edit, not both.',
+  );
+  final lock = (groupId != null && groupId.isNotEmpty) ||
+      editing != null ||
+      editingPersonal != null;
   final home = context.read<HomeCubit>();
   return showTabbySheet<bool>(
     context,
@@ -41,8 +49,9 @@ Future<bool?> showAddExpenseSheet(
         ..load(groupId: groupId, lockGroup: lock),
       child: _AddExpenseSheet(
         onCreated: home.loadGroups,
-        initialForMe: forMe,
+        initialForMe: forMe || editingPersonal != null,
         editing: editing,
+        editingPersonal: editingPersonal,
         groupId: groupId,
       ),
     ),

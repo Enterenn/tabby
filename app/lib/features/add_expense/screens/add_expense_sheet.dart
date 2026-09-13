@@ -7,12 +7,14 @@ class _AddExpenseSheet extends StatefulWidget {
     required this.onCreated,
     this.initialForMe = false,
     this.editing,
+    this.editingPersonal,
     this.groupId,
   });
 
   final VoidCallback onCreated;
   final bool initialForMe;
   final Expense? editing;
+  final PersonalExpense? editingPersonal;
   final String? groupId;
 
   @override
@@ -39,11 +41,22 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   AddExpenseReady? _lastReady;
   bool _didPrefillSplitAmounts = false;
 
-  bool get _isEditing => widget.editing != null;
+  bool get _isEditing =>
+      widget.editing != null || widget.editingPersonal != null;
 
   @override
   void initState() {
     super.initState();
+    final personal = widget.editingPersonal;
+    if (personal != null) {
+      _nameCtrl.text = personal.name;
+      _amountCtrl.text = personal.amount.toStringAsFixed(2);
+      _selectedCategory = personal.category;
+      _expenseDate = personal.expenseDate;
+      _forMe = true;
+      _recurring = false;
+      return;
+    }
     final editing = widget.editing;
     if (editing == null) return;
     _nameCtrl.text = editing.name;
@@ -234,15 +247,25 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     }
 
     final name = _nameCtrl.text.trim();
+    final cubit = context.read<AddExpenseCubit>();
     final bool ok;
-    if (_forMe) {
-      ok = await context.read<AddExpenseCubit>().submitPersonal(
-            name: name,
-            amount: amount,
-            categoryId: _selectedCategory!.id,
-            expenseDate: _expenseDate,
-            recurring: _recurring,
-          );
+    final editingPersonal = widget.editingPersonal;
+    if (editingPersonal != null) {
+      ok = await cubit.updatePersonal(
+        expenseId: editingPersonal.id,
+        name: name,
+        amount: amount,
+        categoryId: _selectedCategory!.id,
+        expenseDate: _expenseDate,
+      );
+    } else if (_forMe) {
+      ok = await cubit.submitPersonal(
+        name: name,
+        amount: amount,
+        categoryId: _selectedCategory!.id,
+        expenseDate: _expenseDate,
+        recurring: _recurring,
+      );
     } else {
       final payerId = _selectedPayerId ??
           _defaultPayerId(ready!.group!.members);
@@ -262,27 +285,27 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
       final editing = widget.editing;
       if (editing != null) {
-        ok = await context.read<AddExpenseCubit>().update(
-              groupId: ready!.group!.id,
-              expenseId: editing.id,
-              name: name,
-              amount: amount,
-              categoryId: _selectedCategory!.id,
-              paidBy: payerId,
-              expenseDate: _expenseDate,
-              customSplits: splits,
-            );
+        ok = await cubit.update(
+          groupId: ready!.group!.id,
+          expenseId: editing.id,
+          name: name,
+          amount: amount,
+          categoryId: _selectedCategory!.id,
+          paidBy: payerId,
+          expenseDate: _expenseDate,
+          customSplits: splits,
+        );
       } else {
-        ok = await context.read<AddExpenseCubit>().submit(
-              groupId: ready!.group!.id,
-              name: name,
-              amount: amount,
-              categoryId: _selectedCategory!.id,
-              paidBy: payerId,
-              expenseDate: _expenseDate,
-              customSplits: _recurring ? null : splits,
-              recurring: _recurring,
-            );
+        ok = await cubit.submit(
+          groupId: ready!.group!.id,
+          name: name,
+          amount: amount,
+          categoryId: _selectedCategory!.id,
+          paidBy: payerId,
+          expenseDate: _expenseDate,
+          customSplits: _recurring ? null : splits,
+          recurring: _recurring,
+        );
       }
     }
 

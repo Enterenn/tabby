@@ -254,4 +254,29 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       return false;
     }
   }
+
+  Future<bool> updatePersonal({
+    required String expenseId,
+    required String name,
+    required double amount,
+    required String categoryId,
+    required DateTime expenseDate,
+  }) async {
+    if (state is! AddExpenseReady) return false;
+    emit(const AddExpenseSubmitting());
+    try {
+      await personalExpensesRepository.update(
+        expenseId: expenseId,
+        name: name,
+        amount: amount,
+        categoryId: categoryId,
+        expenseDate: expenseDate,
+      );
+      if (!isClosed) emit(const AddExpenseSuccess());
+      return true;
+    } catch (e) {
+      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      return false;
+    }
+  }
 }

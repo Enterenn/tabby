@@ -14,7 +14,7 @@ import '../../../shared/models/group.dart';
 import '../../../shared/models/personal_expense.dart';
 import '../../../shared/models/spend_scope.dart';
 import '../../../shared/models/stats.dart';
-import '../../personal/widgets/personal_expense_edit_dialog.dart';
+import '../../add_expense/screens/add_expense_screen.dart';
 import '../cubit/budget_cubit.dart';
 
 part 'budget_widgets.dart';

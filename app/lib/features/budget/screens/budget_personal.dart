@@ -42,7 +42,7 @@ class _PersonalExpensesSection extends StatelessWidget {
             )
           else
             ...items.map(
-              (expense) => _PersonalExpenseTile(expense: expense, state: state),
+              (expense) => _PersonalExpenseTile(expense: expense),
             ),
         ],
       ),
@@ -51,14 +51,14 @@ class _PersonalExpensesSection extends StatelessWidget {
 }
 
 class _PersonalExpenseTile extends StatelessWidget {
-  const _PersonalExpenseTile({required this.expense, required this.state});
+  const _PersonalExpenseTile({required this.expense});
 
   final PersonalExpense expense;
-  final BudgetLoaded state;
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
     final catColor = expense.category.resolvedColor;
     final onCat = expense.category.onResolvedColor;
 
@@ -74,13 +74,22 @@ class _PersonalExpenseTile extends StatelessWidget {
           size: 40,
           iconSize: 20,
         ),
-        title: Text(expense.name, style: tt.titleSmall),
+        title: Text(
+          expense.name,
+          style: tt.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            height: 1.2,
+          ),
+        ),
         subtitle: Text(
           '${context.categoryName(expense.category)} · ${formatRelativeDate(context, expense.expenseDate)}',
         ),
-        trailing: ExpressiveFigure(
-          value: formatMoney(context, expense.amount),
-          size: ExpressiveFigureSize.small,
+        trailing: Text(
+          formatMoney(context, expense.amount),
+          style: tt.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
         ),
       ),
     );
@@ -94,7 +103,11 @@ class _PersonalExpenseTile extends StatelessWidget {
         TabbyActionSheetItem(
           label: context.l10n.editExpense,
           icon: Symbols.edit_rounded,
-          onTap: () => _showEditDialog(context),
+          onTap: () => showAddExpenseSheet(
+            context,
+            forMe: true,
+            editingPersonal: expense,
+          ),
         ),
         TabbyActionSheetItem(
           label: context.l10n.delete,
@@ -103,33 +116,6 @@ class _PersonalExpenseTile extends StatelessWidget {
           onTap: () => _confirmDelete(context),
         ),
       ],
-    );
-  }
-
-  void _showEditDialog(BuildContext context) {
-    final cubit = context.read<BudgetCubit>();
-    showTabbyFormDialog(
-      context: context,
-      builder: (_) => PersonalExpenseEditDialog(
-        expense: expense,
-        categories: state.allCategories,
-        onSave: ({
-          required name,
-          required amount,
-          required categoryId,
-          required expenseDate,
-        }) async {
-          final errorLabel = context.l10n.errorUpdate;
-          final ok = await cubit.updatePersonal(
-            expenseId: expense.id,
-            name: name,
-            amount: amount,
-            categoryId: categoryId,
-            expenseDate: expenseDate,
-          );
-          return ok ? null : errorLabel;
-        },
-      ),
     );
   }
 
