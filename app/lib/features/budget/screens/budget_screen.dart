@@ -18,6 +18,9 @@ import '../../personal/widgets/personal_expense_edit_dialog.dart';
 import '../cubit/budget_cubit.dart';
 
 part 'budget_widgets.dart';
+part 'budget_stats.dart';
+part 'budget_card.dart';
+part 'budget_personal.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 

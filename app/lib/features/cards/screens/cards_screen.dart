@@ -21,7 +21,9 @@ import '../../../shared/widgets/loyalty/loyalty_machine_code.dart';
 import '../../../shared/widgets/loyalty/loyalty_wallet_stack.dart';
 import '../cubit/cards_cubit.dart';
 
-part 'cards_widgets.dart';
+part 'cards_fullscreen.dart';
+part 'cards_scanner.dart';
+part 'cards_add_sheet.dart';
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
