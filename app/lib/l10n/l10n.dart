@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/auth/password_policy.dart';
+import '../shared/models/category.dart';
 import 'app_localizations.dart';
 
 export 'app_localizations.dart';
@@ -9,6 +10,36 @@ extension TabbyL10n on BuildContext {
   AppLocalizations get l10n => AppLocalizations.of(this);
 
   String l10nError(String? raw) => localizeApiError(l10n, raw);
+
+  /// Nom affiché : traduit pour les catégories par défaut, brut pour les custom.
+  String categoryName(Category category) => category.localizedName(l10n);
+}
+
+extension CategoryL10n on Category {
+  String localizedName(AppLocalizations l10n) {
+    if (!isDefault) return name;
+    return switch (name) {
+      'Logement' || 'Loyer' => l10n.defaultCategoryHousing,
+      'Courses' => l10n.defaultCategoryGroceries,
+      'Restaurant' => l10n.defaultCategoryRestaurant,
+      'Transport' => l10n.defaultCategoryTransport,
+      'Loisirs' => l10n.defaultCategoryLeisure,
+      'Abonnements' => l10n.defaultCategorySubscriptions,
+      'Santé' => l10n.defaultCategoryHealth,
+      'Autre' => l10n.defaultCategoryOther,
+      _ => switch (icon) {
+          'home' => l10n.defaultCategoryHousing,
+          'shopping_cart' => l10n.defaultCategoryGroceries,
+          'restaurant' => l10n.defaultCategoryRestaurant,
+          'directions_car' => l10n.defaultCategoryTransport,
+          'sports_esports' => l10n.defaultCategoryLeisure,
+          'subscriptions' => l10n.defaultCategorySubscriptions,
+          'local_hospital' => l10n.defaultCategoryHealth,
+          'category' => l10n.defaultCategoryOther,
+          _ => name,
+        },
+    };
+  }
 }
 
 String localizeApiError(AppLocalizations l10n, String? raw) {

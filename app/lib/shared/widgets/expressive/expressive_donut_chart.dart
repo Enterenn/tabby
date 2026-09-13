@@ -151,7 +151,9 @@ class ExpressiveDonutChart extends StatelessWidget {
                         ),
                       const SizedBox(height: 4),
                       Text(
-                        touched?.category.name ?? context.l10n.totalExpenses,
+                        touched != null
+                            ? context.categoryName(touched.category)
+                            : context.l10n.totalExpenses,
                         style: tt.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),

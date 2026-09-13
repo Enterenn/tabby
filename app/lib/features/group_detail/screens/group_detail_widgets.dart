@@ -422,7 +422,7 @@ class _ExpenseTile extends StatelessWidget {
                         ),
                       ),
                       ExpressiveBadge(
-                        label: expense.category.name,
+                        label: context.categoryName(expense.category),
                         color: catColor,
                         textColor: onCat,
                         padding: const EdgeInsets.symmetric(

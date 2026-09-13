@@ -1592,6 +1592,60 @@ abstract class AppLocalizations {
   /// **'Créer la catégorie'**
   String get createCategory;
 
+  /// No description provided for @editCategory.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la catégorie'**
+  String get editCategory;
+
+  /// No description provided for @defaultCategoryHousing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Logement'**
+  String get defaultCategoryHousing;
+
+  /// No description provided for @defaultCategoryGroceries.
+  ///
+  /// In fr, this message translates to:
+  /// **'Courses'**
+  String get defaultCategoryGroceries;
+
+  /// No description provided for @defaultCategoryRestaurant.
+  ///
+  /// In fr, this message translates to:
+  /// **'Restaurant'**
+  String get defaultCategoryRestaurant;
+
+  /// No description provided for @defaultCategoryTransport.
+  ///
+  /// In fr, this message translates to:
+  /// **'Transport'**
+  String get defaultCategoryTransport;
+
+  /// No description provided for @defaultCategoryLeisure.
+  ///
+  /// In fr, this message translates to:
+  /// **'Loisirs'**
+  String get defaultCategoryLeisure;
+
+  /// No description provided for @defaultCategorySubscriptions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abonnements'**
+  String get defaultCategorySubscriptions;
+
+  /// No description provided for @defaultCategoryHealth.
+  ///
+  /// In fr, this message translates to:
+  /// **'Santé'**
+  String get defaultCategoryHealth;
+
+  /// No description provided for @defaultCategoryOther.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get defaultCategoryOther;
+
   /// No description provided for @invalid.
   ///
   /// In fr, this message translates to:

@@ -832,6 +832,33 @@ class AppLocalizationsFr extends AppLocalizations {
   String get createCategory => 'Créer la catégorie';
 
   @override
+  String get editCategory => 'Modifier la catégorie';
+
+  @override
+  String get defaultCategoryHousing => 'Logement';
+
+  @override
+  String get defaultCategoryGroceries => 'Courses';
+
+  @override
+  String get defaultCategoryRestaurant => 'Restaurant';
+
+  @override
+  String get defaultCategoryTransport => 'Transport';
+
+  @override
+  String get defaultCategoryLeisure => 'Loisirs';
+
+  @override
+  String get defaultCategorySubscriptions => 'Abonnements';
+
+  @override
+  String get defaultCategoryHealth => 'Santé';
+
+  @override
+  String get defaultCategoryOther => 'Autre';
+
+  @override
   String get invalid => 'Invalide';
 
   @override

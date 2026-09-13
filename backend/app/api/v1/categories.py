@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.models import Category, User
-from app.schemas.expense import CategoryCreate, CategoryResponse
+from app.schemas.expense import CategoryCreate, CategoryResponse, CategoryUpdate
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -66,6 +66,32 @@ async def create_category(
         sort_order=sort_order,
     )
     db.add(category)
+    await db.flush()
+    return _to_response(category)
+
+
+@router.patch("/{category_id}", response_model=CategoryResponse)
+async def update_category(
+    category_id: uuid.UUID,
+    body: CategoryUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    category = await db.get(Category, category_id)
+    if category is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    if category.is_default or category.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot update this category",
+        )
+    if body.name is not None:
+        category.name = body.name
+    if body.icon is not None:
+        category.icon = body.icon
+    if body.color is not None:
+        color = body.color if body.color.startswith("#") else f"#{body.color}"
+        category.color = color
     await db.flush()
     return _to_response(category)
 

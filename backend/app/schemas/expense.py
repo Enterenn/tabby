@@ -25,6 +25,22 @@ class CategoryCreate(BaseModel):
     color: str  # hex sans le # ou avec
 
 
+class CategoryUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    icon: str | None = None
+    color: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        name = value.strip()
+        if not name:
+            raise ValueError("Name is required")
+        return name
+
+
 class ExpenseSplitResponse(BaseModel):
     user_id: str
     amount: float

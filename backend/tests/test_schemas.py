@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.auth import RegisterRequest
-from app.schemas.expense import ExpenseCreate
+from app.schemas.expense import CategoryUpdate, ExpenseCreate
 from app.schemas.group import GroupCreate, SettleRequest
 from app.schemas.personal import PersonalExpenseUpdate
 from app.schemas.recurring import PersonalRecurringCreate, RecurringExpenseCreate
@@ -79,6 +79,16 @@ def test_personal_recurring_amount_must_be_positive():
             category_id=uuid4(),
             day_of_period=5,
         )
+
+
+def test_category_update_name_stripped():
+    req = CategoryUpdate(name="  Vetements  ")
+    assert req.name == "Vetements"
+
+
+def test_category_update_empty_name_rejected():
+    with pytest.raises(ValidationError):
+        CategoryUpdate(name="   ")
 
 
 def test_personal_recurring_day_must_be_in_month():

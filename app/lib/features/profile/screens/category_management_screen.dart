@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/models/category.dart';
+import '../../../shared/widgets/category_editor_sheet.dart';
 import '../cubit/categories_cubit.dart';
 
 class CategoryManagementScreen extends StatelessWidget {
@@ -23,11 +24,30 @@ class CategoryManagementScreen extends StatelessWidget {
 class _CategoriesView extends StatelessWidget {
   const _CategoriesView();
 
+  Future<void> _edit(BuildContext context, Category cat) {
+    return showCategoryEditorSheet(
+      context: context,
+      initial: cat,
+      onSubmit: ({
+        required name,
+        required icon,
+        required color,
+      }) {
+        return context.read<CategoriesCubit>().update(
+              categoryId: cat.id,
+              name: name,
+              icon: icon,
+              color: color,
+            );
+      },
+    );
+  }
+
   Future<void> _delete(BuildContext context, Category cat) async {
     final confirmed = await showTabbyConfirm(
       context,
       title: context.l10n.deleteCategoryTitle,
-      body: context.l10n.deleteCategoryBody(cat.name),
+      body: context.l10n.deleteCategoryBody(context.categoryName(cat)),
       confirmLabel: context.l10n.delete,
       danger: true,
     );
@@ -54,6 +74,7 @@ class _CategoriesView extends StatelessWidget {
               ),
             CategoriesLoaded(:final custom) => _CategoriesList(
                 custom: custom,
+                onEdit: (cat) => _edit(context, cat),
                 onDelete: (cat) => _delete(context, cat),
               ),
           };
@@ -64,9 +85,14 @@ class _CategoriesView extends StatelessWidget {
 }
 
 class _CategoriesList extends StatelessWidget {
-  const _CategoriesList({required this.custom, required this.onDelete});
+  const _CategoriesList({
+    required this.custom,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final List<Category> custom;
+  final void Function(Category cat) onEdit;
   final void Function(Category cat) onDelete;
 
   @override
@@ -89,6 +115,7 @@ class _CategoriesList extends StatelessWidget {
             children: [
               for (var i = 0; i < custom.length; i++) ...[
                 ListTile(
+                  onTap: () => onEdit(custom[i]),
                   leading: TabbyCategoryGlyph(
                     icon: custom[i].flutterIcon,
                     background: context.tabbySemantic.chartColorFor(custom[i]),
@@ -99,14 +126,27 @@ class _CategoriesList extends StatelessWidget {
                     size: 36,
                     iconSize: 20,
                   ),
-                  title: Text(custom[i].name),
-                  trailing: IconButton(
-                    icon: Icon(
-                      Symbols.delete_rounded,
-                      size: 20,
-                      color: cs.error,
-                    ),
-                    onPressed: () => onDelete(custom[i]),
+                  title: Text(context.categoryName(custom[i])),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Symbols.edit_rounded,
+                          size: 20,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        onPressed: () => onEdit(custom[i]),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Symbols.delete_rounded,
+                          size: 20,
+                          color: cs.error,
+                        ),
+                        onPressed: () => onDelete(custom[i]),
+                      ),
+                    ],
                   ),
                 ),
                 if (i < custom.length - 1)

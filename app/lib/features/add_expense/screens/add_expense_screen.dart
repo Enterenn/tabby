@@ -12,6 +12,7 @@ import '../../../features/home/cubit/home_cubit.dart';
 import '../../../design_system/design_system.dart';
 import '../../../shared/models/category.dart';
 import '../../../shared/models/group.dart';
+import '../../../shared/widgets/category_editor_sheet.dart';
 import '../cubit/add_expense_cubit.dart';
 
 part 'add_expense_widgets.dart';
@@ -660,15 +661,21 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     BuildContext context,
     AddExpenseReady ready,
   ) {
-    showTabbySheet(
-      context,
-      isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<AddExpenseCubit>(),
-        child: _CreateCategorySheet(
-          onCreated: (cat) => setState(() => _selectedCategory = cat),
-        ),
-      ),
+    showCategoryEditorSheet(
+      context: context,
+      onSubmit: ({
+        required name,
+        required icon,
+        required color,
+      }) async {
+        final cat = await context.read<AddExpenseCubit>().createCategory(
+              name: name,
+              icon: icon,
+              color: color,
+            );
+        if (cat != null) setState(() => _selectedCategory = cat);
+        return cat;
+      },
     );
   }
 }

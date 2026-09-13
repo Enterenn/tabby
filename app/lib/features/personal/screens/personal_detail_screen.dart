@@ -189,7 +189,7 @@ class _ExpenseTile extends StatelessWidget {
                 Text(expense.name, style: tt.titleSmall),
                 const SizedBox(height: 2),
                 Text(
-                  '${expense.category.name} · ${_formatDate(context, expense.expenseDate)}',
+                  '${context.categoryName(expense.category)} · ${_formatDate(context, expense.expenseDate)}',
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
@@ -363,7 +363,7 @@ class _EditDialogState extends State<_EditDialog> {
                       children: [
                         c.iconWidget(size: 18, color: c.resolvedColor),
                         const SizedBox(width: 8),
-                        Text(c.name),
+                        Text(context.categoryName(c)),
                       ],
                     ),
                   ),

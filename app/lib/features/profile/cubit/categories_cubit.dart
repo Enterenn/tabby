@@ -49,6 +49,33 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     }
   }
 
+  Future<Category?> update({
+    required String categoryId,
+    required String name,
+    required String icon,
+    required String color,
+  }) async {
+    final current = state;
+    if (current is! CategoriesLoaded) return null;
+    try {
+      final updated = await _categories.update(
+        categoryId: categoryId,
+        name: name,
+        icon: icon,
+        color: color,
+      );
+      if (!isClosed) {
+        emit(CategoriesLoaded([
+          for (final c in current.custom)
+            if (c.id == categoryId) updated else c,
+        ]));
+      }
+      return updated;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<String?> delete({required String categoryId}) async {
     final current = state;
     if (current is! CategoriesLoaded) return 'errorUnexpected';

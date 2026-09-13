@@ -825,6 +825,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createCategory => 'Create category';
 
   @override
+  String get editCategory => 'Edit category';
+
+  @override
+  String get defaultCategoryHousing => 'Housing';
+
+  @override
+  String get defaultCategoryGroceries => 'Groceries';
+
+  @override
+  String get defaultCategoryRestaurant => 'Restaurant';
+
+  @override
+  String get defaultCategoryTransport => 'Transport';
+
+  @override
+  String get defaultCategoryLeisure => 'Leisure';
+
+  @override
+  String get defaultCategorySubscriptions => 'Subscriptions';
+
+  @override
+  String get defaultCategoryHealth => 'Health';
+
+  @override
+  String get defaultCategoryOther => 'Other';
+
+  @override
   String get invalid => 'Invalid';
 
   @override

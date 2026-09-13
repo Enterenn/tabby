@@ -152,8 +152,12 @@ abstract final class CategoryIcons {
     for (final e in all) e.$1: e.$2,
   };
 
+  static String normalize(String raw) {
+    if (_byId.containsKey(raw)) return raw;
+    return _emojiToId[raw] ?? 'category';
+  }
+
   static IconData resolve(String raw) {
-    final id = _byId.containsKey(raw) ? raw : (_emojiToId[raw] ?? 'category');
-    return _byId[id] ?? Symbols.category_rounded;
+    return _byId[normalize(raw)] ?? Symbols.category_rounded;
   }
 }

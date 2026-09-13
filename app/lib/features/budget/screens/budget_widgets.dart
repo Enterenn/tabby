@@ -368,7 +368,7 @@ class _StatsSection extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                cat.category.name,
+                                context.categoryName(cat.category),
                                 style: tt.titleSmall?.copyWith(
                                   color: isSelected ? onCat : null,
                                 ),
@@ -461,7 +461,7 @@ class _BudgetCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    b.category.name,
+                    context.categoryName(b.category),
                     style: tt.titleMedium?.copyWith(
                       color: isDanger ? semantic.onDangerContainer : null,
                     ),
@@ -565,7 +565,7 @@ class _BudgetCard extends StatelessWidget {
   void _showActions(BuildContext context) {
     showTabbyActionSheet(
       context,
-      title: budget.category.name,
+      title: context.categoryName(budget.category),
       actions: [
         TabbyActionSheetItem(
           label: context.l10n.editLimit,
@@ -596,7 +596,9 @@ class _BudgetCard extends StatelessWidget {
     final confirmed = await showTabbyConfirm(
       context,
       title: context.l10n.deleteBudgetTitle,
-      body: context.l10n.deleteBudgetBody(budget.category.name),
+      body: context.l10n.deleteBudgetBody(
+        context.categoryName(budget.category),
+      ),
       confirmLabel: context.l10n.delete,
       danger: true,
     );
@@ -673,7 +675,7 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
                 iconSize: 20,
               ),
               const SizedBox(width: 10),
-              Text(b.category.name, style: tt.titleMedium),
+              Text(context.categoryName(b.category), style: tt.titleMedium),
             ],
           ),
           const SizedBox(height: 20),
@@ -764,7 +766,7 @@ class _BudgetDialogState extends State<_BudgetDialog> {
                             color: c.resolvedColor,
                           ),
                           const SizedBox(width: 8),
-                          Text(c.name),
+                          Text(context.categoryName(c)),
                         ],
                       ),
                     ))
@@ -866,7 +868,7 @@ class _PersonalExpenseTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${expense.category.name} · ${_formatPersonalDate(context, expense.expenseDate)}',
+                  '${context.categoryName(expense.category)} · ${_formatPersonalDate(context, expense.expenseDate)}',
                   style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
@@ -1041,7 +1043,7 @@ class _EditPersonalDialogState extends State<_EditPersonalDialog> {
                       children: [
                         c.iconWidget(size: 18, color: c.resolvedColor),
                         const SizedBox(width: 8),
-                        Text(c.name),
+                        Text(context.categoryName(c)),
                       ],
                     ),
                   ),
