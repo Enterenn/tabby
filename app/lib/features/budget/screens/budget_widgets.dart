@@ -86,33 +86,6 @@ class _BudgetContent extends StatelessWidget {
 
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-            child: Column(
-              children: [
-                TabbyListCard(
-                  child: ListTile(
-                    leading: const Icon(Symbols.repeat_rounded),
-                    title: Text(context.l10n.recurringExpenses),
-                    trailing: const Icon(Symbols.chevron_right_rounded),
-                    onTap: () => context.push('/profile/recurring'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TabbyListCard(
-                  child: ListTile(
-                    leading: const Icon(Symbols.category_rounded),
-                    title: Text(context.l10n.myCategories),
-                    trailing: const Icon(Symbols.chevron_right_rounded),
-                    onTap: () => context.push('/profile/categories'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 8, 8),
             child: Row(
               children: [

@@ -134,6 +134,11 @@ class ProfileScreen extends StatelessWidget {
                 label: context.l10n.myCategories,
                 onTap: () => context.push('/profile/categories'),
               ),
+              _ActionTile(
+                icon: Symbols.repeat_rounded,
+                label: context.l10n.recurringExpenses,
+                onTap: () => context.push('/profile/recurring'),
+              ),
               const SizedBox(height: 24),
               Text(
                 context.l10n.account,
