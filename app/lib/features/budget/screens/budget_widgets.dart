@@ -64,7 +64,7 @@ class _BudgetContent extends StatelessWidget {
         ),
 
         if (state.groups.length > 1 &&
-            state.selectedScope != SpendScope.personal)
+            state.selectedScope == SpendScope.groups)
           SliverToBoxAdapter(
             child: _GroupFilter(
               groups: state.groups,
@@ -261,34 +261,33 @@ class _GroupFilter extends StatelessWidget {
   final List<Group> groups;
   final String? selectedGroupId;
 
+  static const _all = '';
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<BudgetCubit>();
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TabbyFilterChip(
-              label: context.l10n.allGroups,
-              selected: selectedGroupId == null,
-              onSelected: () => cubit.selectGroup(null),
-            ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: ExpressiveDropdown<String>(
+        selected: selectedGroupId ?? _all,
+        leadingIcon: Icon(
+          Symbols.group_rounded,
+          size: 20,
+          color: context.tabbyColors.onSurfaceVariant,
+        ),
+        entries: [
+          ExpressiveDropdownEntry(
+            value: _all,
+            label: context.l10n.allGroupsMenu,
           ),
-          ...groups.map(
-            (g) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: TabbyFilterChip(
-                label: g.name,
-                selected: selectedGroupId == g.id,
-                onSelected: () => cubit.selectGroup(g.id),
-              ),
-            ),
-          ),
+          for (final g in groups)
+            ExpressiveDropdownEntry(value: g.id, label: g.name),
         ],
+        onSelected: (id) {
+          if (id == null) return;
+          cubit.selectGroup(id == _all ? null : id);
+        },
       ),
     );
   }

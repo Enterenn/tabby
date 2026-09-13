@@ -241,7 +241,8 @@ class BudgetCubit extends Cubit<BudgetState> {
     final s = state as BudgetLoaded;
     if (s.selectedScope == scope) return;
 
-    final clearGroup = scope == SpendScope.personal && s.selectedGroupId != null;
+    final clearGroup =
+        scope != SpendScope.groups && s.selectedGroupId != null;
     emit(s.copyWith(selectedScope: scope, clearGroup: clearGroup));
     if (clearGroup) {
       await load(
