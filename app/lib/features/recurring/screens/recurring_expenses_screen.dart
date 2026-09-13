@@ -126,76 +126,55 @@ class _RecurringCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return TabbyListCard(
-      padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
-      child: Row(
-        children: [
-          TabbyCategoryGlyph(
-            icon: item.category.flutterIcon,
-            background: item.active
-                ? context.tabbySemantic.chartColorFor(item.category)
-                : cs.surfaceContainerHighest,
-            foreground: item.active
-                ? context.tabbySemantic.onFor(
-                    context.tabbySemantic.chartColorFor(item.category),
-                    cs,
-                  )
-                : cs.onSurfaceVariant,
-            size: 44,
-            iconSize: 22,
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        isThreeLine: true,
+        leading: TabbyCategoryGlyph(
+          icon: item.category.flutterIcon,
+          background: item.active
+              ? context.tabbySemantic.chartColorFor(item.category)
+              : cs.surfaceContainerHighest,
+          foreground: item.active
+              ? context.tabbySemantic.onFor(
+                  context.tabbySemantic.chartColorFor(item.category),
+                  cs,
+                )
+              : cs.onSurfaceVariant,
+          size: 40,
+          iconSize: 20,
+        ),
+        title: Text(
+          item.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: tt.titleMedium?.copyWith(
+            color: item.active ? null : cs.onSurfaceVariant,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: tt.titleMedium?.copyWith(
-                    color: item.active ? null : cs.onSurfaceVariant,
+        ),
+        subtitle: Text(
+          '${formatMoney(context, item.amount)} · ${item.dayLabel(context.l10n.recurringFirstOfMonth, context.l10n.recurringNthOfMonth)}\n'
+          '${item.isPersonal ? context.l10n.scopePersonal : item.groupName}',
+        ),
+        trailing: canManage
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: item.active,
+                    onChanged: onToggle == null ? null : (_) => onToggle!(),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    ExpressiveFigure(
-                      value: formatMoney(context, item.amount),
-                      size: ExpressiveFigureSize.small,
-                      color: item.active ? cs.secondary : cs.onSurfaceVariant,
+                  IconButton(
+                    icon: Icon(
+                      Symbols.delete_rounded,
+                      size: 20,
+                      color: cs.error,
                     ),
-                    Text(
-                      ' · ${item.dayLabel(context.l10n.recurringFirstOfMonth, context.l10n.recurringNthOfMonth)}',
-                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-                Text(
-                  item.isPersonal
-                      ? context.l10n.scopePersonal
-                      : item.groupName,
-                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          if (canManage)
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Switch(
-                  value: item.active,
-                  onChanged: onToggle == null ? null : (_) => onToggle!(),
-                ),
-                IconButton(
-                  icon: Icon(Symbols.delete_rounded, size: 20, color: cs.error),
-                  onPressed: onDelete,
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-        ],
+                    onPressed: onDelete,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              )
+            : null,
       ),
     );
   }

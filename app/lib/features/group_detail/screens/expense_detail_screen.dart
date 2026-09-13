@@ -154,34 +154,16 @@ class _ExpenseDetailBody extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    ExpressiveBadge(
+                    ExpressiveBadge.compact(
                       label: context.categoryName(expense.category),
                       color: catColor,
                       textColor: onCat,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      labelStyle: tt.labelSmall?.copyWith(
-                        color: onCat,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
                     ),
                     if (expense.isPending)
-                      ExpressiveBadge(
+                      ExpressiveBadge.compact(
                         label: context.l10n.repaymentPending,
                         color: cs.surfaceContainerHighest,
                         textColor: cs.onSurfaceVariant,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        labelStyle: tt.labelSmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                          height: 1.1,
-                        ),
                       ),
                   ],
                 ),
@@ -304,49 +286,26 @@ class _ExpensePersonTile extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          ExpressiveAvatar(
-            label: avatarLabel,
-            size: 40,
-            imageUrl: resolveMediaUrl(avatarUrl),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              name,
-              style: tt.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                formatMoney(context, amount),
-                style: tt.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 3),
-                Text(
-                  subtitle!,
-                  style: tt.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    height: 1.25,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
+    return ListTile(
+      leading: ExpressiveAvatar(
+        label: avatarLabel,
+        size: 40,
+        imageUrl: resolveMediaUrl(avatarUrl),
+      ),
+      title: Text(
+        name,
+        style: tt.bodyLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          height: 1.2,
+        ),
+      ),
+      subtitle: subtitle == null ? null : Text(subtitle!),
+      trailing: Text(
+        formatMoney(context, amount),
+        style: tt.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: cs.onSurface,
+        ),
       ),
     );
   }

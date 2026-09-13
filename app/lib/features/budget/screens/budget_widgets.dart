@@ -475,7 +475,7 @@ class _BudgetCard extends StatelessWidget {
                 ],
               ),
             ),
-            ExpressiveBadge(
+            ExpressiveBadge.compact(
               label: b.status == BudgetStatus.danger
                   ? context.l10n.overBudget
                   : b.status == BudgetStatus.warning
@@ -840,45 +840,29 @@ class _PersonalExpenseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    final cs = context.tabbyColors;
     final catColor = expense.category.resolvedColor;
     final onCat = expense.category.onResolvedColor;
 
     return TabbyListCard(
       margin: const EdgeInsets.only(bottom: 8),
       onTap: () => _showActions(context),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      child: Row(
-        children: [
-          TabbyCategoryGlyph(
-            icon: expense.category.flutterIcon,
-            background: catColor,
-            foreground: onCat,
-            size: 40,
-            iconSize: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  expense.name,
-                  style: tt.titleSmall,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${context.categoryName(expense.category)} · ${_formatPersonalDate(context, expense.expenseDate)}',
-                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          ExpressiveFigure(
-            value: formatMoney(context, expense.amount),
-            size: ExpressiveFigureSize.small,
-          ),
-        ],
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        leading: TabbyCategoryGlyph(
+          icon: expense.category.flutterIcon,
+          background: catColor,
+          foreground: onCat,
+          size: 40,
+          iconSize: 20,
+        ),
+        title: Text(expense.name, style: tt.titleSmall),
+        subtitle: Text(
+          '${context.categoryName(expense.category)} · ${_formatPersonalDate(context, expense.expenseDate)}',
+        ),
+        trailing: ExpressiveFigure(
+          value: formatMoney(context, expense.amount),
+          size: ExpressiveFigureSize.small,
+        ),
       ),
     );
   }

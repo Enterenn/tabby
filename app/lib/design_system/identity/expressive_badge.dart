@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/format/money.dart';
 import '../../core/theme/app_theme.dart';
 
-/// Badge pill M3 Expressive.
+/// Badge pill M3 Expressive. [compact] = [Chip] dense (statuts, pastilles).
 class ExpressiveBadge extends StatelessWidget {
   const ExpressiveBadge({
     super.key,
@@ -14,7 +14,19 @@ class ExpressiveBadge extends StatelessWidget {
     this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
     this.labelStyle,
     this.iconSize = 16,
+    this.compact = false,
   });
+
+  const ExpressiveBadge.compact({
+    super.key,
+    required this.label,
+    this.color,
+    this.textColor,
+    this.icon,
+  })  : padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        labelStyle = null,
+        iconSize = 12,
+        compact = true;
 
   final String label;
   final Color? color;
@@ -23,13 +35,38 @@ class ExpressiveBadge extends StatelessWidget {
   final EdgeInsets padding;
   final TextStyle? labelStyle;
   final double iconSize;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
     final shapes = context.tabbyShapes;
+    final tt = Theme.of(context).textTheme;
     final bg = color ?? cs.primaryContainer;
     final fg = textColor ?? cs.onPrimaryContainer;
+
+    if (compact) {
+      return Chip(
+        avatar: icon == null
+            ? null
+            : Icon(icon, size: iconSize, color: fg, fill: 1),
+        label: Text(
+          label,
+          style: tt.labelSmall?.copyWith(
+            color: fg,
+            fontWeight: FontWeight.w600,
+            height: 1.1,
+          ),
+        ),
+        backgroundColor: bg,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: EdgeInsets.zero,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+        side: BorderSide.none,
+        shape: shapes.pill(),
+      );
+    }
 
     return Material(
       color: bg,
@@ -48,10 +85,10 @@ class ExpressiveBadge extends StatelessWidget {
             Text(
               label,
               style: labelStyle ??
-                  Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: fg,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  tt.labelLarge?.copyWith(
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ],
         ),

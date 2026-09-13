@@ -33,47 +33,37 @@ class _BalanceTile extends StatelessWidget {
 
     return TabbyListCard(
       color: isMine ? cs.primaryContainer : cs.surfaceContainerLow,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-          children: [
-            ExpressiveAvatar(label: entry.fromUserName, size: 36),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-                      children: [
-                        TextSpan(
-                          text: entry.fromUserName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        TextSpan(text: context.l10n.owesTo),
-                        TextSpan(
-                          text: entry.toUserName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  ExpressiveFigure(
-                    value: formatMoney(context, entry.amount),
-                    size: ExpressiveFigureSize.small,
-                    color: cs.primary,
-                  ),
-                ],
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        leading: ExpressiveAvatar(label: entry.fromUserName, size: 36),
+        title: RichText(
+          text: TextSpan(
+            style: tt.bodyMedium?.copyWith(color: cs.onSurface),
+            children: [
+              TextSpan(
+                text: entry.fromUserName,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-            ),
-            if (isMine)
-              FilledButton.tonal(
+              TextSpan(text: context.l10n.owesTo),
+              TextSpan(
+                text: entry.toUserName,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+        subtitle: ExpressiveFigure(
+          value: formatMoney(context, entry.amount),
+          size: ExpressiveFigureSize.small,
+          color: cs.primary,
+        ),
+        trailing: isMine
+            ? FilledButton.tonal(
                 onPressed: () => _confirmSettle(context),
                 child: Text(context.l10n.settle),
-              ),
-          ],
-        ),
+              )
+            : null,
+      ),
     );
   }
 
@@ -151,75 +141,46 @@ class _MemberTile extends StatelessWidget {
       balLabel = context.l10n.settled;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return ListTile(
+      leading: ExpressiveAvatar(
+        label: member.user.name,
+        size: 40,
+        imageUrl: resolveMediaUrl(member.user.avatarUrl),
+      ),
+      title: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          ExpressiveAvatar(
-            label: member.user.name,
-            size: 40,
-            imageUrl: resolveMediaUrl(member.user.avatarUrl),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      member.user.name,
-                      style: tt.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                    ),
-                    if (isAdmin)
-                      ExpressiveBadge(
-                        label: context.l10n.admin,
-                        color: cs.primaryContainer,
-                        textColor: cs.onPrimaryContainer,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        labelStyle: tt.labelSmall?.copyWith(
-                          color: cs.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                          height: 1.1,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  context.l10n.joinedOn(
-                    DateFormat(
-                      'd MMM yyyy',
-                      Localizations.localeOf(context).toString(),
-                    ).format(member.joinedAt),
-                  ),
-                  style: tt.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    height: 1.25,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
           Text(
-            balLabel,
-            style: tt.bodyMedium?.copyWith(
+            member.user.name,
+            style: tt.bodyLarge?.copyWith(
               fontWeight: FontWeight.w600,
-              color: balColor,
+              height: 1.2,
             ),
           ),
+          if (isAdmin)
+            ExpressiveBadge.compact(
+              label: context.l10n.admin,
+              color: cs.primaryContainer,
+              textColor: cs.onPrimaryContainer,
+            ),
         ],
+      ),
+      subtitle: Text(
+        context.l10n.joinedOn(
+          DateFormat(
+            'd MMM yyyy',
+            Localizations.localeOf(context).toString(),
+          ).format(member.joinedAt),
+        ),
+      ),
+      trailing: Text(
+        balLabel,
+        style: tt.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: balColor,
+        ),
       ),
     );
   }
@@ -397,117 +358,87 @@ class _ExpenseTile extends StatelessWidget {
 
     final canConfirm = expense.canConfirm(currentUserId);
 
-    return InkWell(
-      onTap: () => context.push(
-        '/groups/$groupId/expenses/${expense.id}',
-        extra: context.read<GroupDetailCubit>(),
-      ),
-      onLongPress: canManage || canConfirm
-          ? () => _showExpenseActions(context)
-          : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final tile = Opacity(
+      opacity: expense.isPending ? 0.48 : 1,
+      child: ListTile(
+        leading: TabbyCategoryGlyph(
+          icon: expense.category.flutterIcon,
+          background: catColor,
+          foreground: onCat,
+          size: 40,
+          iconSize: 20,
+        ),
+        title: Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Opacity(
-              opacity: expense.isPending ? 0.48 : 1,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  TabbyCategoryGlyph(
-                    icon: expense.category.flutterIcon,
-                    background: catColor,
-                    foreground: onCat,
-                    size: 40,
-                    iconSize: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              context.expenseName(expense),
-                              style: tt.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                height: 1.2,
-                              ),
-                            ),
-                            if (expense.isPending)
-                              ExpressiveBadge(
-                                label: context.l10n.repaymentPending,
-                                color: cs.surfaceContainerHighest,
-                                textColor: cs.onSurfaceVariant,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                labelStyle: tt.labelSmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.1,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          context.l10n.paidByPerson(payerLabel),
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            height: 1.25,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        formatMoney(context, expense.amount),
-                        style: tt.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                      if (currentUserId.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          context.l10n.yourShareAmount(
-                            expense.shareFor(currentUserId).toStringAsFixed(2),
-                          ),
-                          style: tt.labelSmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
+            Text(
+              context.expenseName(expense),
+              style: tt.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.2,
               ),
             ),
-            if (canConfirm) ...[
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.tonal(
-                  onPressed: () => _confirmRepayment(context),
-                  child: Text(context.l10n.confirmRepayment),
-                ),
+            if (expense.isPending)
+              ExpressiveBadge.compact(
+                label: context.l10n.repaymentPending,
+                color: cs.surfaceContainerHighest,
+                textColor: cs.onSurfaceVariant,
               ),
-            ],
           ],
         ),
+        subtitle: Text(context.l10n.paidByPerson(payerLabel)),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              formatMoney(context, expense.amount),
+              style: tt.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
+            if (currentUserId.isNotEmpty)
+              Text(
+                context.l10n.yourShareAmount(
+                  expense.shareFor(currentUserId).toStringAsFixed(2),
+                ),
+                style: tt.labelSmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.2,
+                ),
+              ),
+          ],
+        ),
+        onTap: () => context.push(
+          '/groups/$groupId/expenses/${expense.id}',
+          extra: context.read<GroupDetailCubit>(),
+        ),
+        onLongPress: canManage || canConfirm
+            ? () => _showExpenseActions(context)
+            : null,
       ),
+    );
+
+    if (!canConfirm) return tile;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        tile,
+        Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: FilledButton.tonal(
+              onPressed: () => _confirmRepayment(context),
+              child: Text(context.l10n.confirmRepayment),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
