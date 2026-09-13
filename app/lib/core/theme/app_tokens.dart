@@ -27,11 +27,88 @@ extension TabbyThemeContext on BuildContext {
   TabbySemanticColors get tabbySemantic =>
       Theme.of(this).extension<TabbySemanticColors>()!;
 
+  TabbySpaceTokens get tabbySpace =>
+      Theme.of(this).extension<TabbySpaceTokens>()!;
+
   /// Hauteur réelle de la navbar flottante, inset système compris.
   /// Aligné sur [MainScaffold] : pad 20+16, barre 72.
   double get tabBarClearance {
     const chrome = 20.0 + 72.0 + 16.0;
     return chrome + MediaQuery.viewPaddingOf(this).bottom;
+  }
+}
+
+// ─── Espacement ──────────────────────────────────────────────────────────────
+
+/// Échelle 4 · 8 · 12 · 16 · 20 · 24 · 28.
+@immutable
+class TabbySpaceTokens extends ThemeExtension<TabbySpaceTokens> {
+  const TabbySpaceTokens({
+    required this.xs,
+    required this.sm,
+    required this.md,
+    required this.lg,
+    required this.xl,
+    required this.xxl,
+    required this.xxxl,
+  });
+
+  final double xs;
+  final double sm;
+  final double md;
+  final double lg;
+  final double xl;
+  final double xxl;
+  final double xxxl;
+
+  static const TabbySpaceTokens standard = TabbySpaceTokens(
+    xs: 4,
+    sm: 8,
+    md: 12,
+    lg: 16,
+    xl: 20,
+    xxl: 24,
+    xxxl: 28,
+  );
+
+  EdgeInsets get gutter => EdgeInsets.symmetric(horizontal: lg);
+  EdgeInsets get gutterWide => EdgeInsets.symmetric(horizontal: xxl);
+  EdgeInsets get gutterAuth => EdgeInsets.symmetric(horizontal: xxxl);
+
+  @override
+  TabbySpaceTokens copyWith({
+    double? xs,
+    double? sm,
+    double? md,
+    double? lg,
+    double? xl,
+    double? xxl,
+    double? xxxl,
+  }) {
+    return TabbySpaceTokens(
+      xs: xs ?? this.xs,
+      sm: sm ?? this.sm,
+      md: md ?? this.md,
+      lg: lg ?? this.lg,
+      xl: xl ?? this.xl,
+      xxl: xxl ?? this.xxl,
+      xxxl: xxxl ?? this.xxxl,
+    );
+  }
+
+  @override
+  TabbySpaceTokens lerp(ThemeExtension<TabbySpaceTokens>? other, double t) {
+    if (other is! TabbySpaceTokens) return this;
+    double lerpD(double a, double b) => a + (b - a) * t;
+    return TabbySpaceTokens(
+      xs: lerpD(xs, other.xs),
+      sm: lerpD(sm, other.sm),
+      md: lerpD(md, other.md),
+      lg: lerpD(lg, other.lg),
+      xl: lerpD(xl, other.xl),
+      xxl: lerpD(xxl, other.xxl),
+      xxxl: lerpD(xxxl, other.xxxl),
+    );
   }
 }
 

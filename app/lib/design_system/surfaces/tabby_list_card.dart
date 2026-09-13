@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
 
-/// Carte de liste — `surfaceContainerLow` + `cardShape`, tap optionnel.
+/// Carte de liste — [Card.filled] + ripple optionnel.
 class TabbyListCard extends StatelessWidget {
   const TabbyListCard({
     super.key,
@@ -24,10 +24,9 @@ class TabbyListCard extends StatelessWidget {
     final padded =
         padding == null ? child : Padding(padding: padding!, child: child);
 
-    final card = Material(
+    final card = Card.filled(
       color: color ?? context.tabbyColors.surfaceContainerLow,
-      elevation: 0,
-      shape: context.tabbyShapes.cardShape,
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: onTap == null ? padded : InkWell(onTap: onTap, child: padded),
     );

@@ -207,7 +207,7 @@ class _SplitParticipants extends StatelessWidget {
                 children: [
                   Text(context.l10n.splitTotal, style: tt.bodySmall),
                   Text(
-                    '${splitsTotal.toStringAsFixed(2)} / ${total.toStringAsFixed(2)} €',
+                    '${formatMoney(context, splitsTotal)} / ${formatMoney(context, total)}',
                     style: tt.bodyMedium?.copyWith(
                       color: isValid
                           ? context.tabbySemantic.success
@@ -320,7 +320,7 @@ class _SplitAmountChip extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Text(
-          '${amount.toStringAsFixed(2)} €',
+          formatMoney(context, amount),
           style: tt.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
             color: emphasized ? cs.onPrimaryContainer : cs.onSurfaceVariant,

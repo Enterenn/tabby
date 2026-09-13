@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../core/format/money.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Badge pill M3 Expressive.
@@ -79,16 +80,15 @@ class ExpressiveBalanceBadge extends StatelessWidget {
     if (isNeutral) {
       final cs = context.tabbyColors;
       return ExpressiveBadge(
-        label: '0,00 €',
+        label: formatMoney(context, 0),
         color: cs.surfaceContainerHighest,
         textColor: cs.onSurfaceVariant,
       );
     }
 
-    final sign = isPositive ? '+' : '-';
     final label = showSign
-        ? '$sign ${amount.abs().toStringAsFixed(2)} €'
-        : '${amount.abs().toStringAsFixed(2)} €';
+        ? formatSignedMoney(context, amount)
+        : formatMoney(context, amount.abs());
 
     return ExpressiveBadge(
       label: label,

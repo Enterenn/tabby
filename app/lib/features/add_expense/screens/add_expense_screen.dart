@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/api/token_storage.dart';
+import '../../../core/format/money.dart';
 import '../../../core/format/split_shares.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/expressive_shapes.dart';

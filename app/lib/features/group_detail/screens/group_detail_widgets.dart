@@ -60,8 +60,7 @@ class _BalanceTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   ExpressiveFigure(
-                    value: entry.amount.toStringAsFixed(2),
-                    suffix: ' €',
+                    value: formatMoney(context, entry.amount),
                     size: ExpressiveFigureSize.small,
                     color: cs.primary,
                   ),
@@ -143,10 +142,10 @@ class _MemberTile extends StatelessWidget {
     String balLabel;
     if (balance > 0.01) {
       balColor = semantic.success;
-      balLabel = '+${balance.toStringAsFixed(2)} €';
+      balLabel = formatSignedMoney(context, balance);
     } else if (balance < -0.01) {
       balColor = semantic.danger;
-      balLabel = '${balance.toStringAsFixed(2)} €';
+      balLabel = formatSignedMoney(context, balance);
     } else {
       balColor = cs.onSurfaceVariant;
       balLabel = context.l10n.settled;
@@ -473,7 +472,7 @@ class _ExpenseTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${expense.amount.toStringAsFixed(2)} €',
+                        formatMoney(context, expense.amount),
                         style: tt.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: cs.onSurface,

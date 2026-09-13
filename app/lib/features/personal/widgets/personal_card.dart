@@ -8,73 +8,55 @@ import '../../../core/theme/app_theme.dart';
 import '../../../design_system/design_system.dart';
 import '../../../l10n/l10n.dart';
 
-class PersonalCard extends StatefulWidget {
+class PersonalCard extends StatelessWidget {
   const PersonalCard({super.key, required this.monthTotal});
 
   final double monthTotal;
 
   @override
-  State<PersonalCard> createState() => _PersonalCardState();
-}
-
-class _PersonalCardState extends State<PersonalCard> {
-  bool _pressed = false;
-
-  @override
   Widget build(BuildContext context) {
     final cs = context.tabbyColors;
+    final space = context.tabbySpace;
     final tt = Theme.of(context).textTheme;
 
-    return AnimatedScale(
-      scale: _pressed ? 0.98 : 1.0,
-      duration: const Duration(milliseconds: 100),
-      curve: Curves.easeOut,
-      child: TabbyListCard(
-        color: cs.surfaceContainerLow,
-        margin: const EdgeInsets.only(bottom: 8),
-        child: InkWell(
-          onTap: () => context.push('/personal'),
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
-            child: Row(
+    return TabbyListCard(
+      color: cs.surfaceContainerLow,
+      margin: EdgeInsets.only(bottom: space.sm),
+      onTap: () => context.push('/personal'),
+      padding: EdgeInsets.fromLTRB(space.xl, space.lg, space.lg, space.lg),
+      child: Row(
+        children: [
+          Icon(
+            Symbols.person_rounded,
+            color: cs.onSurfaceVariant,
+          ),
+          SizedBox(width: space.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Symbols.person_rounded,
-                  color: cs.onSurfaceVariant,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.myExpenses,
-                        style: tt.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        context.l10n.thisMonth,
-                        style: tt.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                Text(
+                  context.l10n.myExpenses,
+                  style: tt.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 12),
-                ExpressiveFigure(
-                  value: formatMoney(context, widget.monthTotal),
-                  size: ExpressiveFigureSize.small,
+                SizedBox(height: space.xs / 2),
+                Text(
+                  context.l10n.thisMonth,
+                  style: tt.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
           ),
-        ),
+          SizedBox(width: space.md),
+          ExpressiveFigure(
+            value: formatMoney(context, monthTotal),
+            size: ExpressiveFigureSize.small,
+          ),
+        ],
       ),
     )
         .animate()

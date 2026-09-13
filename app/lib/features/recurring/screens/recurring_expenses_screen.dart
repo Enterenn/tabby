@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/format/money.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/auth/group_admin.dart';
 import '../../../core/theme/app_theme.dart';
@@ -159,8 +160,7 @@ class _RecurringCard extends StatelessWidget {
                 Row(
                   children: [
                     ExpressiveFigure(
-                      value: item.amount.toStringAsFixed(2),
-                      suffix: ' €',
+                      value: formatMoney(context, item.amount),
                       size: ExpressiveFigureSize.small,
                       color: item.active ? cs.secondary : cs.onSurfaceVariant,
                     ),

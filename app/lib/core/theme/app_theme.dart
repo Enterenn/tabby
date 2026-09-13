@@ -46,7 +46,7 @@ abstract final class AppTheme {
       fontFamily: 'GoogleSansFlex',
       textTheme: textTheme,
       scaffoldBackgroundColor: scheme.surface,
-      extensions: [shapes, typography, semantic],
+      extensions: [shapes, typography, semantic, TabbySpaceTokens.standard],
 
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
