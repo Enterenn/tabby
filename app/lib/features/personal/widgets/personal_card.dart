@@ -37,7 +37,7 @@ class PersonalCard extends StatelessWidget {
               children: [
                 Text(
                   context.l10n.myExpenses,
-                  style: tt.headlineSmall?.copyWith(
+                  style: tt.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),

@@ -38,7 +38,7 @@ class GroupCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         group.name,
-                        style: tt.headlineSmall?.copyWith(
+                        style: tt.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: onCard,
                         ),

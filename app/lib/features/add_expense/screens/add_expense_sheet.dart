@@ -436,7 +436,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                         decimal: true,
                                       ),
                                       textAlign: TextAlign.end,
-                                      autofocus: !_isEditing,
                                       onTapOutside: (_) => _hideKeyboard(),
                                       cursorColor: cs.onTertiaryContainer,
                                       style: type.figureHero.copyWith(

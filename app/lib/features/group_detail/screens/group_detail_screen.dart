@@ -283,7 +283,6 @@ class _GroupSliverAppBar extends StatelessWidget {
         },
         child: TextField(
           controller: ctrl,
-          autofocus: true,
           decoration: InputDecoration(labelText: ctx.l10n.groupName),
         ),
       ),

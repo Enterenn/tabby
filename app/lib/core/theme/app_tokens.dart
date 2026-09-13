@@ -541,17 +541,29 @@ class TabbySemanticColors extends ThemeExtension<TabbySemanticColors> {
     );
   }
 
-  /// Pastilles saturées uniquement — pas de containers (icône = blanc ou noir).
-  static List<Color> _paletteFrom(ColorScheme s) => [
-        s.primary,
-        s.secondary,
-        s.error,
-        const Color(0xFFE67E22),
-        const Color(0xFF27AE60),
-        const Color(0xFF2980B9),
-        const Color(0xFF8E44AD),
-        const Color(0xFF16A085),
-        const Color(0xFF7F8C8D),
+  /// Arc-en-ciel (saturés puis pastels), puis gris et noir.
+  static List<Color> _paletteFrom(ColorScheme _) => [
+        // Saturés
+        const Color(0xFFE74C3C), // rouge
+        const Color(0xFFE67E22), // orange
+        const Color(0xFFF1C40F), // jaune
+        const Color(0xFF27AE60), // vert
+        const Color(0xFF16A085), // teal
+        const Color(0xFF2980B9), // bleu
+        const Color(0xFF8E44AD), // violet
+        const Color(0xFFE91E63), // rose
+        // Pastels (même ordre)
+        const Color(0xFFEF9A9A), // rouge pastel
+        const Color(0xFFFFB74D), // orange pastel
+        const Color(0xFFFFF176), // jaune pastel
+        const Color(0xFF81C784), // vert pastel
+        const Color(0xFF4DB6AC), // teal pastel
+        const Color(0xFF64B5F6), // bleu pastel
+        const Color(0xFFBA68C8), // violet pastel
+        const Color(0xFFF06292), // rose pastel
+        // Neutres
+        const Color(0xFF9E9E9E), // gris
+        const Color(0xFF1C1B1F), // noir
       ];
 
   /// Fond de pastille = hex de la catégorie (même couleur partout).

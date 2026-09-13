@@ -1,0 +1,11 @@
+---
+description: Do not auto hot reload / hot restart Flutter via MCP
+alwaysApply: true
+---
+
+# Flutter — pas de hot reload / restart automatique
+
+- Ne pas appeler `hot_reload`, `hot_restart`, ni reconnecter le DTD juste pour recharger après une modif.
+- L’utilisateur relance / hot-reload **manuellement** dans l’IDE.
+- Analyser le code (`analyze_files`) reste OK si utile.
+- Uniquement si l’utilisateur demande explicitement un reload / restart / « teste sur l’app ».

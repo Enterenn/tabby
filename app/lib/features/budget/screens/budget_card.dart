@@ -266,7 +266,6 @@ class _EditBudgetDialogState extends State<_EditBudgetDialog> {
           const SizedBox(height: 6),
           TabbyAmountField(
             controller: _ctrl,
-            autofocus: true,
           ),
         ],
       ),

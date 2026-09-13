@@ -162,7 +162,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                       controller: _nameCtrl,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(labelText: context.l10n.name),
-                      autofocus: true,
                     ),
                   ),
                 ],
@@ -211,6 +210,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                 label: context.l10n.color,
                 child: Wrap(
                   spacing: 10,
+                  runSpacing: 10,
                   children: palette.map((color) {
                     final isSelected = _selectedColor == color;
                     return GestureDetector(
