@@ -148,7 +148,7 @@
   },
   "editExpense": "Modifier la dépense",
   "totalExpenses": "Total du groupe",
-  "yourShare": "Ta part",
+  "yourShare": "Tes dépenses",
   "yourShareAmount": "Toi : {amount} €",
   "@yourShareAmount": {
     "placeholders": {
@@ -271,6 +271,7 @@
   "allGroups": "Tous",
   "allGroupsMenu": "Tous les groupes",
   "thisMonth": "Ce mois-ci",
+  "myExpenses": "Mes dépenses",
   "noPersonalPurchasesYet": "Aucun achat Pour moi",
   "noSpendThisMonth": "Aucune dépense ce mois",
   "allExpenses": "Toutes les dépenses",

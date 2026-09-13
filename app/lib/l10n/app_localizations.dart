@@ -785,7 +785,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourShare.
   ///
   /// In fr, this message translates to:
-  /// **'Ta part'**
+  /// **'Tes dépenses'**
   String get yourShare;
 
   /// No description provided for @yourShareAmount.
@@ -1309,6 +1309,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ce mois-ci'**
   String get thisMonth;
+
+  /// No description provided for @myExpenses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes dépenses'**
+  String get myExpenses;
 
   /// No description provided for @noPersonalPurchasesYet.
   ///

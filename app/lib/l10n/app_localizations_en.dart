@@ -377,7 +377,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get totalExpenses => 'Group total';
 
   @override
-  String get yourShare => 'Your share';
+  String get yourShare => 'Your expenses';
 
   @override
   String yourShareAmount(String amount) {
@@ -666,6 +666,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thisMonth => 'This month';
+
+  @override
+  String get myExpenses => 'My expenses';
 
   @override
   String get noPersonalPurchasesYet => 'No For me purchases yet';

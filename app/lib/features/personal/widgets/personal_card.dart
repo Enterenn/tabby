@@ -51,7 +51,7 @@ class _PersonalCardState extends State<PersonalCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        context.l10n.expenseForMe,
+                        context.l10n.myExpenses,
                         style: tt.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -67,21 +67,9 @@ class _PersonalCardState extends State<PersonalCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      context.l10n.yourShare,
-                      style: tt.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    ExpressiveFigure(
-                      value: formatMoney(context, widget.monthTotal),
-                      size: ExpressiveFigureSize.small,
-                    ),
-                  ],
+                ExpressiveFigure(
+                  value: formatMoney(context, widget.monthTotal),
+                  size: ExpressiveFigureSize.small,
                 ),
               ],
             ),

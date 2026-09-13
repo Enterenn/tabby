@@ -121,7 +121,7 @@
   "membersCount": "Members ({count})",
   "editExpense": "Edit expense",
   "totalExpenses": "Group total",
-  "yourShare": "Your share",
+  "yourShare": "Your expenses",
   "yourShareAmount": "You: {amount} €",
   "@yourShareAmount": {
     "placeholders": {
@@ -224,6 +224,7 @@
   "allGroups": "All",
   "allGroupsMenu": "All groups",
   "thisMonth": "This month",
+  "myExpenses": "My expenses",
   "noPersonalPurchasesYet": "No For me purchases yet",
   "noSpendThisMonth": "No spending this month",
   "allExpenses": "All expenses",

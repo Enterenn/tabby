@@ -43,7 +43,7 @@ class _PersonalDetailView extends StatelessWidget {
         return switch (state) {
           PersonalDetailLoading() => const Scaffold(body: TabbyLoading()),
           PersonalDetailError(:final message) => Scaffold(
-              appBar: AppBar(title: Text(context.l10n.expenseForMe)),
+              appBar: AppBar(title: Text(context.l10n.myExpenses)),
               body: TabbyErrorState(
                 message: context.l10nError(message),
                 retryLabel: context.l10n.retry,
@@ -78,7 +78,7 @@ class _LoadedBody extends StatelessWidget {
             slivers: [
               SliverAppBar(
                 pinned: true,
-                title: Text(context.l10n.expenseForMe),
+                title: Text(context.l10n.myExpenses),
               ),
               SliverToBoxAdapter(
                 child: ExpressiveTonalCard(

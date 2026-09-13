@@ -66,6 +66,8 @@ abstract final class CategoryIcons {
     ('apartment', Symbols.apartment_rounded),
     ('shopping_cart', Symbols.shopping_cart_rounded),
     ('shopping_bag', Symbols.shopping_bag_rounded),
+    ('checkroom', Symbols.checkroom_rounded),
+    ('apparel', Symbols.apparel_rounded),
     ('storefront', Symbols.storefront_rounded),
     ('restaurant', Symbols.restaurant_rounded),
     ('local_cafe', Symbols.local_cafe_rounded),
@@ -110,6 +112,9 @@ abstract final class CategoryIcons {
   static const Map<String, String> _emojiToId = {
     '🏠': 'home',
     '🛒': 'shopping_cart',
+    '👕': 'checkroom',
+    '👚': 'apparel',
+    '👗': 'checkroom',
     '🍽️': 'restaurant',
     '🍕': 'restaurant',
     '🍔': 'restaurant',
