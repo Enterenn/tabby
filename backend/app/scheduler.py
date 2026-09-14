@@ -32,6 +32,13 @@ def period_expense_date(today: date, day_of_period: int) -> date | None:
 
 SCHEDULER_LOCK_KEY = 7_314_159
 
+# Matches the partial unique indexes from migration 012. PostgreSQL will not
+# infer ON CONFLICT (cols) against an index that has a WHERE clause.
+_RECURRING_CONFLICT = {
+    "index_elements": ["recurring_source_id", "expense_date"],
+    "index_where": text("recurring_source_id IS NOT NULL"),
+}
+
 
 async def generate_recurring_expenses() -> int:
     """
@@ -93,9 +100,7 @@ async def generate_recurring_expenses() -> int:
             inserted = await db.execute(
                 pg_insert(Expense)
                 .values(**expense_values)
-                .on_conflict_do_nothing(
-                    index_elements=[Expense.recurring_source_id, Expense.expense_date]
-                )
+                .on_conflict_do_nothing(**_RECURRING_CONFLICT)
                 .returning(Expense.id)
             )
             if inserted.scalar_one_or_none() is None:
@@ -139,12 +144,7 @@ async def generate_recurring_expenses() -> int:
                     expense_date=expense_date,
                     recurring_source_id=rec.id,
                 )
-                .on_conflict_do_nothing(
-                    index_elements=[
-                        PersonalExpense.recurring_source_id,
-                        PersonalExpense.expense_date,
-                    ]
-                )
+                .on_conflict_do_nothing(**_RECURRING_CONFLICT)
                 .returning(PersonalExpense.id)
             )
             if inserted.scalar_one_or_none() is None:
