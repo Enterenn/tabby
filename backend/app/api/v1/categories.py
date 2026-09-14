@@ -1,13 +1,10 @@
 import uuid
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.deps import get_current_user
-from app.models.models import Category, User
+from app.core.deps import CurrentUser, DbSession
+from app.models.models import Category
 from app.schemas.expense import CategoryCreate, CategoryResponse, CategoryUpdate
 
 router = APIRouter(prefix="/categories", tags=["categories"])
@@ -26,9 +23,9 @@ def _to_response(c: Category) -> CategoryResponse:
 
 @router.get("", response_model=list[CategoryResponse])
 async def list_categories(
-    group_id: Optional[uuid.UUID] = None,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
+    group_id: uuid.UUID | None = None,
 ):
     """Défauts globaux + tes catégories. group_id est ignoré (héritage)."""
     del group_id
@@ -45,8 +42,8 @@ async def list_categories(
 @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(
     body: CategoryCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     color = body.color if body.color.startswith("#") else f"#{body.color}"
     result = await db.execute(
@@ -74,8 +71,8 @@ async def create_category(
 async def update_category(
     category_id: uuid.UUID,
     body: CategoryUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     category = await db.get(Category, category_id)
     if category is None:
@@ -99,8 +96,8 @@ async def update_category(
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(
     category_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     category = await db.get(Category, category_id)
     if category is None:

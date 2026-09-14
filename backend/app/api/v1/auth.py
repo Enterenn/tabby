@@ -1,14 +1,13 @@
+from typing import Annotated
 import io
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
 from PIL import Image, UnidentifiedImageError
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import CurrentUser, DbSession
 from app.core.rate_limit import limiter
 from app.core.refresh_tokens import (
     issue_token_pair,
@@ -51,13 +50,14 @@ def _user_response(user: User) -> UserResponse:
 
 
 @router.get("/me", response_model=UserResponse)
-async def me(current_user: User = Depends(get_current_user)):
+async def me(current_user: CurrentUser):
     return _user_response(current_user)
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(request: Request, body: RegisterRequest, db: DbSession):
+    del request
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
@@ -75,7 +75,8 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
 
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
-async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(request: Request, body: LoginRequest, db: DbSession):
+    del request
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user is None or not verify_password(body.password, user.password_hash):
@@ -88,20 +89,21 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
 
 @router.post("/refresh", response_model=TokenResponse)
 @limiter.limit("10/minute")
-async def refresh(request: Request, body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+async def refresh(request: Request, body: RefreshRequest, db: DbSession):
+    del request
     return await rotate_refresh_token(db, body.refresh_token)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+async def logout(body: RefreshRequest, db: DbSession):
     await revoke_refresh_token(db, body.refresh_token)
 
 
 @router.patch("/me", response_model=UserResponse)
 async def update_profile(
     body: ProfileUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     if body.name is not None:
         current_user.name = body.name
@@ -122,9 +124,10 @@ async def update_profile(
 async def change_password(
     request: Request,
     body: ChangePasswordRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
+    del request
     if not verify_password(body.current_password, current_user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -139,10 +142,11 @@ async def change_password(
 @limiter.limit("10/minute")
 async def upload_avatar(
     request: Request,
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    file: Annotated[UploadFile, File()],
+    current_user: CurrentUser,
+    db: DbSession,
 ):
+    del request
     content_type = (file.content_type or "").lower()
     suffix = Path(file.filename or "").suffix.lower()
     if content_type not in ALLOWED_AVATAR_TYPES and suffix not in ALLOWED_AVATAR_SUFFIXES:

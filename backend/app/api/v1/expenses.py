@@ -1,16 +1,15 @@
 import uuid
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
+from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.database import get_db
-from app.core.deps import ensure_can_manage_paid, require_group_member
+from app.core.deps import DbSession, GroupMemberUser, ensure_can_manage_paid
 from app.core.fcm import send_expense_notification, send_settle_confirmed_notification
-from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember, User
+from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
 from app.services.expense_service import (
     custom_split_amounts,
@@ -31,14 +30,16 @@ _to_response = to_expense_response
 @router.get("/{group_id}/expenses", response_model=list[ExpenseResponse])
 async def list_expenses(
     group_id: uuid.UUID,
-    from_date: date | None = Query(default=None),
-    to_date: date | None = Query(default=None),
-    category_id: uuid.UUID | None = Query(default=None),
-    status_filter: str | None = Query(default=None, alias="status", pattern="^(confirmed|pending)$"),
-    limit: int = Query(default=100, ge=1, le=200),
-    offset: int = Query(default=0, ge=0),
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupMemberUser,
+    db: DbSession,
+    from_date: Annotated[date | None, Query()] = None,
+    to_date: Annotated[date | None, Query()] = None,
+    category_id: Annotated[uuid.UUID | None, Query()] = None,
+    status_filter: Annotated[
+        str | None, Query(alias="status", pattern="^(confirmed|pending)$")
+    ] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ):
     filters = [Expense.group_id == group_id]
     if from_date is not None:
@@ -75,8 +76,8 @@ async def create_expense(
     group_id: uuid.UUID,
     body: ExpenseCreate,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     # Valider la catégorie
     await require_group_category(db, body.category_id, group_id)
@@ -173,8 +174,8 @@ async def update_expense(
     group_id: uuid.UUID,
     expense_id: uuid.UUID,
     body: ExpenseUpdate,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     expense = await db.execute(
         select(Expense)
@@ -279,8 +280,8 @@ async def confirm_expense(
     group_id: uuid.UUID,
     expense_id: uuid.UUID,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(Expense)
@@ -334,8 +335,8 @@ async def confirm_expense(
 async def delete_expense(
     group_id: uuid.UUID,
     expense_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(Expense)

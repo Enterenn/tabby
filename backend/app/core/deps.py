@@ -1,6 +1,7 @@
 """FastAPI dependency injection — current user, group membership / owner guards."""
 
 import uuid
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -11,18 +12,19 @@ from app.core.security import JWTError, decode_token
 from app.models.models import Group, GroupMember, User
 
 bearer_scheme = HTTPBearer()
+DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: AsyncSession = Depends(get_db),
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
+    db: DbSession,
 ) -> User:
     token = credentials.credentials
     try:
         payload = decode_token(token)
         if payload.get("type") != "access":
             raise JWTError("wrong token type")
-        user_id = uuid.UUID(payload["sub"])
+        user_id = uuid.UUID(str(payload["sub"]))
     except (JWTError, ValueError, KeyError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,10 +38,13 @@ async def get_current_user(
     return user
 
 
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
 async def require_group_member(
     group_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ) -> User:
     """Ensures the current user is a member of the requested group."""
     membership = await db.get(GroupMember, (group_id, current_user.id))
@@ -49,6 +54,9 @@ async def require_group_member(
             detail="You are not a member of this group",
         )
     return current_user
+
+
+GroupMemberUser = Annotated[User, Depends(require_group_member)]
 
 
 def is_group_admin(user_id: uuid.UUID, owner_id: uuid.UUID) -> bool:
@@ -64,8 +72,8 @@ def can_manage_paid_record(
 
 async def require_group_owner(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ) -> User:
     """Ensures the current user is the group admin (the creator)."""
     group = await db.get(Group, group_id)
@@ -75,6 +83,9 @@ async def require_group_owner(
             detail="Only the group admin can perform this action",
         )
     return current_user
+
+
+GroupOwnerUser = Annotated[User, Depends(require_group_owner)]
 
 
 async def ensure_can_manage_paid(

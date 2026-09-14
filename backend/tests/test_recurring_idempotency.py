@@ -4,19 +4,24 @@
 import os
 
 import pytest
-from sqlalchemy import inspect
+from sqlalchemy import Table, inspect
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.models.models import Expense, PersonalExpense
 
 
 def test_recurring_unique_constraints_are_declared():
+    expense_table = Expense.__table__
+    personal_table = PersonalExpense.__table__
+    assert isinstance(expense_table, Table)
+    assert isinstance(personal_table, Table)
+
     expense_constraints = {
-        constraint.name for constraint in Expense.__table__.constraints if constraint.name
+        constraint.name for constraint in expense_table.constraints if constraint.name
     }
     personal_constraints = {
         constraint.name
-        for constraint in PersonalExpense.__table__.constraints
+        for constraint in personal_table.constraints
         if constraint.name
     }
 

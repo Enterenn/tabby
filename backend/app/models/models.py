@@ -1,7 +1,8 @@
 """SQLAlchemy ORM models — mirrors the DDL in the cahier technique."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
@@ -157,8 +158,8 @@ class Expense(Base):
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    expense_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    expense_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("status IN ('confirmed', 'pending')", name="ck_expense_status"),
@@ -205,7 +206,7 @@ class ExpenseSplit(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
     )
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
 
     expense: Mapped["Expense"] = relationship(back_populates="splits")
     user: Mapped["User"] = relationship(back_populates="expense_splits")
@@ -225,7 +226,7 @@ class RecurringExpense(Base):
         UUID(as_uuid=True), ForeignKey("user.id"), nullable=False
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     frequency: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("frequency IN ('monthly', 'yearly')", name="ck_recurring_frequency"),
@@ -252,7 +253,7 @@ class PersonalRecurring(Base):
         UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     frequency: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("frequency IN ('monthly', 'yearly')", name="ck_personal_recurring_frequency"),
@@ -280,8 +281,8 @@ class PersonalExpense(Base):
         UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    expense_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    expense_date: Mapped[date] = mapped_column(Date, nullable=False)
     recurring_source_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("personal_recurring.id", ondelete="SET NULL"),
@@ -317,7 +318,7 @@ class Budget(Base):
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
     )
-    limit_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    limit_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     period: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("period IN ('monthly')", name="ck_budget_period"),

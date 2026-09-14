@@ -1,16 +1,13 @@
 """CRUD pour les cartes de fidélité."""
 
 import uuid
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.deps import get_current_user
-from app.models.models import LoyaltyCard, User
+from app.core.deps import CurrentUser, DbSession
+from app.models.models import LoyaltyCard
 
 router = APIRouter(prefix="/loyalty-cards", tags=["loyalty-cards"])
 
@@ -19,27 +16,27 @@ router = APIRouter(prefix="/loyalty-cards", tags=["loyalty-cards"])
 
 class LoyaltyCardCreate(BaseModel):
     brand_name: str
-    brand_id: Optional[str] = None
+    brand_id: str | None = None
     code_type: str  # 'barcode' | 'qrcode'
     code_value: str
-    color: Optional[str] = None
+    color: str | None = None
 
 
 class LoyaltyCardUpdate(BaseModel):
-    brand_name: Optional[str] = None
-    brand_id: Optional[str] = None
-    color: Optional[str] = None
-    code_type: Optional[str] = None
-    code_value: Optional[str] = None
+    brand_name: str | None = None
+    brand_id: str | None = None
+    color: str | None = None
+    code_type: str | None = None
+    code_value: str | None = None
 
 
 class LoyaltyCardResponse(BaseModel):
     id: str
     brand_name: str
-    brand_id: Optional[str]
+    brand_id: str | None
     code_type: str
     code_value: str
-    color: Optional[str]
+    color: str | None
     sort_order: int
 
     model_config = {"from_attributes": True}
@@ -68,8 +65,8 @@ def _to_response(c: LoyaltyCard) -> LoyaltyCardResponse:
 
 @router.get("", response_model=list[LoyaltyCardResponse])
 async def list_cards(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(LoyaltyCard)
@@ -82,8 +79,8 @@ async def list_cards(
 @router.post("", response_model=LoyaltyCardResponse, status_code=status.HTTP_201_CREATED)
 async def create_card(
     body: LoyaltyCardCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     if body.code_type not in ("barcode", "qrcode"):
         raise HTTPException(status_code=400, detail="code_type must be 'barcode' or 'qrcode'")
@@ -119,8 +116,8 @@ async def create_card(
 async def update_card(
     card_id: uuid.UUID,
     body: LoyaltyCardUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     card = await db.get(LoyaltyCard, card_id)
     if card is None or card.user_id != current_user.id:
@@ -148,8 +145,8 @@ async def update_card(
 @router.delete("/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_card(
     card_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     card = await db.get(LoyaltyCard, card_id)
     if card is None or card.user_id != current_user.id:
@@ -160,8 +157,8 @@ async def delete_card(
 @router.put("/reorder", status_code=status.HTTP_204_NO_CONTENT)
 async def reorder_cards(
     items: list[ReorderItem],
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     for item in items:
         card = await db.get(LoyaltyCard, uuid.UUID(item.id))

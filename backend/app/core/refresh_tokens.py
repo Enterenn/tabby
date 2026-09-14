@@ -38,8 +38,8 @@ async def rotate_refresh_token(db: AsyncSession, refresh_token: str) -> TokenRes
         payload = decode_token(refresh_token)
         if payload.get("type") != "refresh":
             raise JWTError("wrong token type")
-        user_id = uuid.UUID(payload["sub"])
-        jti = uuid.UUID(payload["jti"])
+        user_id = uuid.UUID(str(payload["sub"]))
+        jti = uuid.UUID(str(payload["jti"]))
     except (JWTError, ValueError, KeyError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -75,7 +75,7 @@ async def revoke_refresh_token(db: AsyncSession, refresh_token: str) -> None:
         payload = decode_token(refresh_token)
         if payload.get("type") != "refresh":
             return
-        jti = uuid.UUID(payload["jti"])
+        jti = uuid.UUID(str(payload["jti"]))
     except (JWTError, ValueError, KeyError):
         return
     row = await db.get(RefreshToken, jti)

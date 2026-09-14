@@ -130,6 +130,6 @@ class ExpenseResponse(BaseModel):
     expense_date: date
     created_at: datetime
     status: str = "confirmed"
-    splits: list[ExpenseSplitResponse] = []
+    splits: list[ExpenseSplitResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}

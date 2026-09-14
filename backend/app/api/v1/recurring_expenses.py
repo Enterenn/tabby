@@ -3,20 +3,16 @@
 import uuid
 from decimal import Decimal, ROUND_HALF_UP
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.database import get_db
-from app.core.deps import ensure_can_manage_paid, get_current_user, require_group_member
+from app.core.deps import CurrentUser, DbSession, GroupMemberUser, ensure_can_manage_paid
 from app.models.models import (
     Category,
-    Expense,
     GroupMember,
     PersonalRecurring,
     RecurringExpense,
-    User,
 )
 from app.schemas.expense import CategoryResponse
 from app.schemas.recurring import (
@@ -96,8 +92,8 @@ _PERSONAL_LOAD = [
 @router.get("/{group_id}/recurring-expenses", response_model=list[RecurringExpenseResponse])
 async def list_recurring(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupMemberUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(RecurringExpense)
@@ -116,8 +112,8 @@ async def list_recurring(
 async def create_recurring(
     group_id: uuid.UUID,
     body: RecurringExpenseCreate,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupMemberUser,
+    db: DbSession,
 ):
     category = await db.get(Category, body.category_id)
     if category is None:
@@ -160,8 +156,8 @@ async def create_recurring(
 async def toggle_recurring(
     group_id: uuid.UUID,
     rec_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(RecurringExpense)
@@ -184,8 +180,8 @@ async def toggle_recurring(
 async def delete_recurring(
     group_id: uuid.UUID,
     rec_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(RecurringExpense)
@@ -202,8 +198,8 @@ async def delete_recurring(
 
 @global_router.get("", response_model=list[RecurringExpenseResponse])
 async def list_all_recurring(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     """Toutes les récurrences actives de l'utilisateur, tous groupes confondus."""
     # Groupes de l'utilisateur
@@ -244,8 +240,8 @@ async def list_all_recurring(
 )
 async def create_personal_recurring(
     body: PersonalRecurringCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     category = await db.get(Category, body.category_id)
     if category is None:
@@ -279,8 +275,8 @@ async def create_personal_recurring(
 )
 async def toggle_personal_recurring(
     rec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(PersonalRecurring)
@@ -301,8 +297,8 @@ async def toggle_personal_recurring(
 @global_router.delete("/{rec_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_personal_recurring(
     rec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(PersonalRecurring).where(

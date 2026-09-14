@@ -30,8 +30,8 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-def _create_token(data: dict, expires_delta: timedelta) -> str:
-    payload = data.copy()
+def _create_token(data: dict[str, str], expires_delta: timedelta) -> str:
+    payload: dict[str, str | datetime] = dict(data)
     payload["exp"] = datetime.now(timezone.utc) + expires_delta
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
@@ -50,9 +50,12 @@ def create_refresh_token(user_id: str, jti: str) -> str:
     )
 
 
-def decode_token(token: str) -> dict:
+def decode_token(token: str) -> dict[str, object]:
     """Raises JWTError if token is invalid or expired."""
-    return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    if not isinstance(payload, dict):
+        raise JWTError("invalid token payload")
+    return payload
 
 
 __all__ = [

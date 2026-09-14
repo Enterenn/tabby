@@ -2,16 +2,16 @@ import secrets
 import string
 import uuid
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.balance import ExpenseRecord, compute_balances, user_balance
-from app.core.database import get_db
-from app.core.deps import get_current_user, require_group_member, require_group_owner
+from app.core.deps import CurrentUser, DbSession, GroupMemberUser, GroupOwnerUser
 from app.core.rate_limit import limiter
 from app.core.uploads import avatar_public_url
 from app.core.fcm import send_settle_request_notification
@@ -23,7 +23,6 @@ from app.models.models import (
     Group,
     GroupInvite,
     GroupMember,
-    User,
 )
 from app.schemas.group import (
     BalanceEntry,
@@ -49,11 +48,11 @@ def _invite_code() -> str:
     return "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(8))
 
 
-def _confirmed(expenses: list[Expense]) -> list[Expense]:
+def _confirmed(expenses: Sequence[Expense]) -> list[Expense]:
     return [e for e in expenses if e.status != "pending"]
 
 
-def _to_records(expenses: list[Expense]) -> list[ExpenseRecord]:
+def _to_records(expenses: Sequence[Expense]) -> list[ExpenseRecord]:
     return [
         ExpenseRecord(
             paid_by=str(e.paid_by),
@@ -118,8 +117,8 @@ async def _load_group_with_balance(
 
 @router.get("", response_model=list[GroupResponse])
 async def list_groups(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(Group)
@@ -159,8 +158,8 @@ async def list_groups(
 @router.post("", response_model=GroupResponse, status_code=status.HTTP_201_CREATED)
 async def create_group(
     body: GroupCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     group = Group(id=uuid.uuid4(), name=body.name, owner_id=current_user.id)
     db.add(group)
@@ -176,8 +175,8 @@ async def create_group(
 @router.get("/{group_id}", response_model=GroupResponse)
 async def get_group(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     group = await db.get(Group, group_id)
     if group is None:
@@ -189,8 +188,8 @@ async def get_group(
 async def set_group_pin(
     group_id: uuid.UUID,
     body: GroupPinUpdate,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     membership = await db.get(GroupMember, (group_id, current_user.id))
     if membership is None:
@@ -207,8 +206,8 @@ async def set_group_pin(
 async def update_group(
     group_id: uuid.UUID,
     body: GroupUpdate,
-    current_user: User = Depends(require_group_owner),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupOwnerUser,
+    db: DbSession,
 ):
     group = await db.get(Group, group_id)
     if group is None:
@@ -220,8 +219,8 @@ async def update_group(
 @router.delete("/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_group(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_owner),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupOwnerUser,
+    db: DbSession,
 ):
     group = await db.get(Group, group_id)
     if group is None:
@@ -233,8 +232,8 @@ async def delete_group(
 @router.post("/{group_id}/invite", response_model=InviteResponse)
 async def create_invite(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupMemberUser,
+    db: DbSession,
 ):
     # Générer un code unique à 6 chiffres
     for _ in range(10):
@@ -261,9 +260,10 @@ async def create_invite(
 async def join_group(
     request: Request,
     body: JoinRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
+    del request
     result = await db.execute(select(GroupInvite).where(GroupInvite.code == body.code))
     invite = result.scalar_one_or_none()
 
@@ -285,14 +285,16 @@ async def join_group(
     await db.flush()
 
     group = await db.get(Group, invite.group_id)
+    if group is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
     return await _load_group_with_balance(group, current_user.id, db)
 
 
 @router.get("/{group_id}/balances", response_model=list[BalanceEntry])
 async def get_group_balances(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupMemberUser,
+    db: DbSession,
 ):
     """Retourne la liste minimale de transferts pour solder le groupe, avec les noms."""
     exp_result = await db.execute(
@@ -330,8 +332,8 @@ async def settle_debt(
     group_id: uuid.UUID,
     body: SettleRequest,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     """Crée un remboursement. En attente si c'est le débiteur qui le déclare."""
     from app.models.models import Category
@@ -445,8 +447,8 @@ async def settle_debt(
 @router.post("/{group_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
 async def leave_group(
     group_id: uuid.UUID,
-    current_user: User = Depends(require_group_member),
-    db: AsyncSession = Depends(get_db),
+    current_user: GroupMemberUser,
+    db: DbSession,
 ):
     """Quitte le groupe. Refusé si le solde n'est pas nul."""
     exp_result = await db.execute(
@@ -489,8 +491,8 @@ async def leave_group(
 async def remove_member(
     group_id: uuid.UUID,
     user_id: uuid.UUID,
-    current_user: User = Depends(require_group_owner),
-    db: AsyncSession = Depends(get_db),
+    _current_user: GroupOwnerUser,
+    db: DbSession,
 ):
     group = await db.get(Group, group_id)
     if group is not None and group.owner_id == user_id:

@@ -1,5 +1,7 @@
 """Signed avatar delivery — not a public StaticFiles mount."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import FileResponse
 
@@ -11,9 +13,9 @@ router = APIRouter(tags=["avatars"])
 @router.get("/uploads/avatars/{filename}")
 async def serve_avatar(
     filename: str,
-    exp: int = Query(...),
-    sig: str = Query(...),
-    v: int = Query(default=0),
+    exp: Annotated[int, Query()],
+    sig: Annotated[str, Query()],
+    v: Annotated[int, Query()] = 0,
 ):
     if not verify_avatar_signature(filename, exp, sig, v):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or expired link")

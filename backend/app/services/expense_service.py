@@ -8,8 +8,8 @@ from decimal import Decimal, ROUND_HALF_UP
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import Category, Expense, ExpenseSplit, GroupMember
-from app.schemas.expense import CategoryResponse, ExpenseResponse, SplitItem
+from app.models.models import Category, Expense, GroupMember
+from app.schemas.expense import CategoryResponse, ExpenseResponse, ExpenseSplitResponse, SplitItem
 
 _CENT = Decimal("0.01")
 
@@ -100,7 +100,7 @@ def to_expense_response(expense: Expense) -> ExpenseResponse:
         created_at=expense.created_at,
         status=expense.status,
         splits=[
-            {"user_id": str(split.user_id), "amount": float(split.amount)}
+            ExpenseSplitResponse(user_id=str(split.user_id), amount=float(split.amount))
             for split in expense.splits
         ],
     )

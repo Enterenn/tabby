@@ -28,14 +28,14 @@ from app.api.v1.recurring_expenses import (
 )
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
-from app.core.rate_limit import RateLimitExceeded, _rate_limit_exceeded_handler, limiter
+from app.core.rate_limit import RateLimitExceeded, limiter, rate_limit_exceeded_handler
 from app.core.uploads import ensure_upload_dirs
 from app.core.refresh_tokens import purge_expired_refresh_tokens
 from app.scheduler import recurring_job_loop
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     async with AsyncSessionLocal() as db:
         await purge_expired_refresh_tokens(db)
         await db.commit()
@@ -76,7 +76,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 

@@ -3,16 +3,16 @@
 import uuid
 from datetime import date
 from decimal import Decimal
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import CurrentUser, DbSession
 from app.core.spend import user_spent_for_categories
-from app.models.models import Budget, Category, User
+from app.models.models import Budget, Category
 from app.schemas.budget import BudgetCreate, BudgetResponse, BudgetUpdate
 from app.schemas.expense import CategoryResponse
 
@@ -79,10 +79,10 @@ async def _load_user_budgets(
 
 @global_router.get("", response_model=list[BudgetResponse])
 async def list_all_budgets(
-    year: int | None = Query(default=None),
-    month: int | None = Query(default=None, ge=1, le=12),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
+    year: Annotated[int | None, Query()] = None,
+    month: Annotated[int | None, Query(ge=1, le=12)] = None,
 ):
     target_year, target_month = _target_period(year, month)
     return await _load_user_budgets(db, current_user.id, target_year, target_month)
@@ -95,8 +95,8 @@ async def list_all_budgets(
 )
 async def create_budget(
     body: BudgetCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     cat_id = uuid.UUID(body.category_id)
     category = await db.get(Category, cat_id)
@@ -143,8 +143,8 @@ async def create_budget(
 async def update_budget(
     budget_id: uuid.UUID,
     body: BudgetUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(Budget)
@@ -171,8 +171,8 @@ async def update_budget(
 @global_router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_budget(
     budget_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(Budget).where(
@@ -188,10 +188,11 @@ async def delete_budget(
 @router.get("/{group_id}/budgets", response_model=list[BudgetResponse])
 async def list_group_budgets_compat(
     group_id: uuid.UUID,
-    year: int | None = Query(default=None),
-    month: int | None = Query(default=None, ge=1, le=12),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
+    year: Annotated[int | None, Query()] = None,
+    month: Annotated[int | None, Query(ge=1, le=12)] = None,
 ):
+    del group_id
     target_year, target_month = _target_period(year, month)
     return await _load_user_budgets(db, current_user.id, target_year, target_month)

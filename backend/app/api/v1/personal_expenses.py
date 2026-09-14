@@ -1,15 +1,15 @@
 import uuid
 
 from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import extract, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.database import get_db
-from app.core.deps import get_current_user
-from app.models.models import Category, PersonalExpense, User
+from app.core.deps import CurrentUser, DbSession
+from app.models.models import Category, PersonalExpense
+from app.services.expense_service import money
 from app.schemas.expense import CategoryResponse
 from app.schemas.personal import (
     PersonalExpenseCreate,
@@ -40,10 +40,10 @@ def _to_response(expense: PersonalExpense) -> PersonalExpenseResponse:
 
 @router.get("", response_model=list[PersonalExpenseResponse])
 async def list_personal_expenses(
-    year: int | None = Query(default=None),
-    month: int | None = Query(default=None, ge=1, le=12),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
+    year: Annotated[int | None, Query()] = None,
+    month: Annotated[int | None, Query(ge=1, le=12)] = None,
 ):
     today = date.today()
     target_year = year or today.year
@@ -69,8 +69,8 @@ async def list_personal_expenses(
 )
 async def create_personal_expense(
     body: PersonalExpenseCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     category = await db.get(Category, uuid.UUID(body.category_id))
     if category is None:
@@ -83,7 +83,7 @@ async def create_personal_expense(
         user_id=current_user.id,
         category_id=category.id,
         name=body.name,
-        amount=body.amount,
+        amount=money(body.amount),
         expense_date=body.expense_date,
     )
     db.add(expense)
@@ -100,8 +100,8 @@ async def create_personal_expense(
 async def update_personal_expense(
     expense_id: uuid.UUID,
     body: PersonalExpenseUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(PersonalExpense)
@@ -126,7 +126,7 @@ async def update_personal_expense(
     if body.name is not None:
         expense.name = body.name
     if body.amount is not None:
-        expense.amount = body.amount
+        expense.amount = money(body.amount)
     if body.expense_date is not None:
         expense.expense_date = body.expense_date
 
@@ -142,8 +142,8 @@ async def update_personal_expense(
 @router.delete("/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_personal_expense(
     expense_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
 ):
     result = await db.execute(
         select(PersonalExpense).where(

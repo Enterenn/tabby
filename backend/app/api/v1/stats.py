@@ -2,20 +2,18 @@
 
 import uuid
 from datetime import date
-from typing import Optional
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import CurrentUser, DbSession
 from app.core.spend import (
     merge_category_amounts,
     personal_spend_by_category,
     user_share_by_category,
 )
-from app.models.models import Category, GroupMember, User
+from app.models.models import Category, GroupMember
 from app.schemas.expense import CategoryResponse
 
 router = APIRouter(prefix="/stats", tags=["stats"])
@@ -30,12 +28,12 @@ class CategoryStat:
 
 @router.get("")
 async def get_stats(
-    year: int = Query(default=None),
-    month: int = Query(default=None, ge=1, le=12),
-    group_id: Optional[uuid.UUID] = Query(default=None),
-    scope: str = Query(default="all", pattern="^(all|groups|personal)$"),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentUser,
+    db: DbSession,
+    year: Annotated[int | None, Query()] = None,
+    month: Annotated[int | None, Query(ge=1, le=12)] = None,
+    group_id: Annotated[uuid.UUID | None, Query()] = None,
+    scope: Annotated[str, Query(pattern="^(all|groups|personal)$")] = "all",
 ):
     """
     Agrégation de *ta part* par catégorie (somme des ExpenseSplit).
