@@ -10,7 +10,12 @@ from app.schemas.auth import RegisterRequest
 from app.schemas.expense import CategoryUpdate, ExpenseCreate, ExpenseUpdate, SplitItem
 from app.schemas.group import GroupCreate, SettleRequest
 from app.schemas.personal import PersonalExpenseUpdate
-from app.schemas.recurring import PersonalRecurringCreate, RecurringExpenseCreate
+from app.schemas.recurring import (
+    PersonalRecurringCreate,
+    PersonalRecurringUpdate,
+    RecurringExpenseCreate,
+    RecurringExpenseUpdate,
+)
 
 _VALID_PASSWORD = "Abcdef1!"
 
@@ -150,3 +155,18 @@ def test_personal_recurring_day_must_be_in_month():
             category_id=uuid4(),
             day_of_period=31,
         )
+
+
+def test_recurring_update_amount_must_be_positive():
+    with pytest.raises(ValidationError):
+        RecurringExpenseUpdate(amount=0)
+
+
+def test_recurring_update_name_stripped():
+    req = RecurringExpenseUpdate(name="  Loyer  ")
+    assert req.name == "Loyer"
+
+
+def test_personal_recurring_update_day_must_be_in_month():
+    with pytest.raises(ValidationError):
+        PersonalRecurringUpdate(day_of_period=31)

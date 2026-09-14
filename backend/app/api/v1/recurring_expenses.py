@@ -17,8 +17,10 @@ from app.models.models import (
 from app.schemas.expense import CategoryResponse
 from app.schemas.recurring import (
     PersonalRecurringCreate,
+    PersonalRecurringUpdate,
     RecurringExpenseCreate,
     RecurringExpenseResponse,
+    RecurringExpenseUpdate,
 )
 
 router = APIRouter(prefix="/groups", tags=["recurring-expenses"])
@@ -150,6 +152,57 @@ async def create_recurring(
 
 
 @router.patch(
+    "/{group_id}/recurring-expenses/{rec_id}",
+    response_model=RecurringExpenseResponse,
+)
+async def update_recurring(
+    group_id: uuid.UUID,
+    rec_id: uuid.UUID,
+    body: RecurringExpenseUpdate,
+    current_user: GroupMemberUser,
+    db: DbSession,
+):
+    result = await db.execute(
+        select(RecurringExpense)
+        .where(RecurringExpense.id == rec_id, RecurringExpense.group_id == group_id)
+        .options(*_LOAD)
+    )
+    rec = result.scalar_one_or_none()
+    if rec is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    await ensure_can_manage_paid(db, group_id, current_user, rec.paid_by)
+
+    if body.name is not None:
+        rec.name = body.name
+    if body.amount is not None:
+        rec.amount = Decimal(str(body.amount)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+    if body.day_of_period is not None:
+        rec.day_of_period = body.day_of_period
+    if body.category_id is not None:
+        category = await db.get(Category, body.category_id)
+        if category is None:
+            raise HTTPException(status_code=404, detail="Category not found")
+        if category.user_id is not None or category.group_id != group_id and not category.is_default:
+            raise HTTPException(status_code=403, detail="Category not available for this group")
+        rec.category_id = body.category_id
+    if body.paid_by is not None:
+        payer = await db.get(GroupMember, (group_id, body.paid_by))
+        if payer is None:
+            raise HTTPException(status_code=400, detail="Payer is not a member of this group")
+        rec.paid_by = body.paid_by
+
+    await db.flush()
+    result = await db.execute(
+        select(RecurringExpense)
+        .where(RecurringExpense.id == rec.id)
+        .options(*_LOAD)
+    )
+    return _to_response(result.scalar_one())
+
+
+@router.patch(
     "/{group_id}/recurring-expenses/{rec_id}/toggle",
     response_model=RecurringExpenseResponse,
 )
@@ -260,6 +313,50 @@ async def create_personal_recurring(
         active=True,
     )
     db.add(rec)
+    await db.flush()
+    result = await db.execute(
+        select(PersonalRecurring)
+        .where(PersonalRecurring.id == rec.id)
+        .options(*_PERSONAL_LOAD)
+    )
+    return _to_personal_response(result.scalar_one())
+
+
+@global_router.patch("/{rec_id}", response_model=RecurringExpenseResponse)
+async def update_personal_recurring(
+    rec_id: uuid.UUID,
+    body: PersonalRecurringUpdate,
+    current_user: CurrentUser,
+    db: DbSession,
+):
+    result = await db.execute(
+        select(PersonalRecurring)
+        .where(
+            PersonalRecurring.id == rec_id,
+            PersonalRecurring.user_id == current_user.id,
+        )
+        .options(*_PERSONAL_LOAD)
+    )
+    rec = result.scalar_one_or_none()
+    if rec is None:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    if body.name is not None:
+        rec.name = body.name
+    if body.amount is not None:
+        rec.amount = Decimal(str(body.amount)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+    if body.day_of_period is not None:
+        rec.day_of_period = body.day_of_period
+    if body.category_id is not None:
+        category = await db.get(Category, body.category_id)
+        if category is None:
+            raise HTTPException(status_code=404, detail="Category not found")
+        if category.user_id is not None and category.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Category not available")
+        rec.category_id = category.id
+
     await db.flush()
     result = await db.execute(
         select(PersonalRecurring)

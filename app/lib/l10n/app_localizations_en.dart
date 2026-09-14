@@ -641,6 +641,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get editRecurring => 'Edit recurrence';
+
+  @override
+  String get editRecurringSubtitle =>
+      'Expenses already created will not be updated.';
+
+  @override
+  String get recurringDayOfMonth => 'Day of the month';
+
+  @override
   String get budget => 'Budget';
 
   @override
@@ -714,6 +724,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get budgetActions => 'Budget options';
+
+  @override
+  String get moreOptions => 'More options';
 
   @override
   String get newBudget => 'New budget';

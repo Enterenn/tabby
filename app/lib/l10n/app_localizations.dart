@@ -1256,6 +1256,24 @@ abstract class AppLocalizations {
   /// **'{day}e du mois'**
   String recurringNthOfMonth(int day);
 
+  /// No description provided for @editRecurring.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la récurrence'**
+  String get editRecurring;
+
+  /// No description provided for @editRecurringSubtitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les dépenses déjà créées ne sont pas modifiées.'**
+  String get editRecurringSubtitle;
+
+  /// No description provided for @recurringDayOfMonth.
+  ///
+  /// In fr, this message translates to:
+  /// **'Jour du mois'**
+  String get recurringDayOfMonth;
+
   /// No description provided for @budget.
   ///
   /// In fr, this message translates to:
@@ -1393,6 +1411,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Options du budget'**
   String get budgetActions;
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plus d’options'**
+  String get moreOptions;
 
   /// No description provided for @newBudget.
   ///

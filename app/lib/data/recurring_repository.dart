@@ -68,6 +68,44 @@ class RecurringRepository {
   Future<void> deletePersonal(String id) {
     return _dio.delete('/recurring-expenses/$id');
   }
+
+  Future<RecurringExpense> update({
+    required String groupId,
+    required String id,
+    required String name,
+    required double amount,
+    required String categoryId,
+    required String paidBy,
+    required int dayOfPeriod,
+  }) async {
+    final response = await _dio.patch(
+      '/groups/$groupId/recurring-expenses/$id',
+      data: {
+        'name': name,
+        'amount': amount,
+        'category_id': categoryId,
+        'paid_by': paidBy,
+        'day_of_period': dayOfPeriod,
+      },
+    );
+    return RecurringExpense.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<RecurringExpense> updatePersonal({
+    required String id,
+    required String name,
+    required double amount,
+    required String categoryId,
+    required int dayOfPeriod,
+  }) async {
+    final response = await _dio.patch('/recurring-expenses/$id', data: {
+      'name': name,
+      'amount': amount,
+      'category_id': categoryId,
+      'day_of_period': dayOfPeriod,
+    });
+    return RecurringExpense.fromJson(response.data as Map<String, dynamic>);
+  }
 }
 
 final recurringRepository = RecurringRepository();

@@ -127,24 +127,19 @@ class _CategoriesList extends StatelessWidget {
                     iconSize: 20,
                   ),
                   title: Text(context.categoryName(custom[i])),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Symbols.edit_rounded,
-                          size: 20,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        onPressed: () => onEdit(custom[i]),
+                  trailing: ExpressiveOverflowMenu(
+                    tooltip: context.l10n.moreOptions,
+                    actions: [
+                      ExpressiveOverflowAction(
+                        label: context.l10n.edit,
+                        icon: Symbols.edit_rounded,
+                        onTap: () => onEdit(custom[i]),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Symbols.delete_rounded,
-                          size: 20,
-                          color: cs.error,
-                        ),
-                        onPressed: () => onDelete(custom[i]),
+                      ExpressiveOverflowAction(
+                        label: context.l10n.delete,
+                        icon: Symbols.delete_rounded,
+                        danger: true,
+                        onTap: () => onDelete(custom[i]),
                       ),
                     ],
                   ),

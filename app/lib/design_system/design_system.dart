@@ -6,6 +6,7 @@
 library;
 
 export 'actions/expressive_action_button.dart';
+export 'actions/expressive_overflow_menu.dart';
 export 'actions/expressive_button_group.dart';
 export 'actions/tabby_button.dart';
 export 'actions/tabby_filter_chip.dart';

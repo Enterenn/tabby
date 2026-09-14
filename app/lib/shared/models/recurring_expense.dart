@@ -66,6 +66,17 @@ class RecurringExpense extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, groupId, name, amount, active, dayOfPeriod, frequency, isPersonal,
+        id,
+        groupId,
+        groupName,
+        name,
+        amount,
+        category,
+        paidBy,
+        paidByName,
+        active,
+        dayOfPeriod,
+        frequency,
+        isPersonal,
       ];
 }

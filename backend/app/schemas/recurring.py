@@ -31,6 +31,33 @@ class RecurringExpenseCreate(BaseModel):
         return v
 
 
+class RecurringExpenseUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    amount: float | None = Field(default=None, gt=0)
+    category_id: uuid.UUID | None = None
+    paid_by: uuid.UUID | None = None
+    day_of_period: int | None = None
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        name = value.strip()
+        if not name:
+            raise ValueError("Name is required")
+        return name
+
+    @field_validator("day_of_period")
+    @classmethod
+    def validate_day(cls, v: int | None) -> int | None:
+        if v is None:
+            return None
+        if not 1 <= v <= 28:
+            raise ValueError("day_of_period must be between 1 and 28")
+        return v
+
+
 class RecurringExpenseResponse(BaseModel):
     id: str
     group_id: str | None = None
@@ -77,3 +104,30 @@ class PersonalRecurringCreate(BaseModel):
         if v not in ("monthly",):
             raise ValueError("Only 'monthly' frequency is supported")
         return v
+
+
+class PersonalRecurringUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    amount: float | None = Field(default=None, gt=0)
+    category_id: uuid.UUID | None = None
+    day_of_period: int | None = None
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        name = value.strip()
+        if not name:
+            raise ValueError("Name is required")
+        return name
+
+    @field_validator("day_of_period")
+    @classmethod
+    def validate_day(cls, v: int | None) -> int | None:
+        if v is None:
+            return None
+        if not 1 <= v <= 28:
+            raise ValueError("day_of_period must be between 1 and 28")
+        return v
+

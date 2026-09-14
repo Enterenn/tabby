@@ -647,6 +647,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get editRecurring => 'Modifier la récurrence';
+
+  @override
+  String get editRecurringSubtitle =>
+      'Les dépenses déjà créées ne sont pas modifiées.';
+
+  @override
+  String get recurringDayOfMonth => 'Jour du mois';
+
+  @override
   String get budget => 'Budget';
 
   @override
@@ -720,6 +730,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get budgetActions => 'Options du budget';
+
+  @override
+  String get moreOptions => 'Plus d’options';
 
   @override
   String get newBudget => 'Nouveau budget';

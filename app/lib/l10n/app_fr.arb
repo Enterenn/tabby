@@ -265,6 +265,9 @@
       "day": { "type": "int" }
     }
   },
+  "editRecurring": "Modifier la récurrence",
+  "editRecurringSubtitle": "Les dépenses déjà créées ne sont pas modifiées.",
+  "recurringDayOfMonth": "Jour du mois",
 
   "budget": "Budget",
   "monthTotal": "Ta part ce mois-ci",
@@ -294,6 +297,7 @@
   "noBudgetBody": "Fixe un plafond par catégorie pour suivre tes dépenses du mois.",
   "budgetThresholdHint": "Attention dès 75 % du plafond, dépassé à 100 %.",
   "budgetActions": "Options du budget",
+  "moreOptions": "Plus d’options",
   "newBudget": "Nouveau budget",
   "allGroups": "Tous",
   "allGroupsMenu": "Tous les groupes",

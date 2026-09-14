@@ -84,4 +84,44 @@ class RecurringCubit extends Cubit<RecurringState> {
       return ApiFailure.from(e).message;
     }
   }
+
+  Future<String?> update(
+    RecurringExpense item, {
+    required String name,
+    required double amount,
+    required String categoryId,
+    required int dayOfPeriod,
+    String? paidBy,
+  }) async {
+    final current = state;
+    if (current is! RecurringLoaded) return 'errorUnexpected';
+    try {
+      final updated = item.isPersonal
+          ? await _recurring.updatePersonal(
+              id: item.id,
+              name: name,
+              amount: amount,
+              categoryId: categoryId,
+              dayOfPeriod: dayOfPeriod,
+            )
+          : await _recurring.update(
+              groupId: item.groupId,
+              id: item.id,
+              name: name,
+              amount: amount,
+              categoryId: categoryId,
+              paidBy: paidBy ?? item.paidBy,
+              dayOfPeriod: dayOfPeriod,
+            );
+      if (!isClosed) {
+        emit(RecurringLoaded([
+          for (final existing in current.items)
+            if (existing.id == item.id) updated else existing,
+        ]));
+      }
+      return null;
+    } catch (e) {
+      return ApiFailure.from(e).message;
+    }
+  }
 }
