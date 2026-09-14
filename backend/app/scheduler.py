@@ -5,7 +5,8 @@ import calendar
 import logging
 from datetime import date
 
-from sqlalchemy import extract, select
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import selectinload
 
 from app.core.database import async_session_factory
@@ -45,10 +46,7 @@ async def generate_recurring_expenses() -> int:
         result = await db.execute(
             select(RecurringExpense)
             .where(RecurringExpense.active.is_(True))
-            .options(
-                selectinload(RecurringExpense.group),
-                selectinload(RecurringExpense.generated_expenses),
-            )
+            .options(selectinload(RecurringExpense.group))
         )
         recurrings = result.scalars().all()
 
@@ -58,10 +56,9 @@ async def generate_recurring_expenses() -> int:
                 continue
 
             already = await db.execute(
-                select(Expense).where(
+                select(Expense.id).where(
                     Expense.recurring_source_id == rec.id,
-                    extract("year", Expense.expense_date) == today.year,
-                    extract("month", Expense.expense_date) == today.month,
+                    Expense.expense_date == expense_date,
                 )
             )
             if already.scalar_one_or_none() is not None:
@@ -79,24 +76,33 @@ async def generate_recurring_expenses() -> int:
             per_person = (total / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             remainder = total - per_person * n
 
-            expense = Expense(
-                id=_uuid.uuid4(),
-                group_id=rec.group_id,
-                category_id=rec.category_id,
-                paid_by=rec.paid_by,
-                name=rec.name,
-                amount=total,
-                expense_date=expense_date,
-                recurring_source_id=rec.id,
+            expense_id = _uuid.uuid4()
+            expense_values = {
+                "id": expense_id,
+                "group_id": rec.group_id,
+                "category_id": rec.category_id,
+                "paid_by": rec.paid_by,
+                "name": rec.name,
+                "amount": total,
+                "expense_date": expense_date,
+                "recurring_source_id": rec.id,
+            }
+            inserted = await db.execute(
+                pg_insert(Expense)
+                .values(**expense_values)
+                .on_conflict_do_nothing(
+                    index_elements=[Expense.recurring_source_id, Expense.expense_date]
+                )
+                .returning(Expense.id)
             )
-            db.add(expense)
-            await db.flush()
+            if inserted.scalar_one_or_none() is None:
+                continue
 
             for m in members:
                 split_amt = per_person + (remainder if m.user_id == rec.paid_by else Decimal("0"))
                 db.add(ExpenseSplit(
                     id=_uuid.uuid4(),
-                    expense_id=expense.id,
+                    expense_id=expense_id,
                     user_id=m.user_id,
                     amount=split_amt,
                 ))
@@ -116,18 +122,19 @@ async def generate_recurring_expenses() -> int:
                 continue
 
             already = await db.execute(
-                select(PersonalExpense).where(
+                select(PersonalExpense.id).where(
                     PersonalExpense.recurring_source_id == rec.id,
-                    extract("year", PersonalExpense.expense_date) == today.year,
-                    extract("month", PersonalExpense.expense_date) == today.month,
+                    PersonalExpense.expense_date == expense_date,
                 )
             )
             if already.scalar_one_or_none() is not None:
                 continue
 
-            db.add(
-                PersonalExpense(
-                    id=_uuid.uuid4(),
+            personal_expense_id = _uuid.uuid4()
+            inserted = await db.execute(
+                pg_insert(PersonalExpense)
+                .values(
+                    id=personal_expense_id,
                     user_id=rec.user_id,
                     category_id=rec.category_id,
                     name=rec.name,
@@ -137,7 +144,17 @@ async def generate_recurring_expenses() -> int:
                     expense_date=expense_date,
                     recurring_source_id=rec.id,
                 )
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        PersonalExpense.recurring_source_id,
+                        PersonalExpense.expense_date,
+                    ]
+                )
+                .returning(PersonalExpense.id)
             )
+            if inserted.scalar_one_or_none() is None:
+                continue
+
             generated += 1
             logger.info(
                 "Generated personal recurring '%s' for %s/%s (user %s)",

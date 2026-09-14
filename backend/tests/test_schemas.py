@@ -91,6 +91,36 @@ def test_expense_update_custom_splits_must_match_amount():
         )
 
 
+def test_expense_custom_split_amounts_must_be_positive():
+    with pytest.raises(ValidationError):
+        ExpenseCreate(
+            name="Lunch",
+            amount=20,
+            category_id=uuid4(),
+            paid_by=uuid4(),
+            expense_date=date.today(),
+            split_type="custom",
+            splits=[SplitItem(user_id=uuid4(), amount=-1)],
+        )
+
+
+def test_expense_custom_split_users_must_be_unique():
+    user_id = uuid4()
+    with pytest.raises(ValidationError):
+        ExpenseCreate(
+            name="Lunch",
+            amount=20,
+            category_id=uuid4(),
+            paid_by=user_id,
+            expense_date=date.today(),
+            split_type="custom",
+            splits=[
+                SplitItem(user_id=user_id, amount=10),
+                SplitItem(user_id=user_id, amount=10),
+            ],
+        )
+
+
 def test_expense_update_custom_splits_ok():
     user_id = uuid4()
     req = ExpenseUpdate(

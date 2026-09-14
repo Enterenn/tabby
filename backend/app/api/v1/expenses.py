@@ -75,6 +75,11 @@ async def create_expense(
     category = await db.get(Category, body.category_id)
     if category is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+    if category.user_id is not None or category.group_id != group_id and not category.is_default:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Category not available for this group",
+        )
 
     # Valider le payeur (doit être membre du groupe)
     payer_member = await db.get(GroupMember, (group_id, body.paid_by))
@@ -210,6 +215,11 @@ async def update_expense(
         category = await db.get(Category, body.category_id)
         if category is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
+        if category.user_id is not None or category.group_id != group_id and not category.is_default:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Category not available for this group",
+            )
         expense.category_id = body.category_id
     if body.paid_by is not None:
         payer_member = await db.get(GroupMember, (group_id, body.paid_by))

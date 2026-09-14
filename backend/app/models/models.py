@@ -167,9 +167,20 @@ class Expense(Base):
         server_default="confirmed",
     )
     recurring_source_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("recurring_expense.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("recurring_expense.id"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        # A recurring source can generate at most one expense per date.
+        # The migration creates the PostgreSQL partial unique index because
+        # nullable unique columns have different semantics across databases.
+        UniqueConstraint(
+            "recurring_source_id",
+            "expense_date",
+            name="uq_expense_recurring_source_date",
+        ),
+    )
 
     group: Mapped["Group"] = relationship(back_populates="expenses")
     category: Mapped["Category"] = relationship(back_populates="expenses")
@@ -270,7 +281,18 @@ class PersonalExpense(Base):
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     expense_date: Mapped[datetime] = mapped_column(Date, nullable=False)
     recurring_source_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("personal_recurring.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey("personal_recurring.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "recurring_source_id",
+            "expense_date",
+            name="uq_personal_expense_recurring_source_date",
+        ),
     )
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 

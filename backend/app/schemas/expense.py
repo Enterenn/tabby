@@ -50,7 +50,7 @@ class ExpenseSplitResponse(BaseModel):
 
 class SplitItem(BaseModel):
     user_id: uuid.UUID
-    amount: float
+    amount: float = Field(gt=0)
 
 
 class ExpenseCreate(BaseModel):
@@ -75,6 +75,8 @@ class ExpenseCreate(BaseModel):
         if self.split_type == "custom":
             if not self.splits:
                 raise ValueError("splits required when split_type is 'custom'")
+            if len({split.user_id for split in self.splits}) != len(self.splits):
+                raise ValueError("Each split user must be unique")
             total_splits = round(sum(s.amount for s in self.splits), 2)
             if abs(total_splits - round(self.amount, 2)) > 0.01:
                 raise ValueError(
@@ -107,6 +109,8 @@ class ExpenseUpdate(BaseModel):
         if self.split_type == "custom":
             if not self.splits:
                 raise ValueError("splits required when split_type is 'custom'")
+            if len({split.user_id for split in self.splits}) != len(self.splits):
+                raise ValueError("Each split user must be unique")
             if self.amount is not None:
                 total_splits = round(sum(s.amount for s in self.splits), 2)
                 if abs(total_splits - round(self.amount, 2)) > 0.01:

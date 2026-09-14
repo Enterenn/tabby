@@ -122,6 +122,8 @@ async def create_recurring(
     category = await db.get(Category, body.category_id)
     if category is None:
         raise HTTPException(status_code=404, detail="Category not found")
+    if category.user_id is not None or category.group_id != group_id and not category.is_default:
+        raise HTTPException(status_code=403, detail="Category not available for this group")
 
     payer = await db.get(GroupMember, (group_id, body.paid_by))
     if payer is None:
