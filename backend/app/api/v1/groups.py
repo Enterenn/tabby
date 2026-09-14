@@ -4,7 +4,7 @@ import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -15,6 +15,7 @@ from app.core.deps import get_current_user, require_group_member, require_group_
 from app.core.rate_limit import limiter
 from app.core.uploads import avatar_public_url
 from app.core.fcm import send_settle_request_notification
+from app.services.notification_service import enqueue_notification
 from app.models.models import (
     DeviceToken,
     Expense,
@@ -328,6 +329,7 @@ async def get_group_balances(
 async def settle_debt(
     group_id: uuid.UUID,
     body: SettleRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
@@ -421,23 +423,21 @@ async def settle_debt(
     await db.flush()
 
     if status_value == "pending":
-        try:
-            group = await db.get(Group, group_id)
-            tokens_result = await db.execute(
-                select(DeviceToken.token).where(DeviceToken.user_id == to_user_id)
+        group = await db.get(Group, group_id)
+        tokens_result = await db.execute(
+            select(DeviceToken.token).where(DeviceToken.user_id == to_user_id)
+        )
+        tokens = [t for (t,) in tokens_result.all()]
+        if group and tokens:
+            enqueue_notification(
+                background_tasks,
+                send_settle_request_notification,
+                tokens=tokens,
+                group_name=group.name,
+                amount=float(amount),
+                group_id=str(group_id),
+                payer_name=current_user.name,
             )
-            tokens = [t for (t,) in tokens_result.all()]
-            if group and tokens:
-                send_settle_request_notification(
-                    tokens=tokens,
-                    group_name=group.name,
-                    amount=float(amount),
-                    group_id=str(group_id),
-                    payer_name=current_user.name,
-                )
-        except Exception as exc:
-            import logging
-            logging.getLogger(__name__).error("[FCM] settle notification error: %s", exc)
 
     return {"ok": True, "status": status_value}
 

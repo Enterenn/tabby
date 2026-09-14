@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,6 +20,7 @@ from app.services.expense_service import (
     require_group_member_user,
     to_expense_response,
 )
+from app.services.notification_service import enqueue_notification
 
 router = APIRouter(prefix="/groups", tags=["expenses"])
 
@@ -73,6 +74,7 @@ async def list_expenses(
 async def create_expense(
     group_id: uuid.UUID,
     body: ExpenseCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
@@ -135,32 +137,30 @@ async def create_expense(
     expense = result.scalar_one()
     response = _to_response(expense)
 
-    # Notifier les autres membres du groupe (fire-and-forget)
-    try:
-        group = await db.get(Group, group_id)
-        members_result = await db.execute(
-            select(GroupMember).where(GroupMember.group_id == group_id)
+    # Notifier les autres membres du groupe en arrière-plan.
+    group = await db.get(Group, group_id)
+    members_result = await db.execute(
+        select(GroupMember).where(GroupMember.group_id == group_id)
+    )
+    other_user_ids = [
+        m.user_id for m in members_result.scalars().all()
+        if m.user_id != current_user.id
+    ]
+    if other_user_ids and group:
+        tokens_result = await db.execute(
+            select(DeviceToken.token).where(DeviceToken.user_id.in_(other_user_ids))
         )
-        other_user_ids = [
-            m.user_id for m in members_result.scalars().all()
-            if m.user_id != current_user.id
-        ]
-        if other_user_ids and group:
-            tokens_result = await db.execute(
-                select(DeviceToken.token).where(DeviceToken.user_id.in_(other_user_ids))
-            )
-            tokens = [t for (t,) in tokens_result.all()]
-            send_expense_notification(
-                tokens=tokens,
-                group_name=group.name,
-                expense_name=response.name,
-                amount=response.amount,
-                group_id=str(group_id),
-                payer_name=current_user.name,
-            )
-    except Exception as exc:
-        import logging
-        logging.getLogger(__name__).error("[FCM] notification error: %s", exc)
+        tokens = [t for (t,) in tokens_result.all()]
+        enqueue_notification(
+            background_tasks,
+            send_expense_notification,
+            tokens=tokens,
+            group_name=group.name,
+            expense_name=response.name,
+            amount=response.amount,
+            group_id=str(group_id),
+            payer_name=current_user.name,
+        )
 
     return response
 
@@ -278,6 +278,7 @@ async def update_expense(
 async def confirm_expense(
     group_id: uuid.UUID,
     expense_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
@@ -307,23 +308,21 @@ async def confirm_expense(
     expense.status = "confirmed"
     await db.flush()
 
-    try:
-        group = await db.get(Group, group_id)
-        tokens_result = await db.execute(
-            select(DeviceToken.token).where(DeviceToken.user_id == expense.paid_by)
+    group = await db.get(Group, group_id)
+    tokens_result = await db.execute(
+        select(DeviceToken.token).where(DeviceToken.user_id == expense.paid_by)
+    )
+    tokens = [t for (t,) in tokens_result.all()]
+    if group and tokens:
+        enqueue_notification(
+            background_tasks,
+            send_settle_confirmed_notification,
+            tokens=tokens,
+            group_name=group.name,
+            amount=float(expense.amount),
+            group_id=str(group_id),
+            confirmer_name=current_user.name,
         )
-        tokens = [t for (t,) in tokens_result.all()]
-        if group and tokens:
-            send_settle_confirmed_notification(
-                tokens=tokens,
-                group_name=group.name,
-                amount=float(expense.amount),
-                group_id=str(group_id),
-                confirmer_name=current_user.name,
-            )
-    except Exception as exc:
-        import logging
-        logging.getLogger(__name__).error("[FCM] confirm notification error: %s", exc)
 
     return _to_response(expense)
 
