@@ -41,13 +41,12 @@ class AddExpenseReady extends AddExpenseState {
     Group? group,
     bool? groupLocked,
     bool clearGroup = false,
-  }) =>
-      AddExpenseReady(
-        groups: groups ?? this.groups,
-        categories: categories ?? this.categories,
-        group: clearGroup ? null : (group ?? this.group),
-        groupLocked: groupLocked ?? this.groupLocked,
-      );
+  }) => AddExpenseReady(
+    groups: groups ?? this.groups,
+    categories: categories ?? this.categories,
+    group: clearGroup ? null : (group ?? this.group),
+    groupLocked: groupLocked ?? this.groupLocked,
+  );
 
   @override
   List<Object?> get props => [groups, categories, group, groupLocked];
@@ -68,29 +67,80 @@ class AddExpenseError extends AddExpenseState {
   List<Object?> get props => [message];
 }
 
+String? validateExpenseSubmission({
+  required String groupId,
+  required String name,
+  required double amount,
+  required String categoryId,
+  required String paidBy,
+  List<Map<String, dynamic>>? customSplits,
+}) {
+  if (groupId.trim().isEmpty) return 'expenseGroupRequired';
+  if (name.trim().isEmpty) return 'expenseNameRequired';
+  if (!amount.isFinite || amount <= 0) return 'expenseAmountInvalid';
+  if (categoryId.trim().isEmpty) return 'expenseCategoryRequired';
+  if (paidBy.trim().isEmpty) return 'expensePayerRequired';
+  if (customSplits != null) {
+    if (customSplits.isEmpty) return 'expenseSplitsRequired';
+    final ids = customSplits.map((split) => split['user_id']).toSet();
+    if (ids.length != customSplits.length) return 'expenseSplitsDuplicate';
+    final total = customSplits.fold<double>(
+      0,
+      (sum, split) => sum + ((split['amount'] as num?)?.toDouble() ?? 0),
+    );
+    if (customSplits.any(
+          (split) => ((split['amount'] as num?)?.toDouble() ?? 0) <= 0,
+        ) ||
+        (total - amount).abs() > 0.02) {
+      return 'expenseSplitsMismatch';
+    }
+  }
+  return null;
+}
+
 // ─── Cubit ────────────────────────────────────────────────────────────────────
 
 class AddExpenseCubit extends Cubit<AddExpenseState> {
-  AddExpenseCubit() : super(const AddExpenseInitial());
+  AddExpenseCubit({
+    GroupsRepository? groups,
+    CategoriesRepository? categories,
+    ExpensesRepository? expenses,
+    PersonalExpensesRepository? personalExpenses,
+    RecurringRepository? recurring,
+  }) : _groups = groups ?? groupsRepository,
+       _categories = categories ?? categoriesRepository,
+       _expenses = expenses ?? expensesRepository,
+       _personalExpenses = personalExpenses ?? personalExpensesRepository,
+       _recurring = recurring ?? recurringRepository,
+       super(const AddExpenseInitial());
+
+  final GroupsRepository _groups;
+  final CategoriesRepository _categories;
+  final ExpensesRepository _expenses;
+  final PersonalExpensesRepository _personalExpenses;
+  final RecurringRepository _recurring;
 
   Future<void> load({String? groupId, bool lockGroup = false}) async {
     emit(const AddExpenseLoading());
     try {
-      final groups = await groupsRepository.list();
-      final categories = await categoriesRepository.list();
+      final groups = await _groups.list();
+      final categories = await _categories.list();
 
       if (groups.isEmpty) {
         if (!isClosed) {
-          emit(AddExpenseReady(
-            groups: const [],
-            categories: categories,
-            groupLocked: lockGroup,
-          ));
+          emit(
+            AddExpenseReady(
+              groups: const [],
+              categories: categories,
+              groupLocked: lockGroup,
+            ),
+          );
         }
         return;
       }
 
-      final selectedId = groupId ?? (groups.length == 1 ? groups.first.id : null);
+      final selectedId =
+          groupId ?? (groups.length == 1 ? groups.first.id : null);
       if (selectedId == null) {
         if (!isClosed) {
           emit(AddExpenseReady(groups: groups, categories: categories));
@@ -98,14 +148,16 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
         return;
       }
 
-      final group = await groupsRepository.get(selectedId);
+      final group = await _groups.get(selectedId);
       if (!isClosed) {
-        emit(AddExpenseReady(
-          groups: groups,
-          group: group,
-          categories: categories,
-          groupLocked: lockGroup && groupId != null,
-        ));
+        emit(
+          AddExpenseReady(
+            groups: groups,
+            group: group,
+            categories: categories,
+            groupLocked: lockGroup && groupId != null,
+          ),
+        );
       }
     } catch (e) {
       if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
@@ -116,12 +168,15 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     final current = state;
     if (current is! AddExpenseReady || current.groupLocked) return;
     try {
-      final group = await groupsRepository.get(groupId);
+      final group = await _groups.get(groupId);
       if (!isClosed) {
         emit(current.copyWith(group: group));
       }
     } catch (e) {
-      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      if (!isClosed) {
+        emit(AddExpenseError(ApiFailure.from(e).message));
+        emit(current);
+      }
     }
   }
 
@@ -133,7 +188,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     final current = state;
     if (current is! AddExpenseReady) return null;
     try {
-      final newCat = await categoriesRepository.create(
+      final newCat = await _categories.create(
         name: name,
         icon: icon,
         color: color,
@@ -159,7 +214,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
   }) async {
     final current = state;
     if (current is! AddExpenseReady) return false;
-    final validation = _validateSubmission(
+    final validation = validateExpenseSubmission(
       groupId: groupId,
       name: name,
       amount: amount,
@@ -178,7 +233,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
 
     try {
       if (recurring) {
-        await recurringRepository.create(
+        await _recurring.create(
           groupId: groupId,
           name: name,
           amount: amount,
@@ -187,7 +242,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
           dayOfPeriod: expenseDate.day,
         );
       } else {
-        await expensesRepository.create(
+        await _expenses.create(
           groupId: groupId,
           name: name,
           amount: amount,
@@ -201,7 +256,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (e) {
-      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      if (!isClosed) {
+        emit(AddExpenseError(ApiFailure.from(e).message));
+        emit(current);
+      }
       return false;
     }
   }
@@ -218,7 +276,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
   }) async {
     final current = state;
     if (current is! AddExpenseReady) return false;
-    final validation = _validateSubmission(
+    final validation = validateExpenseSubmission(
       groupId: groupId,
       name: name,
       amount: amount,
@@ -235,7 +293,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     }
     emit(const AddExpenseSubmitting());
     try {
-      await expensesRepository.update(
+      await _expenses.update(
         groupId: groupId,
         expenseId: expenseId,
         name: name,
@@ -248,40 +306,12 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (e) {
-      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      if (!isClosed) {
+        emit(AddExpenseError(ApiFailure.from(e).message));
+        emit(current);
+      }
       return false;
     }
-  }
-
-  String? _validateSubmission({
-    required String groupId,
-    required String name,
-    required double amount,
-    required String categoryId,
-    required String paidBy,
-    List<Map<String, dynamic>>? customSplits,
-  }) {
-    if (groupId.trim().isEmpty) return 'expenseGroupRequired';
-    if (name.trim().isEmpty) return 'expenseNameRequired';
-    if (!amount.isFinite || amount <= 0) return 'expenseAmountInvalid';
-    if (categoryId.trim().isEmpty) return 'expenseCategoryRequired';
-    if (paidBy.trim().isEmpty) return 'expensePayerRequired';
-    if (customSplits != null) {
-      if (customSplits.isEmpty) return 'expenseSplitsRequired';
-      final ids = customSplits.map((split) => split['user_id']).toSet();
-      if (ids.length != customSplits.length) return 'expenseSplitsDuplicate';
-      final total = customSplits.fold<double>(
-        0,
-        (sum, split) => sum + ((split['amount'] as num?)?.toDouble() ?? 0),
-      );
-      if (customSplits.any(
-            (split) => ((split['amount'] as num?)?.toDouble() ?? 0) <= 0,
-          ) ||
-          (total - amount).abs() > 0.02) {
-        return 'expenseSplitsMismatch';
-      }
-    }
-    return null;
   }
 
   Future<bool> submitPersonal({
@@ -291,18 +321,19 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required DateTime expenseDate,
     bool recurring = false,
   }) async {
-    if (state is! AddExpenseReady) return false;
+    final current = state;
+    if (current is! AddExpenseReady) return false;
     emit(const AddExpenseSubmitting());
     try {
       if (recurring) {
-        await recurringRepository.createPersonal(
+        await _recurring.createPersonal(
           name: name,
           amount: amount,
           categoryId: categoryId,
           dayOfPeriod: expenseDate.day.clamp(1, 28),
         );
       } else {
-        await personalExpensesRepository.create(
+        await _personalExpenses.create(
           name: name,
           amount: amount,
           categoryId: categoryId,
@@ -312,7 +343,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (e) {
-      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      if (!isClosed) {
+        emit(AddExpenseError(ApiFailure.from(e).message));
+        emit(current);
+      }
       return false;
     }
   }
@@ -324,10 +358,11 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required String categoryId,
     required DateTime expenseDate,
   }) async {
-    if (state is! AddExpenseReady) return false;
+    final current = state;
+    if (current is! AddExpenseReady) return false;
     emit(const AddExpenseSubmitting());
     try {
-      await personalExpensesRepository.update(
+      await _personalExpenses.update(
         expenseId: expenseId,
         name: name,
         amount: amount,
@@ -337,7 +372,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       if (!isClosed) emit(const AddExpenseSuccess());
       return true;
     } catch (e) {
-      if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
+      if (!isClosed) {
+        emit(AddExpenseError(ApiFailure.from(e).message));
+        emit(current);
+      }
       return false;
     }
   }

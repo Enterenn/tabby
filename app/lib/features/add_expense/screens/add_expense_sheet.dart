@@ -76,7 +76,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     _expenseDate = editing.expenseDate;
     _forMe = false;
     _recurring = false;
-    _splitMode = _looksEqualSplit(editing)
+    _splitMode = looksLikeEqualSplit(editing)
         ? ExpenseSplitMode.equal
         : ExpenseSplitMode.amounts;
     _splitGroupId = widget.groupId;
@@ -89,7 +89,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   }
 
   void _saveDraft() {
-    if (_submitted || _isEditing || (_nameCtrl.text.trim().isEmpty && _amountCtrl.text.trim().isEmpty)) {
+    if (_submitted ||
+        _isEditing ||
+        (_nameCtrl.text.trim().isEmpty && _amountCtrl.text.trim().isEmpty)) {
       return;
     }
     addExpenseDraftStore.save(
@@ -146,6 +148,30 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     }
   }
 
+  void _synchronizeReadyState(AddExpenseReady ready) {
+    _lastReady = ready;
+
+    final group = ready.group;
+    if (group != null) {
+      _selectedPayerId = resolveExpensePayer(
+        selectedId: _selectedPayerId,
+        members: group.members,
+        currentUserId: tokenStorage.userId,
+      );
+      _syncSplitMembers(group.members, group.id);
+    }
+
+    final category = resolveExpenseCategory(
+      selected: _selectedCategory,
+      draftCategoryId: _draftCategoryId,
+      available: ready.categories,
+    );
+    if (category != null) {
+      _selectedCategory = category;
+      if (_draftCategoryId == category.id) _draftCategoryId = null;
+    }
+  }
+
   void _fillEqualAmounts(List<GroupMember> members) {
     final amounts = _previewAmounts(members);
     for (final m in members) {
@@ -187,7 +213,8 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     if (_splitMode == ExpenseSplitMode.amounts) {
       return {
         for (final m in members)
-          m.user.id: double.tryParse(
+          m.user.id:
+              double.tryParse(
                 _splitCtrls[m.user.id]?.text.replaceAll(',', '.') ?? '',
               ) ??
               0,
@@ -208,8 +235,8 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   int get _shareSum => _shareCounts.values.fold(0, (sum, n) => sum + n);
 
   double get _splitsTotal => _splitCtrls.values.fold(0.0, (acc, ctrl) {
-        return acc + (double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0.0);
-      });
+    return acc + (double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0.0);
+  });
 
   double get _expenseAmount =>
       double.tryParse(_amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
@@ -218,12 +245,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
   void _hideKeyboard() {
     FocusManager.instance.primaryFocus?.unfocus();
-  }
-
-  String? _defaultPayerId(List<GroupMember> members) {
-    final me = tokenStorage.userId;
-    if (me != null && members.any((m) => m.user.id == me)) return me;
-    return members.isNotEmpty ? members.first.user.id : null;
   }
 
   Future<void> _onGroupChanged(String? id) async {
@@ -253,9 +274,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       showTabbySnack(context, context.l10n.invalidAmount);
       return;
     }
-    if (!_forMe &&
-        !_recurring &&
-        _includedIds.isEmpty) {
+    if (!_forMe && !_recurring && _includedIds.isEmpty) {
       showTabbySnack(context, context.l10n.splitNeedSomeone);
       return;
     }
@@ -293,8 +312,11 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         recurring: _recurring,
       );
     } else {
-      final payerId = _selectedPayerId ??
-          _defaultPayerId(ready!.group!.members);
+      final payerId = resolveExpensePayer(
+        selectedId: _selectedPayerId,
+        members: ready!.group!.members,
+        currentUserId: tokenStorage.userId,
+      );
       if (payerId == null) {
         showTabbySnack(context, context.l10n.chooseAGroup);
         return;
@@ -345,9 +367,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.tabbyColors;
-    final tt = Theme.of(context).textTheme;
-    final type = context.tabbyType;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -356,6 +375,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         height: MediaQuery.sizeOf(context).height * 0.92,
         child: BlocConsumer<AddExpenseCubit, AddExpenseState>(
           listener: (context, state) {
+            if (state is AddExpenseReady) {
+              _synchronizeReadyState(state);
+            }
             if (state is AddExpenseError && _lastReady != null) {
               showTabbySnack(context, context.l10nError(state.message));
             }
@@ -383,7 +405,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
             final bool submitting;
             if (state is AddExpenseReady) {
               ready = state;
-              _lastReady = state;
               submitting = false;
             } else if (state is AddExpenseSubmitting) {
               ready = _lastReady!;
@@ -391,32 +412,6 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
             } else {
               ready = _lastReady!;
               submitting = false;
-            }
-
-            if (_selectedPayerId == null &&
-                ready.group != null &&
-                ready.group!.members.isNotEmpty) {
-              _selectedPayerId = _defaultPayerId(ready.group!.members);
-            }
-            if (_selectedCategory != null) {
-              for (final category in ready.categories) {
-                if (category.id == _selectedCategory!.id) {
-                  _selectedCategory = category;
-                  break;
-                }
-              }
-            }
-            if (_selectedCategory == null && _draftCategoryId != null) {
-              for (final category in ready.categories) {
-                if (category.id == _draftCategoryId) {
-                  _selectedCategory = category;
-                  _draftCategoryId = null;
-                  break;
-                }
-              }
-            }
-            if (ready.group != null) {
-              _syncSplitMembers(ready.group!.members, ready.group!.id);
             }
 
             return Form(
@@ -441,102 +436,14 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                         if (!ready.groupLocked &&
                             !widget.initialForMe &&
                             !_isEditing) ...[
-                          ExpressiveButtonGroup<bool>(
-                            value: _forMe,
-                            onChanged: (v) => setState(() => _forMe = v),
-                            segments: [
-                              ExpressiveButtonGroupSegment(
-                                value: false,
-                                label: context.l10n.expenseShared,
-                              ),
-                              ExpressiveButtonGroupSegment(
-                                value: true,
-                                label: context.l10n.expenseForMe,
-                              ),
-                            ],
+                          _ExpenseKindSelector(
+                            forMe: _forMe,
+                            onChanged: (value) =>
+                                setState(() => _forMe = value),
                           ),
                           const SizedBox(height: 24),
                         ],
-                        ExpressiveTonalCard(
-                          variant: ExpressiveTonalVariant.lime,
-                          margin: EdgeInsets.zero,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 28,
-                            horizontal: 24,
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(minWidth: 96),
-                                  child: IntrinsicWidth(
-                                    child: TextFormField(
-                                      controller: _amountCtrl,
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                      textAlign: TextAlign.end,
-                                      onTapOutside: (_) => _hideKeyboard(),
-                                      cursorColor: cs.onTertiaryContainer,
-                                      style: type.figureHero.copyWith(
-                                        color: cs.onTertiaryContainer,
-                                      ),
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.allow(
-                                          RegExp(r'[\d,.]'),
-                                        ),
-                                      ],
-                                      onChanged: (_) => setState(() {}),
-                                      decoration: InputDecoration(
-                                        filled: false,
-                                        isCollapsed: true,
-                                        border: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        focusedBorder: InputBorder.none,
-                                        errorBorder: InputBorder.none,
-                                        focusedErrorBorder: InputBorder.none,
-                                        hintText: '0,00',
-                                        hintStyle: type.figureHero.copyWith(
-                                          color: cs.onTertiaryContainer
-                                              .withValues(alpha: 0.34),
-                                        ),
-                                        errorStyle: const TextStyle(
-                                          fontSize: 0,
-                                          height: 0,
-                                        ),
-                                      ),
-                                      validator: (v) {
-                                        if (v == null || v.isEmpty) {
-                                          return context.l10n.required;
-                                        }
-                                        if (double.tryParse(
-                                              v.replaceAll(',', '.'),
-                                            ) ==
-                                            null) {
-                                          return context.l10n.invalid;
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  ' €',
-                                  style: type.figureMedium.copyWith(
-                                    color: cs.onTertiaryContainer.withValues(
-                                      alpha:
-                                          _amountCtrl.text.isEmpty ? 0.34 : 1,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        _ExpenseAmountCard(controller: _amountCtrl),
 
                         const SizedBox(height: 24),
                         ExpressiveSheetSection(
@@ -575,45 +482,9 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
                         if (!_forMe) ...[
                           const SizedBox(height: 24),
-                          ExpressiveSheetSection(
-                            label: context.l10n.group,
-                          child: ready.groups.isEmpty
-                              ? Text(
-                                  context.l10n.createGroupFirst,
-                                  style: tt.bodyMedium?.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                )
-                              : ready.groupLocked && ready.group != null
-                                  ? InputDecorator(
-                                      decoration: const InputDecoration(
-                                        prefixIcon: Icon(
-                                          Symbols.lock_rounded,
-                                          size: 18,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        ready.group!.name,
-                                        style: tt.bodyLarge,
-                                      ),
-                                    )
-                                  : ExpressiveDropdown<String>(
-                                      selected: ready.group?.id,
-                                      hintText: context.l10n.chooseGroup,
-                                      leadingIcon: Icon(
-                                        Symbols.group_rounded,
-                                        size: 20,
-                                        color: cs.onSurfaceVariant,
-                                      ),
-                                      entries: [
-                                        for (final g in ready.groups)
-                                          ExpressiveDropdownEntry(
-                                            value: g.id,
-                                            label: g.name,
-                                          ),
-                                      ],
-                                      onSelected: _onGroupChanged,
-                                    ),
+                          _ExpenseGroupField(
+                            ready: ready,
+                            onSelected: _onGroupChanged,
                           ),
 
                           if (ready.group != null) ...[
@@ -627,9 +498,8 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                                     child: _PayerDropdown(
                                       members: ready.group!.members,
                                       selectedId: _selectedPayerId,
-                                      onChanged: (id) => setState(
-                                        () => _selectedPayerId = id,
-                                      ),
+                                      onChanged: (id) =>
+                                          setState(() => _selectedPayerId = id),
                                     ),
                                   ),
                                 ),
@@ -647,76 +517,85 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                               ],
                             ),
 
-                          const SizedBox(height: 24),
-                          AbsorbPointer(
-                            absorbing: _recurring,
-                            child: Opacity(
-                              opacity: _recurring ? 0.45 : 1,
-                              child: _SplitParticipants(
-                                mode: _splitMode,
-                                members: ready.group!.members,
-                                includedIds: _includedIds,
-                                amounts: _previewAmounts(ready.group!.members),
-                                shares: _shareCounts,
-                                splitCtrls: _splitCtrls,
-                                total: _expenseAmount,
-                                splitsTotal: _splitsTotal,
-                                isValid: _splitsValid,
-                                onToggle: (id) => setState(() {
-                                  _setIncluded(
-                                    id,
-                                    !_includedIds.contains(id),
-                                  );
-                                }),
-                                onSelectAll: () => setState(
-                                  () => _selectAll(
-                                    ready.group!.members,
-                                    included: true,
+                            const SizedBox(height: 24),
+                            AbsorbPointer(
+                              absorbing: _recurring,
+                              child: Opacity(
+                                opacity: _recurring ? 0.45 : 1,
+                                child: AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _amountCtrl,
+                                    ..._splitCtrls.values,
+                                  ]),
+                                  builder: (context, _) => _SplitParticipants(
+                                    mode: _splitMode,
+                                    members: ready.group!.members,
+                                    includedIds: _includedIds,
+                                    amounts: _previewAmounts(
+                                      ready.group!.members,
+                                    ),
+                                    shares: _shareCounts,
+                                    splitCtrls: _splitCtrls,
+                                    total: _expenseAmount,
+                                    splitsTotal: _splitsTotal,
+                                    isValid: _splitsValid,
+                                    onToggle: (id) => setState(() {
+                                      _setIncluded(
+                                        id,
+                                        !_includedIds.contains(id),
+                                      );
+                                    }),
+                                    onSelectAll: () => setState(
+                                      () => _selectAll(
+                                        ready.group!.members,
+                                        included: true,
+                                      ),
+                                    ),
+                                    onSelectNone: () => setState(
+                                      () => _selectAll(
+                                        ready.group!.members,
+                                        included: false,
+                                      ),
+                                    ),
+                                    onModeChanged: (value) => setState(() {
+                                      _splitMode = value;
+                                      if (value == ExpenseSplitMode.amounts) {
+                                        _fillEqualAmounts(ready.group!.members);
+                                      }
+                                    }),
+                                    onShareChanged: (userId, value) {
+                                      setState(() {
+                                        _shareCounts[userId] = value;
+                                        if (value <= 0) {
+                                          _includedIds.remove(userId);
+                                        } else {
+                                          _includedIds.add(userId);
+                                        }
+                                      });
+                                    },
                                   ),
                                 ),
-                                onSelectNone: () => setState(
-                                  () => _selectAll(
-                                    ready.group!.members,
-                                    included: false,
-                                  ),
-                                ),
-                                onModeChanged: (v) => setState(() {
-                                  _splitMode = v;
-                                  if (v == ExpenseSplitMode.amounts) {
-                                    _fillEqualAmounts(ready.group!.members);
-                                  }
-                                }),
-                                onShareChanged: (userId, value) {
-                                  setState(() {
-                                    _shareCounts[userId] = value;
-                                    if (value <= 0) {
-                                      _includedIds.remove(userId);
-                                    } else {
-                                      _includedIds.add(userId);
-                                    }
-                                  });
-                                },
-                                onAmountChanged: () => setState(() {}),
                               ),
                             ),
-                          ),
 
-                          if (!_isEditing) ...[
-                            const SizedBox(height: 16),
-                            _RecurringTile(
-                              value: _recurring,
-                              expenseDate: _expenseDate,
-                              onChanged: (v) => setState(() {
-                                _recurring = v;
-                                if (v) {
-                                  _splitMode = ExpenseSplitMode.equal;
-                                  _includedIds.addAll(
-                                    ready.group!.members.map((m) => m.user.id),
-                                  );
-                                }
-                              }),
-                            ),
-                          ],
+                            if (!_isEditing) ...[
+                              const SizedBox(height: 16),
+                              _RecurringTile(
+                                value: _recurring,
+                                expenseDate: _expenseDate,
+                                onChanged: (v) => setState(() {
+                                  _recurring = v;
+                                  if (v) {
+                                    _splitMode = ExpenseSplitMode.equal;
+                                    _includedIds.addAll(
+                                      ready.group!.members.map(
+                                        (m) => m.user.id,
+                                      ),
+                                    );
+                                  }
+                                }),
+                              ),
+                            ],
                           ],
                         ],
                         if (_forMe) ...[
@@ -759,40 +638,18 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     );
   }
 
-  void _showCreateCategorySheet(
-    BuildContext context,
-    AddExpenseReady ready,
-  ) {
+  void _showCreateCategorySheet(BuildContext context, AddExpenseReady ready) {
     showCategoryEditorSheet(
       context: context,
-      onSubmit: ({
-        required name,
-        required icon,
-        required color,
-      }) async {
+      onSubmit: ({required name, required icon, required color}) async {
         final cat = await context.read<AddExpenseCubit>().createCategory(
-              name: name,
-              icon: icon,
-              color: color,
-            );
+          name: name,
+          icon: icon,
+          color: color,
+        );
         if (cat != null) setState(() => _selectedCategory = cat);
         return cat;
       },
     );
   }
-}
-
-bool _looksEqualSplit(Expense expense) {
-  final active = [
-    for (final split in expense.splits)
-      if (split.amount > 0.005) split.amount,
-  ];
-  if (active.length <= 1) return true;
-  var minAmount = active.first;
-  var maxAmount = active.first;
-  for (final amount in active) {
-    if (amount < minAmount) minAmount = amount;
-    if (amount > maxAmount) maxAmount = amount;
-  }
-  return maxAmount - minAmount <= 0.02;
 }

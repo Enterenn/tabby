@@ -1,4 +1,5 @@
 part of 'add_expense_screen.dart';
+
 // ─── Split preview (Tricount-style include / exclude) ─────────────────────────
 
 class _SplitParticipants extends StatelessWidget {
@@ -17,7 +18,6 @@ class _SplitParticipants extends StatelessWidget {
     required this.onSelectNone,
     required this.onModeChanged,
     required this.onShareChanged,
-    required this.onAmountChanged,
   });
 
   final ExpenseSplitMode mode;
@@ -34,7 +34,6 @@ class _SplitParticipants extends StatelessWidget {
   final VoidCallback onSelectNone;
   final ValueChanged<ExpenseSplitMode> onModeChanged;
   final void Function(String userId, int value) onShareChanged;
-  final VoidCallback onAmountChanged;
 
   String _modeLabel(BuildContext context, ExpenseSplitMode value) =>
       switch (value) {
@@ -68,8 +67,8 @@ class _SplitParticipants extends StatelessWidget {
                   value: allOn
                       ? true
                       : allOff
-                          ? false
-                          : null,
+                      ? false
+                      : null,
                   onChanged: (_) => toggleAll(),
                   visualDensity: VisualDensity.compact,
                 ),
@@ -100,9 +99,9 @@ class _SplitParticipants extends StatelessWidget {
             final included = includedIds.contains(id);
             final amount = mode == ExpenseSplitMode.amounts
                 ? (double.tryParse(
-                      splitCtrls[id]?.text.replaceAll(',', '.') ?? '',
-                    ) ??
-                    0)
+                        splitCtrls[id]?.text.replaceAll(',', '.') ?? '',
+                      ) ??
+                      0)
                 : (amounts[id] ?? 0);
             final count = shares[id] ?? 0;
             final amountCtrl = splitCtrls[id];
@@ -143,8 +142,9 @@ class _SplitParticipants extends StatelessWidget {
                         child: Text(
                           m.user.name,
                           style: tt.bodyMedium?.copyWith(
-                            fontWeight:
-                                included ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: included
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                             color: included
                                 ? cs.onSurface
                                 : cs.onSurfaceVariant,
@@ -177,7 +177,6 @@ class _SplitParticipants extends StatelessWidget {
                             controller: amountCtrl,
                             dense: true,
                             textAlign: TextAlign.right,
-                            onChanged: (_) => onAmountChanged(),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 10,
@@ -185,10 +184,7 @@ class _SplitParticipants extends StatelessWidget {
                           ),
                         )
                       else
-                        _SplitAmountChip(
-                          amount: amount,
-                          emphasized: included,
-                        ),
+                        _SplitAmountChip(amount: amount, emphasized: included),
                     ],
                   ),
                 ),
@@ -196,10 +192,7 @@ class _SplitParticipants extends StatelessWidget {
             ];
           }),
           if (mode == ExpenseSplitMode.amounts) ...[
-            Divider(
-              height: 1,
-              color: cs.outlineVariant.withValues(alpha: 0.6),
-            ),
+            Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.6)),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
               child: Row(
@@ -248,7 +241,9 @@ class _SplitModeButton extends StatelessWidget {
         backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerLow),
         surfaceTintColor: WidgetStatePropertyAll(cs.surfaceContainerLow),
         shape: WidgetStatePropertyAll(context.tabbyShapes.cardShape),
-        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 8),
+        ),
       ),
       builder: (context, controller, _) {
         return Material(
@@ -289,13 +284,11 @@ class _SplitModeButton extends StatelessWidget {
               trailingIcon: value == mode
                   ? const Icon(Symbols.check_rounded, size: 18)
                   : null,
-              child: Text(
-                switch (value) {
-                  ExpenseSplitMode.equal => context.l10n.splitEqual,
-                  ExpenseSplitMode.shares => context.l10n.splitShares,
-                  ExpenseSplitMode.amounts => context.l10n.splitCustom,
-                },
-              ),
+              child: Text(switch (value) {
+                ExpenseSplitMode.equal => context.l10n.splitEqual,
+                ExpenseSplitMode.shares => context.l10n.splitShares,
+                ExpenseSplitMode.amounts => context.l10n.splitCustom,
+              }),
             ),
           ),
       ],
