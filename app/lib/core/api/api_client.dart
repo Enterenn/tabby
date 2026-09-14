@@ -72,11 +72,18 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  void cancelPendingRefresh() {
+    _dio.interceptors.whereType<_AuthInterceptor>().forEach((interceptor) {
+      interceptor.cancelRefresh();
+    });
+  }
+
   void setAccessToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
   void clearToken() {
+    cancelPendingRefresh();
     _dio.options.headers.remove('Authorization');
   }
 }
@@ -86,13 +93,20 @@ class _AuthInterceptor extends Interceptor {
 
   final Dio _dio;
   Future<String>? _refreshing;
+  bool _refreshCancelled = false;
+
+  void cancelRefresh() {
+    _refreshCancelled = true;
+    _refreshing = null;
+  }
 
   static bool _skipRefresh(RequestOptions options) {
     final path = options.path;
     return path.endsWith('/auth/refresh') ||
         path.endsWith('/auth/login') ||
         path.endsWith('/auth/register') ||
-        path.endsWith('/auth/logout');
+        path.endsWith('/auth/logout') ||
+        options.extra['authRetried'] == true;
   }
 
   @override
@@ -119,13 +133,26 @@ class _AuthInterceptor extends Interceptor {
       return;
     }
 
+    _refreshCancelled = false;
     _refreshing ??= _refreshAccessToken(refresh).whenComplete(() {
       _refreshing = null;
     });
     try {
       final newAccess = await _refreshing!;
-      final retryOptions = err.requestOptions;
-      retryOptions.headers['Authorization'] = 'Bearer $newAccess';
+      if (_refreshCancelled) {
+        handler.next(err);
+        return;
+      }
+      final retryOptions = err.requestOptions.copyWith(
+        headers: {
+          ...err.requestOptions.headers,
+          'Authorization': 'Bearer $newAccess',
+        },
+        extra: {
+          ...err.requestOptions.extra,
+          'authRetried': true,
+        },
+      );
       handler.resolve(await _dio.fetch(retryOptions));
     } on DioException catch (refreshErr) {
       if (refreshErr.response?.statusCode == 401) {
