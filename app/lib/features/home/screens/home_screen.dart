@@ -146,7 +146,7 @@ class _HomeViewState extends State<_HomeView> {
             return Stack(
               children: [
                 RefreshIndicator(
-                  onRefresh: () => context.read<HomeCubit>().loadGroups(),
+                  onRefresh: () => context.read<HomeCubit>().loadGroups(force: true),
                   child: ListView(
                     controller: _scrollController,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),

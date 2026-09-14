@@ -7,6 +7,7 @@ import '../../../core/api/token_storage.dart';
 import '../../../core/auth/biometric_settings.dart';
 import '../../../core/services/fcm_service.dart';
 import '../../../data/repositories.dart';
+import '../../add_expense/cubit/draft_store.dart';
 import '../../../shared/models/user.dart';
 
 part 'auth_state.dart';
@@ -132,6 +133,8 @@ class AuthCubit extends Cubit<AuthState> {
     await FcmService.instance.deleteToken();
     await tokenStorage.clear();
     apiClient.clearToken();
+    groupsRepository.invalidate();
+    addExpenseDraftStore.clear();
     if (!isClosed) emit(AuthUnauthenticated());
   }
 

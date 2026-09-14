@@ -59,7 +59,7 @@
 
 | Méthode | Route | Entrée | Réponse |
 |---|---|---|---|
-| `GET` | `/groups/{group_id}/expenses` | `from_date?`, `to_date?`, `category_id?`, `status?`, `limit=100`, `offset=0` | `list[ExpenseResponse]` (pagination optionnelle, réponse rétrocompatible) |
+| `GET` | `/groups/{group_id}/expenses` | `from_date?`, `to_date?`, `category_id?`, `status?`, `limit?` (1-500, défaut illimité), `offset=0` | `list[ExpenseResponse]` (rétrocompatible sans limit) |
 | `POST` | `/groups/{group_id}/expenses` | `name`, `amount`, `category_id`, `paid_by`, `expense_date`, split | `201 ExpenseResponse` |
 | `PATCH` | `/groups/{group_id}/expenses/{expense_id}` | champs de dépense optionnels | `ExpenseResponse` |
 | `POST` | `/groups/{group_id}/expenses/{expense_id}/confirm` | — | `ExpenseResponse` |

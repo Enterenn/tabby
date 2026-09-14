@@ -39,7 +39,7 @@ async def list_expenses(
     status_filter: Annotated[
         str | None, Query(alias="status", pattern="^(confirmed|pending)$")
     ] = None,
-    limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    limit: Annotated[int | None, Query(ge=1, le=500)] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
 ):
     filters = [Expense.group_id == group_id]
@@ -52,7 +52,7 @@ async def list_expenses(
     if status_filter is not None:
         filters.append(Expense.status == status_filter)
 
-    result = await db.execute(
+    q = (
         select(Expense)
         .where(*filters)
         .options(
@@ -61,9 +61,11 @@ async def list_expenses(
             selectinload(Expense.splits),
         )
         .order_by(Expense.expense_date.desc(), Expense.created_at.desc(), Expense.id.desc())
-        .limit(limit)
         .offset(offset)
     )
+    if limit is not None:
+        q = q.limit(limit)
+    result = await db.execute(q)
     expenses = result.scalars().all()
     return [_to_response(e) for e in expenses]
 
