@@ -10,6 +10,30 @@ def test_default_access_token_lifetime_is_fifteen_minutes():
     assert Settings.model_fields["access_token_expire_minutes"].default == 15
 
 
+def test_default_api_rate_limit_is_reasonable():
+    assert Settings.model_fields["api_rate_limit"].default == "120/minute"
+
+
+def test_rejects_invalid_trusted_proxy_network():
+    with pytest.raises(RuntimeError, match="TRUSTED_PROXY_CIDRS"):
+        Settings(
+            secret_key=_SECRET,
+            database_url=_SAFE_URL,
+            debug=True,
+            trusted_proxy_cidrs="192.168.1.20/32,not-a-network",
+        )
+
+
+def test_rejects_invalid_api_rate_limit():
+    with pytest.raises(RuntimeError, match="API_RATE_LIMIT"):
+        Settings(
+            secret_key=_SECRET,
+            database_url=_SAFE_URL,
+            debug=True,
+            api_rate_limit="not-a-limit",
+        )
+
+
 def test_rejects_short_secret_key():
     with pytest.raises(RuntimeError, match="SECRET_KEY"):
         Settings(secret_key="too-short", database_url=_SAFE_URL, debug=True)

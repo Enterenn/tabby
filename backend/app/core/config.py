@@ -1,3 +1,6 @@
+from ipaddress import ip_network
+
+from limits import parse
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -35,6 +38,10 @@ class Settings(BaseSettings):
     version: str = "0.1.0"
     # Optional public HTTPS origin, e.g. https://tabby.example.com
     public_origin: str = ""
+    # Per-client default for routes without a stricter explicit limit.
+    api_rate_limit: str = "120/minute"
+    # Comma-separated IPs/CIDRs allowed to supply forwarding headers.
+    trusted_proxy_cidrs: str = ""
 
     @model_validator(mode="after")
     def secrets_must_be_strong(self) -> "Settings":
@@ -56,6 +63,22 @@ class Settings(BaseSettings):
                 "DATABASE_URL still uses the default or empty Postgres password. "
                 "Set POSTGRES_PASSWORD to a long random value."
             )
+
+        try:
+            for cidr in self.trusted_proxy_cidrs.split(","):
+                if cidr.strip():
+                    ip_network(cidr.strip(), strict=False)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"TRUSTED_PROXY_CIDRS contains an invalid IP or network: {cidr.strip()}"
+            ) from exc
+
+        try:
+            parse(self.api_rate_limit)
+        except ValueError as exc:
+            raise RuntimeError(
+                "API_RATE_LIMIT must use a value such as '120/minute'"
+            ) from exc
         return self
 
 

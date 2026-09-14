@@ -28,7 +28,12 @@ from app.api.v1.recurring_expenses import (
 )
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
-from app.core.rate_limit import RateLimitExceeded, limiter, rate_limit_exceeded_handler
+from app.core.rate_limit import (
+    ApiRateLimitMiddleware,
+    RateLimitExceeded,
+    limiter,
+    rate_limit_exceeded_handler,
+)
 from app.core.uploads import ensure_upload_dirs
 from app.core.refresh_tokens import purge_expired_refresh_tokens
 from app.scheduler import recurring_job_loop
@@ -78,6 +83,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(ApiRateLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 _cors_origins = [

@@ -271,10 +271,20 @@ Aucun port forwarding supplémentaire sur la box.
 ```env
 PUBLIC_ORIGIN=https://tabby.example.com
 API_BIND=192.168.1.XX
+API_RATE_LIMIT=120/minute
+TRUSTED_PROXY_CIDRS=192.168.1.YY/32
 ```
 
 Puis `docker compose up -d`. `API_BIND` doit correspondre à l'adresse LAN du
-LXC lorsque NPM est hébergé ailleurs.
+LXC lorsque NPM est hébergé ailleurs. Remplace `192.168.1.YY` par l'adresse LAN
+de NPM : les en-têtes `X-Forwarded-For` ne sont acceptés que depuis ces proxies
+explicitement approuvés.
+
+Si le proxy orange de Cloudflare est activé, ajoute aussi à
+`TRUSTED_PROXY_CIDRS` les plages officielles Cloudflare présentes dans la chaîne,
+séparées par des virgules. Utilise les listes à jour publiées sur
+`https://www.cloudflare.com/ips/` ; ne fais pas confiance à tout le réseau
+Internet avec `0.0.0.0/0`.
 
 Vérifie : `curl https://tabby.example.com/health`
 

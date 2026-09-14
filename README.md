@@ -165,7 +165,7 @@ La checklist complète est disponible dans [`docs/validation.md`](./docs/validat
 - access et refresh tokens différenciés, rotation et révocation serveur ;
 - tokens mobiles conservés avec `flutter_secure_storage` ;
 - HTTPS imposé sur les builds Android de production ;
-- limitation des tentatives sur les routes d'authentification ;
+- limites dédiées sur l'authentification et plafond global par client sur l'API ;
 - contrôle d'appartenance aux groupes côté API ;
 - URLs d'avatars signées et fichiers redimensionnés ;
 - journaux réseau expurgés des mots de passe et tokens.
