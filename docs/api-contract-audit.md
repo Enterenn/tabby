@@ -1,6 +1,6 @@
-# Tabby — Contrat API réel
+# Tabby — Contrat de l'API REST
 
-> Source de vérité pour le lot 0. Ce document décrit les routes actuellement enregistrées par `backend/app/main.py`, leurs paramètres et leurs schémas principaux. Toute modification d’API doit mettre à jour ce fichier et les tests concernés.
+> Ce document décrit les routes actuellement enregistrées par `backend/app/main.py`, leurs paramètres et leurs principaux schémas. Toute modification d'API doit mettre à jour ce fichier et les tests concernés.
 
 ## Conventions
 
@@ -28,6 +28,7 @@
 | `PATCH` | `/auth/me` | `name?`, `email?` | `UserResponse` |
 | `POST` | `/auth/change-password` | `current_password`, `new_password` | `204` |
 | `POST` | `/auth/me/avatar` | multipart `file` | `UserResponse` |
+| `GET` | `/uploads/avatars/{filename}` | `exp`, `sig`, `v?` ; URL signée | Fichier image |
 
 ## Groupes
 
@@ -71,10 +72,12 @@
 |---|---|---|---|
 | `GET` | `/groups/{group_id}/recurring-expenses` | — | `list[RecurringExpenseResponse]` |
 | `POST` | `/groups/{group_id}/recurring-expenses` | `name`, `amount`, `category_id`, `paid_by`, `frequency`, `day_of_period` | `201 RecurringExpenseResponse` |
+| `PATCH` | `/groups/{group_id}/recurring-expenses/{rec_id}` | champs optionnels | `RecurringExpenseResponse` |
 | `PATCH` | `/groups/{group_id}/recurring-expenses/{rec_id}/toggle` | — | `RecurringExpenseResponse` |
 | `DELETE` | `/groups/{group_id}/recurring-expenses/{rec_id}` | — | `204` |
 | `GET` | `/recurring-expenses` | — | récurrences groupe + personnelles |
 | `POST` | `/recurring-expenses` | récurrence personnelle | `201 RecurringExpenseResponse` |
+| `PATCH` | `/recurring-expenses/{rec_id}` | champs optionnels | `RecurringExpenseResponse` |
 | `PATCH` | `/recurring-expenses/{rec_id}/toggle` | — | `RecurringExpenseResponse` |
 | `DELETE` | `/recurring-expenses/{rec_id}` | — | `204` |
 
@@ -113,10 +116,16 @@
 | `DELETE` | `/loyalty-cards/{card_id}` | — | `204` |
 | `PUT` | `/loyalty-cards/reorder` | `[{id, sort_order}]` | `204` |
 
-## Écarts à traiter dans les lots suivants
+## Appareils et notifications
 
-- `GET /groups/{group_id}/expenses` n’a pas encore de pagination ni filtres.
-- La documentation technique historique décrit des routes et payloads parfois différents des routes réellement enregistrées.
-- `GET /categories?group_id=` conserve le paramètre pour compatibilité mais l’ignore actuellement.
-- `/groups/{group_id}/budgets` est une route de compatibilité et retourne des budgets personnels.
-- Le format exact de la réponse de règlement doit être formalisé dans un schéma dédié.
+| Méthode | Route | Entrée | Réponse |
+|---|---|---|---|
+| `POST` | `/devices/token` | `token`, `platform` | `204` |
+| `DELETE` | `/devices/token` | `token`, `platform` | `204` |
+
+## Notes de compatibilité
+
+- `GET /categories?group_id=` conserve le paramètre, mais retourne actuellement les catégories globales et personnelles.
+- `/groups/{group_id}/budgets` est une route historique de compatibilité et retourne les budgets personnels.
+- `GET /groups/{group_id}/expenses` accepte filtres, limite et offset ; sans `limit`, la réponse reste non bornée pour compatibilité.
+- `POST /groups/{group_id}/settle` retourne actuellement `{ "ok": true, "status": "pending" | "confirmed" }`.

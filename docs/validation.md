@@ -16,14 +16,14 @@ Depuis `backend/` :
 
 ```bash
 python -m pip install -r requirements-dev.txt
-pytest
+python -m pytest
 ```
 
 Pour tester avec PostgreSQL et les migrations :
 
 ```bash
 alembic upgrade head
-pytest
+python -m pytest
 ```
 
 ## Contrat API
@@ -41,7 +41,7 @@ Toute modification d’une route doit être accompagnée de :
 
 - `flutter analyze` sans issue.
 - `flutter test` vert.
-- `pytest` vert.
+- `python -m pytest` vert.
 - Migrations Alembic applicables sur une base vierge et une base existante.
 - Aucun secret dans les logs ou fichiers suivis.
 - Aucun changement non documenté du contrat API.

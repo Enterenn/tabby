@@ -140,6 +140,16 @@ nano .env
 ```
 *Colle les deux valeurs. Sauvegarde avec `Ctrl+O` puis Entrée, quitte avec `Ctrl+X`.*
 
+Par défaut, Docker publie l'API uniquement sur `127.0.0.1`. Si Nginx Proxy
+Manager tourne sur une autre machine du réseau, ajoute également dans `.env` :
+
+```env
+API_BIND=192.168.1.XX
+```
+
+Utilise l'adresse LAN du conteneur Tabby. Cela rend le port accessible au
+reverse proxy sur le réseau local, sans justifier de l'ouvrir sur Internet.
+
 **Base déjà existante** (volume Docker créé avec l'ancien mot de passe `tabby`) : Postgres n'applique `POSTGRES_PASSWORD` qu'à la première création. Change le mot de passe dans le volume, puis mets la même valeur dans `.env` :
 
 ```bash
@@ -169,7 +179,7 @@ docker compose ps
 ```bash
 docker compose exec api alembic upgrade head
 ```
-*Cette commande crée toutes les tables (utilisateurs, groupes, dépenses...) et ajoute les 8 catégories par défaut (Loyer, Courses, etc.). Tu dois voir des lignes défiler sans message d'erreur en rouge à la fin.*
+*Cette commande crée toutes les tables (utilisateurs, groupes, dépenses...) et ajoute les catégories par défaut (Logement, Courses, etc.). Tu dois voir des lignes défiler sans message d'erreur en rouge à la fin.*
 
 **Après chaque `git pull`** qui modifie le backend, relance la même commande pour appliquer les nouvelles migrations (ex. colonne `brand_id` sur les cartes fidélité). Le conteneur API applique aussi les migrations au démarrage, mais un `docker compose up -d --build` après pull reste la bonne habitude.
 
@@ -200,18 +210,24 @@ Note cette adresse, tu en as besoin pour l'étape suivante.
 
 ## Partie 9 — Connecter l'app Flutter
 
-Sur ton PC (pas dans le conteneur), ouvre dans Cursor le fichier :
-```
-app/lib/core/api/api_client.dart
+Sur ton PC, lance l'application en injectant l'URL de l'API. Il n'est pas
+nécessaire de modifier `api_client.dart`.
+
+En debug sur le wifi local :
+
+```bash
+cd app
+flutter run --dart-define=API_BASE_URL=http://192.168.1.XX:8000
 ```
 
-En debug sur le wifi de la maison, l'app utilise encore `http://192.168.1.XX:8000`. Pour l'accès **hors maison en HTTPS**, ne touche plus ce fichier : lance plutôt :
+Pour l'accès hors maison :
 
-```
+```bash
 flutter run --dart-define=API_BASE_URL=https://<TON_DOMAINE>
 ```
 
-*(voir la partie 11 pour le domaine)*
+Le manifest Android autorise HTTP uniquement dans les builds debug/profile.
+Un build release doit toujours utiliser HTTPS.
 
 ---
 
@@ -219,28 +235,30 @@ flutter run --dart-define=API_BASE_URL=https://<TON_DOMAINE>
 
 1. Connecte ton téléphone Android au **même réseau wifi** que ta box/routeur (celui utilisé par ton Proxmox).
 2. Lance l'app depuis Cursor sur ton téléphone (`flutter run`, ou bouton Run).
-3. Regarde la pastille sur l'écran Home :
-   - **Verte** → tout fonctionne, le Lot 0 est validé.
-   - **Rouge** → vérifie dans l'ordre : le téléphone est bien sur le même wifi, l'IP dans `api_client.dart` est correcte, `docker compose ps` montre bien `api` en `running`.
+3. Connecte-toi ou crée un compte, puis actualise l'accueil.
+4. En cas d'échec, l'application affiche un état réseau avec une action pour
+   réessayer. Vérifie dans l'ordre : le téléphone est sur le bon réseau, la
+   valeur `API_BASE_URL` est correcte et `docker compose ps` montre `api` en
+   cours d'exécution.
 
 ---
 
 ## Partie 11 — Accès hors maison (HTTPS via Nginx Proxy Manager)
 
-Même principe que Jellyfin. **Pas de Caddy** : NPM gère déjà les certificats et les ports 80/443 de la box.
+Nginx Proxy Manager gère le certificat et les ports 80/443 du réseau.
 
 ### 1. DNS
 
-Chez ton registrar, reproduis exactement ce que tu as pour `jellyfin.landrodie.fr` :
+Chez ton registrar, crée l'entrée DNS du sous-domaine choisi :
 
-- soit un enregistrement **A** `tabby` → la même IP publique,
-- soit un **CNAME** / wildcard `*.landrodie.fr` déjà en place (rien à ajouter).
+- soit un enregistrement **A** `tabby` vers l'IP publique ;
+- soit un **CNAME** ou un wildcard déjà configuré.
 
 ### 2. Proxy Host dans NPM
 
 | Champ | Valeur |
 |---|---|
-| Domain Names | `tabby.landrodie.fr` |
+| Domain Names | `tabby.example.com` |
 | Scheme | `http` |
 | Forward Hostname / IP | IP LAN du LXC `tabby-backend` |
 | Forward Port | `8000` |
@@ -250,21 +268,25 @@ Aucun port forwarding supplémentaire sur la box.
 
 ### 3. `.env` du backend
 
-```
-PUBLIC_ORIGIN=https://tabby.landrodie.fr
+```env
+PUBLIC_ORIGIN=https://tabby.example.com
+API_BIND=192.168.1.XX
 ```
 
-Puis `docker compose up -d` (sans profil https).
+Puis `docker compose up -d`. `API_BIND` doit correspondre à l'adresse LAN du
+LXC lorsque NPM est hébergé ailleurs.
 
-Vérifie : `curl https://tabby.landrodie.fr/health`
+Vérifie : `curl https://tabby.example.com/health`
 
 ### 4. App Flutter
 
 ```
-flutter run --dart-define=API_BASE_URL=https://tabby.landrodie.fr
+flutter run --dart-define=API_BASE_URL=https://tabby.example.com
 ```
 
-Pour un APK release, le même `--dart-define` est obligatoire (le binaire refuse le HTTP).
+Pour un APK release personnalisé, fournis cette URL avec `--dart-define`.
+Sans override, l'application utilise l'URL HTTPS configurée par défaut dans le
+projet. Le binaire release refuse dans tous les cas le trafic HTTP.
 
 Le port `8000` reste utile en wifi maison pour le debug. **Ne le forward jamais** sur la box : seul NPM doit y accéder en LAN.
 
