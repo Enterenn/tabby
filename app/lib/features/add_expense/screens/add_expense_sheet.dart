@@ -41,6 +41,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   AddExpenseReady? _lastReady;
   bool _didPrefillSplitAmounts = false;
   bool _submitted = false;
+  String? _draftCategoryId;
 
   bool get _isEditing =>
       widget.editing != null || widget.editingPersonal != null;
@@ -54,6 +55,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       _amountCtrl.text = draft.amount;
       _selectedPayerId = draft.payerId;
       _expenseDate = draft.expenseDate;
+      _draftCategoryId = draft.categoryId;
     }
     final personal = widget.editingPersonal;
     if (personal != null) {
@@ -400,6 +402,15 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
               for (final category in ready.categories) {
                 if (category.id == _selectedCategory!.id) {
                   _selectedCategory = category;
+                  break;
+                }
+              }
+            }
+            if (_selectedCategory == null && _draftCategoryId != null) {
+              for (final category in ready.categories) {
+                if (category.id == _draftCategoryId) {
+                  _selectedCategory = category;
+                  _draftCategoryId = null;
                   break;
                 }
               }

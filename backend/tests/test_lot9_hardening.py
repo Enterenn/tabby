@@ -1,6 +1,4 @@
-from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 from PIL import Image

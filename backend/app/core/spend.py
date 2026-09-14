@@ -62,6 +62,7 @@ async def user_share_for_pairs(
     if not pairs:
         return out
     group_ids = {group_id for group_id, _ in pairs}
+    category_ids = {category_id for _, category_id in pairs}
     start, end = month_bounds(year, month)
     result = await db.execute(
         select(
@@ -72,6 +73,7 @@ async def user_share_for_pairs(
         .join(ExpenseSplit, ExpenseSplit.expense_id == Expense.id)
         .where(
             Expense.group_id.in_(group_ids),
+            Expense.category_id.in_(category_ids),
             ExpenseSplit.user_id == user_id,
             Expense.expense_date >= start,
             Expense.expense_date <= end,
