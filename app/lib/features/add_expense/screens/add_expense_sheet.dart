@@ -40,6 +40,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
   AddExpenseReady? _lastReady;
   bool _didPrefillSplitAmounts = false;
+  bool _submitted = false;
 
   bool get _isEditing =>
       widget.editing != null || widget.editingPersonal != null;
@@ -86,7 +87,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   }
 
   void _saveDraft() {
-    if (_isEditing || (_nameCtrl.text.trim().isEmpty && _amountCtrl.text.trim().isEmpty)) {
+    if (_submitted || _isEditing || (_nameCtrl.text.trim().isEmpty && _amountCtrl.text.trim().isEmpty)) {
       return;
     }
     addExpenseDraftStore.save(
@@ -333,6 +334,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     }
 
     if (ok && mounted) {
+      _submitted = true;
       addExpenseDraftStore.clear();
       widget.onCreated();
       Navigator.of(context).pop(true);

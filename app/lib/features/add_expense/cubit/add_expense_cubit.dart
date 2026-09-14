@@ -168,7 +168,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       customSplits: customSplits,
     );
     if (validation != null) {
-      if (!isClosed) emit(AddExpenseError(validation));
+      if (!isClosed) {
+        emit(AddExpenseError(validation));
+        emit(current);
+      }
       return false;
     }
     emit(const AddExpenseSubmitting());
@@ -213,7 +216,8 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     required DateTime expenseDate,
     List<Map<String, dynamic>>? customSplits,
   }) async {
-    if (state is! AddExpenseReady) return false;
+    final current = state;
+    if (current is! AddExpenseReady) return false;
     final validation = _validateSubmission(
       groupId: groupId,
       name: name,
@@ -223,7 +227,10 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       customSplits: customSplits,
     );
     if (validation != null) {
-      if (!isClosed) emit(AddExpenseError(validation));
+      if (!isClosed) {
+        emit(AddExpenseError(validation));
+        emit(current);
+      }
       return false;
     }
     emit(const AddExpenseSubmitting());
@@ -270,7 +277,7 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       if (customSplits.any(
             (split) => ((split['amount'] as num?)?.toDouble() ?? 0) <= 0,
           ) ||
-          (total - amount).abs() > 0.01) {
+          (total - amount).abs() > 0.02) {
         return 'expenseSplitsMismatch';
       }
     }
