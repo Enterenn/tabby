@@ -17,13 +17,14 @@ class HomeCubit extends Cubit<HomeState> {
         _personal = personal ?? personalExpensesRepository,
         super(HomeInitial()) {
     _personalSub = _personal.changes.listen((_) {
-      if (!isClosed && state is HomeLoaded) loadGroups(silent: true);
+      if (!isClosed && state is HomeLoaded) loadGroups(silent: true, force: true);
     });
   }
 
   final GroupsRepository _groups;
   final PersonalExpensesRepository _personal;
   StreamSubscription<void>? _personalSub;
+  Future<void>? _loading;
 
   void reset() {
     if (!isClosed) emit(HomeInitial());
@@ -35,10 +36,19 @@ class HomeCubit extends Cubit<HomeState> {
     return super.close();
   }
 
-  Future<void> loadGroups({bool silent = false}) async {
-    if (!silent) emit(HomeLoading());
+  Future<void> loadGroups({bool silent = false, bool force = false}) {
+    final current = _loading;
+    if (current != null) return current;
+
+    if (!silent && !isClosed) emit(HomeLoading());
+    final request = _loadGroups(silent: silent, force: force);
+    _loading = request;
+    return request.whenComplete(() => _loading = null);
+  }
+
+  Future<void> _loadGroups({required bool silent, required bool force}) async {
     try {
-      final groupsFuture = _groups.list();
+      final groupsFuture = force ? _groups.refresh() : _groups.list();
       final personalFuture = () async {
         try {
           return await _personal.list();
@@ -50,7 +60,9 @@ class HomeCubit extends Cubit<HomeState> {
       final personal = await personalFuture;
       if (!isClosed) emit(HomeLoaded(groups, personalExpenses: personal));
     } catch (e) {
-      if (!isClosed) emit(HomeError(ApiFailure.from(e).message));
+      if (!isClosed && state is! HomeLoaded) {
+        emit(HomeError(ApiFailure.from(e).message));
+      }
     }
   }
 

@@ -69,13 +69,13 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
 
   Future<void> load() async {
     emit(GroupDetailLoading());
-    await refresh();
+    await refresh(force: false);
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool force = true}) async {
     try {
       final results = await Future.wait([
-        _groups.get(_groupId),
+        force ? _groups.refreshGroup(_groupId) : _groups.get(_groupId),
         _groups.balances(_groupId),
         _expenses.list(_groupId),
       ]);
@@ -209,7 +209,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
       if (!isClosed && current is GroupDetailLoaded) {
         emit(current.copyWith(group: updated));
       }
-      await _home.loadGroups();
+      await _home.loadGroups(force: true);
       return null;
     } catch (e) {
       if (!isClosed) emit(prev);
