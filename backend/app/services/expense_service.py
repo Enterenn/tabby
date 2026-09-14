@@ -19,15 +19,30 @@ def money(value: object) -> Decimal:
     return Decimal(str(value)).quantize(_CENT, rounding=ROUND_HALF_UP)
 
 
-def category_is_available(category: Category, group_id: uuid.UUID) -> bool:
-    """Global default or category owned by the requested group."""
-    return category.is_default and category.user_id is None or category.group_id == group_id
+def category_is_available(
+    category: Category,
+    group_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> bool:
+    """Return True when the category may be used in an expense for *group_id*.
+
+    Accepted cases:
+    - Global default (is_default=True, no owner)
+    - Category owned by the group itself
+    - Personal category created by the requesting user
+    """
+    if category.is_default and category.user_id is None:
+        return True
+    if category.user_id is not None:
+        return category.user_id == user_id
+    return category.group_id == group_id
 
 
 async def require_group_category(
     db: AsyncSession,
     category_id: uuid.UUID,
     group_id: uuid.UUID,
+    user_id: uuid.UUID,
 ) -> Category:
     category = await db.get(Category, category_id)
     if category is None:
@@ -35,7 +50,7 @@ async def require_group_category(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found",
         )
-    if not category_is_available(category, group_id):
+    if not category_is_available(category, group_id, user_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Category not available for this group",

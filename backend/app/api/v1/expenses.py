@@ -12,6 +12,7 @@ from app.core.fcm import send_expense_notification, send_settle_confirmed_notifi
 from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
 from app.services.expense_service import (
+    category_is_available,
     custom_split_amounts,
     equal_split_amounts,
     money,
@@ -80,7 +81,7 @@ async def create_expense(
     db: DbSession,
 ):
     # Valider la catégorie
-    await require_group_category(db, body.category_id, group_id)
+    await require_group_category(db, body.category_id, group_id, current_user.id)
 
     # Valider le payeur (doit être membre du groupe)
     await require_group_member_user(db, group_id, body.paid_by, detail="Payer is not a member of this group")
@@ -202,7 +203,7 @@ async def update_expense(
         category = await db.get(Category, body.category_id)
         if category is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
-        if category.user_id is not None or category.group_id != group_id and not category.is_default:
+        if not category_is_available(category, group_id, current_user.id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Category not available for this group",

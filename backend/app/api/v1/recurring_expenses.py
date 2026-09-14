@@ -15,6 +15,7 @@ from app.models.models import (
     RecurringExpense,
 )
 from app.schemas.expense import CategoryResponse
+from app.services.expense_service import require_group_category
 from app.schemas.recurring import (
     PersonalRecurringCreate,
     PersonalRecurringUpdate,
@@ -114,14 +115,10 @@ async def list_recurring(
 async def create_recurring(
     group_id: uuid.UUID,
     body: RecurringExpenseCreate,
-    _current_user: GroupMemberUser,
+    current_user: GroupMemberUser,
     db: DbSession,
 ):
-    category = await db.get(Category, body.category_id)
-    if category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
-    if category.user_id is not None or category.group_id != group_id and not category.is_default:
-        raise HTTPException(status_code=403, detail="Category not available for this group")
+    await require_group_category(db, body.category_id, group_id, current_user.id)
 
     payer = await db.get(GroupMember, (group_id, body.paid_by))
     if payer is None:
