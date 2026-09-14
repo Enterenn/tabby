@@ -26,7 +26,7 @@ class _ExpressivePressScaleState extends State<ExpressivePressScale> {
   Widget build(BuildContext context) {
     final scaled = AnimatedScale(
       scale: _pressed && widget.enabled ? widget.scale : 1,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 140),
       curve: Curves.easeOut,
       child: widget.child,
     );

@@ -246,7 +246,7 @@ class _SplitModeButton extends StatelessWidget {
       consumeOutsideTap: true,
       style: MenuStyle(
         backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerLow),
-        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        surfaceTintColor: WidgetStatePropertyAll(cs.surfaceContainerLow),
         shape: WidgetStatePropertyAll(context.tabbyShapes.cardShape),
         padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 8)),
       ),
