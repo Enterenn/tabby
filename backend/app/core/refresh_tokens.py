@@ -84,6 +84,12 @@ async def revoke_refresh_token(db: AsyncSession, refresh_token: str) -> None:
         await db.flush()
 
 
+async def purge_expired_refresh_tokens(db: AsyncSession) -> None:
+    await db.execute(
+        update(RefreshToken).where(RefreshToken.expires_at < _now()).values(revoked_at=_now())
+    )
+
+
 async def revoke_all_refresh_tokens(db: AsyncSession, user_id: uuid.UUID) -> None:
     await db.execute(
         update(RefreshToken)

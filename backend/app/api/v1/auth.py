@@ -175,7 +175,14 @@ async def upload_avatar(
             detail="Image must be at least 128x128",
         )
 
-    processed = process_avatar(image)
+    try:
+        processed = process_avatar(image)
+    except ValueError as exc:
+        image.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
     image.close()
     save_avatar(str(current_user.id), processed)
     processed.close()

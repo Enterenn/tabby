@@ -14,6 +14,7 @@ AVATARS_DIR = UPLOADS_DIR / "avatars"
 ALLOWED_AVATAR_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_AVATAR_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_AVATAR_BYTES = 20 * 1024 * 1024
+MAX_AVATAR_PIXELS = 20_000_000
 MIN_AVATAR_SIZE = 128
 AVATAR_OUTPUT_SIZE = 256
 AVATAR_URL_TTL_SECONDS = 3600
@@ -74,6 +75,8 @@ def apply_exif_orientation(image: Image.Image) -> Image.Image:
 def process_avatar(image: Image.Image) -> Image.Image:
     image = apply_exif_orientation(image).convert("RGB")
     width, height = image.size
+    if width * height > MAX_AVATAR_PIXELS:
+        raise ValueError("Avatar image has too many pixels")
     side = min(width, height)
     left = (width - side) // 2
     top = (height - side) // 2

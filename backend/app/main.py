@@ -27,13 +27,18 @@ from app.api.v1.recurring_expenses import (
     router as recurring_router,
 )
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal
 from app.core.rate_limit import RateLimitExceeded, _rate_limit_exceeded_handler, limiter
 from app.core.uploads import ensure_upload_dirs
+from app.core.refresh_tokens import purge_expired_refresh_tokens
 from app.scheduler import recurring_job_loop
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    async with AsyncSessionLocal() as db:
+        await purge_expired_refresh_tokens(db)
+        await db.commit()
     task = asyncio.create_task(recurring_job_loop())
     yield
     task.cancel()
