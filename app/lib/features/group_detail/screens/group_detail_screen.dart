@@ -36,6 +36,30 @@ Future<void> _editGroupExpense(
   }
 }
 
+Future<void> _confirmDeleteGroupExpense(
+  BuildContext context,
+  Expense expense,
+) async {
+  final name = context.expenseName(expense);
+  final pending = expense.isPending;
+  final confirmed = await showTabbyConfirm(
+    context,
+    title: pending
+        ? context.l10n.rejectRepaymentTitle
+        : context.l10n.deleteExpenseTitle,
+    body: pending
+        ? context.l10n.rejectRepaymentBody(name)
+        : context.l10n.deleteExpenseBody(name),
+    confirmLabel: pending ? context.l10n.rejectRepayment : context.l10n.delete,
+    danger: true,
+  );
+  if (!confirmed || !context.mounted) return;
+
+  final err = await context.read<GroupDetailCubit>().deleteExpense(expense.id);
+  if (!context.mounted || err == null) return;
+  showTabbySnack(context, context.l10nError(err));
+}
+
 class GroupDetailScreen extends StatelessWidget {
   const GroupDetailScreen({super.key, required this.groupId});
 
@@ -44,10 +68,7 @@ class GroupDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (ctx) => GroupDetailCubit(
-        groupId,
-        ctx.read<HomeCubit>(),
-      )..load(),
+      create: (ctx) => GroupDetailCubit(groupId, ctx.read<HomeCubit>())..load(),
       child: const _GroupDetailView(),
     );
   }
@@ -75,9 +96,8 @@ class _GroupDetailView extends StatelessWidget {
       },
       builder: (context, state) {
         return switch (state) {
-          GroupDetailLoading() || GroupDetailInitial() => const Scaffold(
-            body: TabbyLoading(),
-          ),
+          GroupDetailLoading() ||
+          GroupDetailInitial() => const Scaffold(body: TabbyLoading()),
           GroupDetailLoaded(:final group, :final balances, :final expenses) =>
             _LoadedBody(group: group, balances: balances, expenses: expenses),
           GroupDetailError(:final message) => Scaffold(
@@ -138,9 +158,7 @@ class _LoadedBody extends StatelessWidget {
               ),
               // ── 3. À régler ──────────────────────────────────────────────────
               if (balances.isNotEmpty) ...[
-                _SectionHeader(
-                  title: context.l10n.toSettle,
-                ),
+                _SectionHeader(title: context.l10n.toSettle),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList.separated(
@@ -328,4 +346,3 @@ class _GroupSliverAppBar extends StatelessWidget {
     }
   }
 }
-

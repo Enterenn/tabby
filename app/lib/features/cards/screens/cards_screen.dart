@@ -75,46 +75,42 @@ class _CardsViewState extends State<_CardsView> {
           appBar: AppBar(
             title: Text(context.l10n.myCards),
             actions: [
-              if (hasCards)
-                _CardsViewMenu(
-                  value: _view,
-                  onSelected: _setView,
-                ),
+              if (hasCards) _CardsViewMenu(value: _view, onSelected: _setView),
             ],
           ),
           body: switch (state) {
             CardsInitial() || CardsLoading() => const TabbyLoading(),
             CardsError(:final message) => TabbyErrorState(
-                message: context.l10nError(message),
-                retryLabel: context.l10n.retry,
-                onRetry: () => context.read<CardsCubit>().load(),
-              ),
+              message: context.l10nError(message),
+              retryLabel: context.l10n.retry,
+              onRetry: () => context.read<CardsCubit>().load(),
+            ),
             CardsLoaded(:final cards) when cards.isEmpty => TabbyEmptyState(
-                icon: Symbols.credit_card_rounded,
-                title: context.l10n.noCards,
-                body: context.l10n.noCardsHint,
-                actionLabel: context.l10n.addCard,
-                onAction: () => _showCardSheet(context),
-              ),
+              icon: Symbols.credit_card_rounded,
+              title: context.l10n.noCards,
+              body: context.l10n.noCardsHint,
+              actionLabel: context.l10n.addCard,
+              onAction: () => _showCardSheet(context),
+            ),
             CardsLoaded(:final cards, :final frequent) => _CardsBody(
-                cards: cards,
-                frequent: frequent,
-                view: _view,
-                category: _category,
-                useFrequent: _useFrequent,
-                onFrequent: () => setState(() {
-                  _useFrequent = true;
-                  _category = null;
-                }),
-                onAll: () => setState(() {
-                  _useFrequent = false;
-                  _category = null;
-                }),
-                onCategory: (category) => setState(() {
-                  _useFrequent = false;
-                  _category = category;
-                }),
-              ),
+              cards: cards,
+              frequent: frequent,
+              view: _view,
+              category: _category,
+              useFrequent: _useFrequent,
+              onFrequent: () => setState(() {
+                _useFrequent = true;
+                _category = null;
+              }),
+              onAll: () => setState(() {
+                _useFrequent = false;
+                _category = null;
+              }),
+              onCategory: (category) => setState(() {
+                _useFrequent = false;
+                _category = category;
+              }),
+            ),
             _ => const SizedBox.shrink(),
           },
         );
@@ -124,10 +120,7 @@ class _CardsViewState extends State<_CardsView> {
 }
 
 class _CardsViewMenu extends StatelessWidget {
-  const _CardsViewMenu({
-    required this.value,
-    required this.onSelected,
-  });
+  const _CardsViewMenu({required this.value, required this.onSelected});
 
   final LoyaltyCardsView value;
   final ValueChanged<LoyaltyCardsView> onSelected;
@@ -162,10 +155,10 @@ class _CardsViewMenu extends StatelessWidget {
   }
 
   static IconData _iconFor(LoyaltyCardsView view) => switch (view) {
-        LoyaltyCardsView.wallet => Symbols.layers_rounded,
-        LoyaltyCardsView.grid => Symbols.grid_view_rounded,
-        LoyaltyCardsView.compact => Symbols.view_agenda_rounded,
-      };
+    LoyaltyCardsView.wallet => Symbols.layers_rounded,
+    LoyaltyCardsView.grid => Symbols.grid_view_rounded,
+    LoyaltyCardsView.compact => Symbols.view_agenda_rounded,
+  };
 
   static String _label(BuildContext context, LoyaltyCardsView view) =>
       switch (view) {
@@ -236,14 +229,15 @@ class _CardsBodyState extends State<_CardsBody> {
     final present = LoyaltyBrandCategory.presentIn(widget.cards);
     final selected = _selectedOf(present);
     final showFrequent = widget.frequent.isNotEmpty;
-    final frequentSelected = showFrequent && widget.useFrequent && selected == null;
+    final frequentSelected =
+        showFrequent && widget.useFrequent && selected == null;
     final visible = frequentSelected
         ? widget.frequent
         : selected == null
-            ? widget.cards
-            : widget.cards
-                .where((card) => LoyaltyBrandCategory.ofCard(card) == selected)
-                .toList();
+        ? widget.cards
+        : widget.cards
+              .where((card) => LoyaltyBrandCategory.ofCard(card) == selected)
+              .toList();
     final showBrandChips = present.length >= 2;
     final showChips = showFrequent || showBrandChips;
     final filterKey = frequentSelected
@@ -305,12 +299,7 @@ class _CardsBodyState extends State<_CardsBody> {
         clipBehavior: Clip.none,
         children: [
           for (final child in previous)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: child,
-            ),
+            Positioned(top: 0, left: 0, right: 0, child: child),
           ?current,
         ],
       ),
@@ -348,54 +337,53 @@ class _CardsBodyState extends State<_CardsBody> {
   Widget _cardsForView(BuildContext context, List<LoyaltyCard> visible) {
     return switch (widget.view) {
       LoyaltyCardsView.wallet => LoyaltyWalletStack(
-          cards: visible,
-          onTapCard: (c) => _openFullScreen(context, c),
-          onReorder: (list) => context.read<CardsCubit>().reorder(
-                LoyaltyBrandCategory.mergeVisibleOrder(widget.cards, list),
-              ),
+        cards: visible,
+        onTapCard: (c) => _openFullScreen(context, c),
+        onReorder: (list) => context.read<CardsCubit>().reorder(
+          LoyaltyBrandCategory.mergeVisibleOrder(widget.cards, list),
         ),
+      ),
       LoyaltyCardsView.grid => LayoutBuilder(
-          builder: (context, constraints) {
-            const gap = 12.0;
-            final tileWidth = (constraints.maxWidth - gap) / 2;
-            final tileHeight = tileWidth / 1.52;
-            return Wrap(
-              spacing: gap,
-              runSpacing: gap,
-              children: [
-                for (final card in visible)
-                  SizedBox(
-                    width: tileWidth,
+        builder: (context, constraints) {
+          const gap = 12.0;
+          final tileWidth = (constraints.maxWidth - gap) / 2;
+          final tileHeight = tileWidth / 1.52;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final card in visible)
+                SizedBox(
+                  width: tileWidth,
+                  height: tileHeight,
+                  child: LoyaltyCardFace(
+                    card: card,
+                    style: LoyaltyCardFaceStyle.tile,
                     height: tileHeight,
-                    child: LoyaltyCardFace(
-                      card: card,
-                      style: LoyaltyCardFaceStyle.tile,
-                      height: tileHeight,
-                      onTap: () => _openFullScreen(context, card),
-                      onLongPress: () =>
-                          _showActions(context, card, widget.cards),
-                    ),
+                    onTap: () => _openFullScreen(context, card),
+                    onLongPress: () =>
+                        _showActions(context, card, widget.cards),
                   ),
-              ],
-            );
-          },
-        ),
-      LoyaltyCardsView.compact => Column(
-          children: [
-            for (final card in visible)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: LoyaltyCardFace(
-                  card: card,
-                  style: LoyaltyCardFaceStyle.compact,
-                  height: 76,
-                  onTap: () => _openFullScreen(context, card),
-                  onLongPress: () =>
-                      _showActions(context, card, widget.cards),
                 ),
+            ],
+          );
+        },
+      ),
+      LoyaltyCardsView.compact => Column(
+        children: [
+          for (final card in visible)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: LoyaltyCardFace(
+                card: card,
+                style: LoyaltyCardFaceStyle.compact,
+                height: 76,
+                onTap: () => _openFullScreen(context, card),
+                onLongPress: () => _showActions(context, card, widget.cards),
               ),
-          ],
-        ),
+            ),
+        ],
+      ),
     };
   }
 }
@@ -515,6 +503,22 @@ void _showCardSheet(BuildContext context, {LoyaltyCard? existing}) {
   );
 }
 
+Future<void> _confirmDeleteCard(
+  BuildContext context,
+  CardsCubit cubit,
+  LoyaltyCard card,
+) async {
+  final confirmed = await showTabbyConfirm(
+    context,
+    title: context.l10n.deleteLoyaltyCardTitle,
+    body: context.l10n.deleteLoyaltyCardBody(card.brandName),
+    confirmLabel: context.l10n.delete,
+    danger: true,
+  );
+  if (!confirmed || !context.mounted) return;
+  await cubit.deleteCard(card.id);
+}
+
 void _openFullScreen(BuildContext context, LoyaltyCard card) {
   final cubit = context.read<CardsCubit>();
   cubit.recordOpen(card.id);
@@ -535,7 +539,11 @@ void _openFullScreen(BuildContext context, LoyaltyCard card) {
             },
             onDelete: () {
               Navigator.of(routeContext).pop();
-              cubit.deleteCard(card.id);
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (context.mounted) {
+                  await _confirmDeleteCard(context, cubit, card);
+                }
+              });
             },
           ),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -596,7 +604,7 @@ void _showActions(
         label: context.l10n.delete,
         icon: Symbols.delete_rounded,
         danger: true,
-        onTap: () => cubit.deleteCard(card.id),
+        onTap: () => _confirmDeleteCard(context, cubit, card),
       ),
     ],
   );

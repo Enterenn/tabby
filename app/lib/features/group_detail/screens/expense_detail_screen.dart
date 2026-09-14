@@ -17,10 +17,7 @@ class ExpenseDetailScreen extends StatelessWidget {
     final view = _ExpenseDetailView(expenseId: expenseId);
     final existing = cubit;
     if (existing != null) {
-      return BlocProvider<GroupDetailCubit>.value(
-        value: existing,
-        child: view,
-      );
+      return BlocProvider<GroupDetailCubit>.value(value: existing, child: view);
     }
     return BlocProvider(
       create: (ctx) => GroupDetailCubit(groupId, ctx.read<HomeCubit>())..load(),
@@ -45,22 +42,21 @@ class _ExpenseDetailView extends StatelessWidget {
       },
       builder: (context, state) {
         return switch (state) {
-          GroupDetailLoading() || GroupDetailInitial() => const Scaffold(
-              body: TabbyLoading(),
-            ),
+          GroupDetailLoading() ||
+          GroupDetailInitial() => const Scaffold(body: TabbyLoading()),
           GroupDetailError(:final message) => Scaffold(
-              appBar: AppBar(),
-              body: TabbyErrorState(
-                message: context.l10nError(message),
-                retryLabel: context.l10n.retry,
-                onRetry: () => context.read<GroupDetailCubit>().load(),
-              ),
+            appBar: AppBar(),
+            body: TabbyErrorState(
+              message: context.l10nError(message),
+              retryLabel: context.l10n.retry,
+              onRetry: () => context.read<GroupDetailCubit>().load(),
             ),
+          ),
           GroupDetailLoaded(:final group, :final expenses) => _loadedBody(
-              context,
-              group: group,
-              expenses: expenses,
-            ),
+            context,
+            group: group,
+            expenses: expenses,
+          ),
           _ => const SizedBox.shrink(),
         };
       },
@@ -218,8 +214,9 @@ class _ExpenseDetailBody extends StatelessWidget {
   }
 
   Future<void> _confirmRepayment(BuildContext context) async {
-    final err =
-        await context.read<GroupDetailCubit>().confirmExpense(expense.id);
+    final err = await context.read<GroupDetailCubit>().confirmExpense(
+      expense.id,
+    );
     if (!context.mounted) return;
     showTabbySnack(
       context,
@@ -241,25 +238,18 @@ class _ExpenseDetailBody extends StatelessWidget {
             icon: Symbols.edit_rounded,
             label: context.l10n.editExpense,
             subtitle: title,
-            onTap: () => _editGroupExpense(
-              context,
-              groupId: group.id,
-              expense: expense,
-            ),
+            onTap: () =>
+                _editGroupExpense(context, groupId: group.id, expense: expense),
           ),
         if (!expense.isPending) const TabbyActionSheetItem.divider(),
         TabbyActionSheetItem(
           icon: Symbols.delete_rounded,
-          label: context.l10n.delete,
+          label: expense.isPending
+              ? context.l10n.rejectRepayment
+              : context.l10n.delete,
           subtitle: title,
           danger: true,
-          onTap: () async {
-            final err = await cubit.deleteExpense(expense.id);
-            if (!context.mounted) return;
-            if (err != null) {
-              showTabbySnack(context, context.l10nError(err));
-            }
-          },
+          onTap: () => _confirmDeleteGroupExpense(context, expense),
         ),
       ],
     );
@@ -294,10 +284,7 @@ class _ExpensePersonTile extends StatelessWidget {
       ),
       title: Text(
         name,
-        style: tt.bodyLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          height: 1.2,
-        ),
+        style: tt.bodyLarge?.copyWith(fontWeight: FontWeight.w600, height: 1.2),
       ),
       subtitle: subtitle == null ? null : Text(subtitle!),
       trailing: Text(

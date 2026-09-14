@@ -824,6 +824,24 @@ abstract class AppLocalizations {
   /// **'Remboursement confirmé ✓'**
   String get repaymentConfirmed;
 
+  /// No description provided for @rejectRepayment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejeter le remboursement'**
+  String get rejectRepayment;
+
+  /// No description provided for @rejectRepaymentTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejeter ce remboursement ?'**
+  String get rejectRepaymentTitle;
+
+  /// No description provided for @rejectRepaymentBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'La demande « {name} » sera supprimée. Aucun remboursement ne sera confirmé.'**
+  String rejectRepaymentBody(String name);
+
   /// No description provided for @errorSettlePending.
   ///
   /// In fr, this message translates to:
@@ -871,6 +889,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Modifier la dépense'**
   String get editExpense;
+
+  /// No description provided for @deleteExpenseTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cette dépense ?'**
+  String get deleteExpenseTitle;
+
+  /// No description provided for @deleteExpenseBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » sera supprimée du groupe. Cette action est irréversible.'**
+  String deleteExpenseBody(String name);
 
   /// No description provided for @totalExpenses.
   ///
@@ -1831,6 +1861,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Afficher la carte'**
   String get showCard;
+
+  /// No description provided for @deleteLoyaltyCardTitle.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cette carte ?'**
+  String get deleteLoyaltyCardTitle;
+
+  /// No description provided for @deleteLoyaltyCardBody.
+  ///
+  /// In fr, this message translates to:
+  /// **'La carte « {name} » sera retirée de ton portefeuille.'**
+  String deleteLoyaltyCardBody(String name);
 
   /// No description provided for @moveUp.
   ///

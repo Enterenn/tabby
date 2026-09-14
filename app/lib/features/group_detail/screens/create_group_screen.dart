@@ -58,14 +58,14 @@ class _CreateGroupViewState extends State<_CreateGroupView> {
         final loading = state is GroupFormSubmitting;
         return Scaffold(
           appBar: AppBar(title: Text(context.l10n.newGroup)),
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+          body: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 32),
                   Text(
                     context.l10n.createGroupHeadline,
                     style: Theme.of(context).textTheme.headlineSmall,
@@ -73,9 +73,8 @@ class _CreateGroupViewState extends State<_CreateGroupView> {
                   const SizedBox(height: 8),
                   Text(
                     context.l10n.createGroupHint,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
@@ -84,7 +83,9 @@ class _CreateGroupViewState extends State<_CreateGroupView> {
                     autofocus: true,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
-                    decoration: InputDecoration(labelText: context.l10n.groupName),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.groupName,
+                    ),
                     validator: (v) => v == null || v.trim().isEmpty
                         ? context.l10n.requiredField
                         : null,

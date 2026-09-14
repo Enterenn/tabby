@@ -139,6 +139,14 @@
   "repaymentPending": "Pending",
   "confirmRepayment": "Confirm repayment",
   "repaymentConfirmed": "Repayment confirmed ✓",
+  "rejectRepayment": "Reject repayment",
+  "rejectRepaymentTitle": "Reject this repayment?",
+  "rejectRepaymentBody": "The request “{name}” will be deleted. No repayment will be confirmed.",
+  "@rejectRepaymentBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "errorSettlePending": "A repayment is already waiting for confirmation.",
   "settled": "Settled",
   "joinedOn": "Joined {date}",
@@ -147,6 +155,13 @@
   "noExpensesInGroup": "No expenses in this group.",
   "membersCount": "Members ({count})",
   "editExpense": "Edit expense",
+  "deleteExpenseTitle": "Delete this expense?",
+  "deleteExpenseBody": "“{name}” will be deleted from the group. This cannot be undone.",
+  "@deleteExpenseBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "totalExpenses": "Group total",
   "yourShare": "Your expenses",
   "yourShareAmount": "You: {amount} €",
@@ -324,6 +339,13 @@
   "noCardsHint": "Add your first loyalty card\nwith the button below",
   "addCard": "Add a card",
   "showCard": "Show card",
+  "deleteLoyaltyCardTitle": "Delete this card?",
+  "deleteLoyaltyCardBody": "The “{name}” card will be removed from your wallet.",
+  "@deleteLoyaltyCardBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "moveUp": "Move up",
   "moveDown": "Move down",
   "loyaltyCard": "Loyalty card",

@@ -400,6 +400,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get repaymentConfirmed => 'Remboursement confirmé ✓';
 
   @override
+  String get rejectRepayment => 'Rejeter le remboursement';
+
+  @override
+  String get rejectRepaymentTitle => 'Rejeter ce remboursement ?';
+
+  @override
+  String rejectRepaymentBody(String name) {
+    return 'La demande « $name » sera supprimée. Aucun remboursement ne sera confirmé.';
+  }
+
+  @override
   String get errorSettlePending =>
       'Un remboursement est déjà en attente de confirmation.';
 
@@ -429,6 +440,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get editExpense => 'Modifier la dépense';
+
+  @override
+  String get deleteExpenseTitle => 'Supprimer cette dépense ?';
+
+  @override
+  String deleteExpenseBody(String name) {
+    return '« $name » sera supprimée du groupe. Cette action est irréversible.';
+  }
 
   @override
   String get totalExpenses => 'Total du groupe';
@@ -961,6 +980,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get showCard => 'Afficher la carte';
+
+  @override
+  String get deleteLoyaltyCardTitle => 'Supprimer cette carte ?';
+
+  @override
+  String deleteLoyaltyCardBody(String name) {
+    return 'La carte « $name » sera retirée de ton portefeuille.';
+  }
 
   @override
   String get moveUp => 'Monter';

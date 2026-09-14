@@ -395,6 +395,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get repaymentConfirmed => 'Repayment confirmed ✓';
 
   @override
+  String get rejectRepayment => 'Reject repayment';
+
+  @override
+  String get rejectRepaymentTitle => 'Reject this repayment?';
+
+  @override
+  String rejectRepaymentBody(String name) {
+    return 'The request “$name” will be deleted. No repayment will be confirmed.';
+  }
+
+  @override
   String get errorSettlePending =>
       'A repayment is already waiting for confirmation.';
 
@@ -424,6 +435,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editExpense => 'Edit expense';
+
+  @override
+  String get deleteExpenseTitle => 'Delete this expense?';
+
+  @override
+  String deleteExpenseBody(String name) {
+    return '“$name” will be deleted from the group. This cannot be undone.';
+  }
 
   @override
   String get totalExpenses => 'Group total';
@@ -951,6 +970,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showCard => 'Show card';
+
+  @override
+  String get deleteLoyaltyCardTitle => 'Delete this card?';
+
+  @override
+  String deleteLoyaltyCardBody(String name) {
+    return 'The “$name” card will be removed from your wallet.';
+  }
 
   @override
   String get moveUp => 'Move up';

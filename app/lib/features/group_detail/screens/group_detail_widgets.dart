@@ -1,4 +1,5 @@
 part of 'group_detail_screen.dart';
+
 // ─── Section header ───────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
@@ -7,9 +8,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: TabbySectionHeader(title: title),
-    );
+    return SliverToBoxAdapter(child: TabbySectionHeader(title: title));
   }
 }
 
@@ -70,10 +69,10 @@ class _BalanceTile extends StatelessWidget {
     );
     if (amount == null || !context.mounted) return;
     final err = await context.read<GroupDetailCubit>().settle(
-          fromUserId: entry.fromUserId,
-          toUserId: entry.toUserId,
-          amount: amount,
-        );
+      fromUserId: entry.fromUserId,
+      toUserId: entry.toUserId,
+      amount: amount,
+    );
     if (!context.mounted) return;
     final waiting = err == null && entry.fromUserId == currentUserId;
     showTabbySnack(
@@ -81,8 +80,8 @@ class _BalanceTile extends StatelessWidget {
       err != null
           ? context.l10nError(err)
           : waiting
-              ? context.l10n.settlePending
-              : context.l10n.settleSaved,
+          ? context.l10n.settlePending
+          : context.l10n.settleSaved,
     );
   }
 }
@@ -175,10 +174,7 @@ class _SettleDialogState extends State<_SettleDialog> {
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: tt.bodySmall?.copyWith(color: cs.error),
-            ),
+            Text(_error!, style: tt.bodySmall?.copyWith(color: cs.error)),
           ],
         ],
       ),
@@ -525,7 +521,9 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   Future<void> _confirmRepayment(BuildContext context) async {
-    final err = await context.read<GroupDetailCubit>().confirmExpense(expense.id);
+    final err = await context.read<GroupDetailCubit>().confirmExpense(
+      expense.id,
+    );
     if (!context.mounted) return;
     showTabbySnack(
       context,
@@ -534,7 +532,6 @@ class _ExpenseTile extends StatelessWidget {
   }
 
   void _showExpenseActions(BuildContext context) {
-    final cubit = context.read<GroupDetailCubit>();
     final title = context.expenseName(expense);
 
     showTabbyActionSheet(
@@ -545,30 +542,22 @@ class _ExpenseTile extends StatelessWidget {
             icon: Symbols.edit_rounded,
             label: context.l10n.editExpense,
             subtitle: title,
-            onTap: () => _editGroupExpense(
-              context,
-              groupId: groupId,
-              expense: expense,
-            ),
+            onTap: () =>
+                _editGroupExpense(context, groupId: groupId, expense: expense),
           ),
         if (!expense.isPending) const TabbyActionSheetItem.divider(),
         TabbyActionSheetItem(
           icon: Symbols.delete_rounded,
-          label: context.l10n.delete,
+          label: expense.isPending
+              ? context.l10n.rejectRepayment
+              : context.l10n.delete,
           subtitle: title,
           danger: true,
-          onTap: () async {
-            final err = await cubit.deleteExpense(expense.id);
-            if (!context.mounted) return;
-            if (err != null) {
-              showTabbySnack(context, context.l10nError(err));
-            }
-          },
+          onTap: () => _confirmDeleteGroupExpense(context, expense),
         ),
       ],
     );
   }
-
 }
 
 // ─── Total card ───────────────────────────────────────────────────────────────
@@ -585,7 +574,10 @@ class _TotalHero extends StatelessWidget {
     final total = confirmed.fold<double>(0, (sum, e) => sum + e.amount);
     final myShare = currentUserId.isEmpty
         ? 0.0
-        : confirmed.fold<double>(0, (sum, e) => sum + e.shareFor(currentUserId));
+        : confirmed.fold<double>(
+            0,
+            (sum, e) => sum + e.shareFor(currentUserId),
+          );
 
     final yourShare = formatMoney(context, myShare);
     final groupTotal = formatMoney(context, total);
@@ -599,50 +591,48 @@ class _TotalHero extends StatelessWidget {
       child: DefaultTextStyle.merge(
         style: TextStyle(color: cs.onTertiaryContainer),
         child: LayoutBuilder(
-        builder: (context, constraints) {
-          final figureStyle = _heroAmountStyle(
-            context,
-            color: cs.onTertiaryContainer,
-          );
-          final sideBySide = _measureText(context, yourShare, figureStyle) +
-                  _measureText(context, groupTotal, figureStyle) +
-                  gap <=
-              constraints.maxWidth;
-          if (sideBySide) {
-            return Row(
+          builder: (context, constraints) {
+            final figureStyle = _heroAmountStyle(
+              context,
+              color: cs.onTertiaryContainer,
+            );
+            final sideBySide =
+                _measureText(context, yourShare, figureStyle) +
+                    _measureText(context, groupTotal, figureStyle) +
+                    gap <=
+                constraints.maxWidth;
+            if (sideBySide) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: _CostColumn(
+                      label: context.l10n.yourShare,
+                      value: yourShare,
+                    ),
+                  ),
+                  const SizedBox(width: gap),
+                  Expanded(
+                    child: _CostColumn(
+                      label: context.l10n.totalExpenses,
+                      value: groupTotal,
+                      alignEnd: true,
+                    ),
+                  ),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _CostColumn(
-                    label: context.l10n.yourShare,
-                    value: yourShare,
-                  ),
-                ),
-                const SizedBox(width: gap),
-                Expanded(
-                  child: _CostColumn(
-                    label: context.l10n.totalExpenses,
-                    value: groupTotal,
-                    alignEnd: true,
-                  ),
+                _CostColumn(label: context.l10n.yourShare, value: yourShare),
+                const SizedBox(height: 12),
+                _CostColumn(
+                  label: context.l10n.totalExpenses,
+                  value: groupTotal,
                 ),
               ],
             );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _CostColumn(
-                label: context.l10n.yourShare,
-                value: yourShare,
-              ),
-              const SizedBox(height: 12),
-              _CostColumn(
-                label: context.l10n.totalExpenses,
-                value: groupTotal,
-              ),
-            ],
-          );
-        },
+          },
         ),
       ),
     );
@@ -651,11 +641,7 @@ class _TotalHero extends StatelessWidget {
 
 TextStyle _heroAmountStyle(BuildContext context, {Color? color}) {
   final base = context.tabbyType.figureMedium;
-  return base.copyWith(
-    fontSize: 28,
-    height: 32 / 28,
-    color: color,
-  );
+  return base.copyWith(fontSize: 28, height: 32 / 28, color: color);
 }
 
 double _measureText(BuildContext context, String text, TextStyle style) {
@@ -702,11 +688,7 @@ class _CostColumn extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              style: _heroAmountStyle(context),
-            ),
+            child: Text(value, maxLines: 1, style: _heroAmountStyle(context)),
           ),
         ),
       ],

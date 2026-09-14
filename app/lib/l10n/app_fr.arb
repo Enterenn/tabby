@@ -144,6 +144,14 @@
   "repaymentPending": "En attente",
   "confirmRepayment": "Confirmer le remboursement",
   "repaymentConfirmed": "Remboursement confirmé ✓",
+  "rejectRepayment": "Rejeter le remboursement",
+  "rejectRepaymentTitle": "Rejeter ce remboursement ?",
+  "rejectRepaymentBody": "La demande « {name} » sera supprimée. Aucun remboursement ne sera confirmé.",
+  "@rejectRepaymentBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "errorSettlePending": "Un remboursement est déjà en attente de confirmation.",
   "settled": "Soldé",
   "joinedOn": "Rejoint le {date}",
@@ -167,6 +175,13 @@
     }
   },
   "editExpense": "Modifier la dépense",
+  "deleteExpenseTitle": "Supprimer cette dépense ?",
+  "deleteExpenseBody": "« {name} » sera supprimée du groupe. Cette action est irréversible.",
+  "@deleteExpenseBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "totalExpenses": "Total du groupe",
   "yourShare": "Tes dépenses",
   "yourShareAmount": "Toi : {amount} €",
@@ -409,6 +424,13 @@
   "noCardsHint": "Ajoute ta première carte de fidélité\navec le bouton ci-dessous",
   "addCard": "Ajouter une carte",
   "showCard": "Afficher la carte",
+  "deleteLoyaltyCardTitle": "Supprimer cette carte ?",
+  "deleteLoyaltyCardBody": "La carte « {name} » sera retirée de ton portefeuille.",
+  "@deleteLoyaltyCardBody": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "moveUp": "Monter",
   "moveDown": "Descendre",
   "loyaltyCard": "Carte de fidélité",

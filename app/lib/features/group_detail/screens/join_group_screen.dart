@@ -60,14 +60,14 @@ class _JoinGroupViewState extends State<_JoinGroupView> {
         final loading = state is GroupFormSubmitting;
         return Scaffold(
           appBar: AppBar(title: Text(context.l10n.joinGroup)),
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+          body: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 32),
                   Text(
                     context.l10n.joinGroupHeadline,
                     style: Theme.of(context).textTheme.headlineSmall,
@@ -75,9 +75,8 @@ class _JoinGroupViewState extends State<_JoinGroupView> {
                   const SizedBox(height: 8),
                   Text(
                     context.l10n.joinGroupHint,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                   const SizedBox(height: 32),
                   TextFormField(
