@@ -159,6 +159,18 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
   }) async {
     final current = state;
     if (current is! AddExpenseReady) return false;
+    final validation = _validateSubmission(
+      groupId: groupId,
+      name: name,
+      amount: amount,
+      categoryId: categoryId,
+      paidBy: paidBy,
+      customSplits: customSplits,
+    );
+    if (validation != null) {
+      if (!isClosed) emit(AddExpenseError(validation));
+      return false;
+    }
     emit(const AddExpenseSubmitting());
 
     try {
@@ -202,6 +214,18 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
     List<Map<String, dynamic>>? customSplits,
   }) async {
     if (state is! AddExpenseReady) return false;
+    final validation = _validateSubmission(
+      groupId: groupId,
+      name: name,
+      amount: amount,
+      categoryId: categoryId,
+      paidBy: paidBy,
+      customSplits: customSplits,
+    );
+    if (validation != null) {
+      if (!isClosed) emit(AddExpenseError(validation));
+      return false;
+    }
     emit(const AddExpenseSubmitting());
     try {
       await expensesRepository.update(
@@ -220,6 +244,37 @@ class AddExpenseCubit extends Cubit<AddExpenseState> {
       if (!isClosed) emit(AddExpenseError(ApiFailure.from(e).message));
       return false;
     }
+  }
+
+  String? _validateSubmission({
+    required String groupId,
+    required String name,
+    required double amount,
+    required String categoryId,
+    required String paidBy,
+    List<Map<String, dynamic>>? customSplits,
+  }) {
+    if (groupId.trim().isEmpty) return 'expenseGroupRequired';
+    if (name.trim().isEmpty) return 'expenseNameRequired';
+    if (!amount.isFinite || amount <= 0) return 'expenseAmountInvalid';
+    if (categoryId.trim().isEmpty) return 'expenseCategoryRequired';
+    if (paidBy.trim().isEmpty) return 'expensePayerRequired';
+    if (customSplits != null) {
+      if (customSplits.isEmpty) return 'expenseSplitsRequired';
+      final ids = customSplits.map((split) => split['user_id']).toSet();
+      if (ids.length != customSplits.length) return 'expenseSplitsDuplicate';
+      final total = customSplits.fold<double>(
+        0,
+        (sum, split) => sum + ((split['amount'] as num?)?.toDouble() ?? 0),
+      );
+      if (customSplits.any(
+            (split) => ((split['amount'] as num?)?.toDouble() ?? 0) <= 0,
+          ) ||
+          (total - amount).abs() > 0.01) {
+        return 'expenseSplitsMismatch';
+      }
+    }
+    return null;
   }
 
   Future<bool> submitPersonal({

@@ -47,6 +47,13 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   @override
   void initState() {
     super.initState();
+    final draft = _isEditing ? null : addExpenseDraftStore.take();
+    if (draft != null) {
+      _nameCtrl.text = draft.name;
+      _amountCtrl.text = draft.amount;
+      _selectedPayerId = draft.payerId;
+      _expenseDate = draft.expenseDate;
+    }
     final personal = widget.editingPersonal;
     if (personal != null) {
       _nameCtrl.text = personal.name;
@@ -78,8 +85,24 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     }
   }
 
+  void _saveDraft() {
+    if (_isEditing || (_nameCtrl.text.trim().isEmpty && _amountCtrl.text.trim().isEmpty)) {
+      return;
+    }
+    addExpenseDraftStore.save(
+      AddExpenseDraft(
+        name: _nameCtrl.text,
+        amount: _amountCtrl.text,
+        categoryId: _selectedCategory?.id,
+        payerId: _selectedPayerId,
+        expenseDate: _expenseDate,
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _saveDraft();
     _nameCtrl.dispose();
     _amountCtrl.dispose();
     for (final c in _splitCtrls.values) {
@@ -310,6 +333,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
     }
 
     if (ok && mounted) {
+      addExpenseDraftStore.clear();
       widget.onCreated();
       Navigator.of(context).pop(true);
     }
@@ -328,7 +352,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         height: MediaQuery.sizeOf(context).height * 0.92,
         child: BlocConsumer<AddExpenseCubit, AddExpenseState>(
           listener: (context, state) {
-            if (state is AddExpenseError) {
+            if (state is AddExpenseError && _lastReady != null) {
               showTabbySnack(context, context.l10nError(state.message));
             }
           },
@@ -337,11 +361,18 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
               return const TabbyLoading();
             }
             if (state is AddExpenseError && _lastReady == null) {
-              return TabbyErrorState(
-                message: context.l10nError(state.message),
-                retryLabel: context.l10n.retry,
-                onRetry: () => context.read<AddExpenseCubit>().load(),
-              );
+              void retry() => context.read<AddExpenseCubit>().load();
+              return state.message == 'errorNetwork'
+                  ? TabbyOfflineState(
+                      message: context.l10n.offlineRetry,
+                      retryLabel: context.l10n.retry,
+                      onRetry: retry,
+                    )
+                  : TabbyErrorState(
+                      message: context.l10nError(state.message),
+                      retryLabel: context.l10n.retry,
+                      onRetry: retry,
+                    );
             }
 
             final AddExpenseReady ready;

@@ -16,6 +16,7 @@ export 'data/expressive_hero.dart';
 export 'feedback/tabby_empty_state.dart';
 export 'feedback/tabby_error_state.dart';
 export 'feedback/tabby_loading.dart';
+export 'feedback/tabby_offline_state.dart';
 export 'feedback/tabby_snack.dart';
 export 'inputs/expressive_dropdown.dart';
 export 'inputs/tabby_amount_field.dart';

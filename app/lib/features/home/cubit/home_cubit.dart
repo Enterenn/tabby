@@ -61,7 +61,7 @@ class HomeCubit extends Cubit<HomeState> {
       if (!isClosed) emit(HomeLoaded(groups, personalExpenses: personal));
     } catch (e) {
       if (!isClosed && state is! HomeLoaded) {
-        emit(HomeError(ApiFailure.from(e).message));
+        emit(HomeError(ApiFailure.from(e).code));
       }
     }
   }

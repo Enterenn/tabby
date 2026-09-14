@@ -87,7 +87,7 @@ class GroupDetailCubit extends Cubit<GroupDetailState> {
         ));
       }
     } catch (e) {
-      if (!isClosed) emit(GroupDetailError(ApiFailure.from(e).message));
+      if (!isClosed) emit(GroupDetailError(ApiFailure.from(e).code));
     }
   }
 

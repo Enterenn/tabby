@@ -120,10 +120,18 @@ class _HomeViewState extends State<_HomeView> {
             return const TabbyLoading();
           }
           if (state is HomeError) {
+            void retry() => context.read<HomeCubit>().loadGroups(force: true);
+            if (state.message == 'errorNetwork') {
+              return TabbyOfflineState(
+                message: context.l10n.offlineRetry,
+                retryLabel: context.l10n.retry,
+                onRetry: retry,
+              );
+            }
             return TabbyErrorState(
               message: context.l10nError(state.message),
               retryLabel: context.l10n.retry,
-              onRetry: () => context.read<HomeCubit>().loadGroups(),
+              onRetry: retry,
             );
           }
           if (state is HomeLoaded) {

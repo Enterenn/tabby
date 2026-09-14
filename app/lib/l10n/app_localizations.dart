@@ -326,6 +326,60 @@ abstract class AppLocalizations {
   /// **'Pas de connexion réseau'**
   String get offlineBanner;
 
+  /// No description provided for @offlineRetry.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion indisponible. Vérifie ton réseau puis réessaie.'**
+  String get offlineRetry;
+
+  /// No description provided for @expenseGroupRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis un groupe.'**
+  String get expenseGroupRequired;
+
+  /// No description provided for @expenseNameRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute une description.'**
+  String get expenseNameRequired;
+
+  /// No description provided for @expenseAmountInvalid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Saisis un montant positif.'**
+  String get expenseAmountInvalid;
+
+  /// No description provided for @expenseCategoryRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis une catégorie.'**
+  String get expenseCategoryRequired;
+
+  /// No description provided for @expensePayerRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisis la personne qui a payé.'**
+  String get expensePayerRequired;
+
+  /// No description provided for @expenseSplitsRequired.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajoute au moins un participant.'**
+  String get expenseSplitsRequired;
+
+  /// No description provided for @expenseSplitsDuplicate.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chaque participant ne peut apparaître qu\'une fois.'**
+  String get expenseSplitsDuplicate;
+
+  /// No description provided for @expenseSplitsMismatch.
+  ///
+  /// In fr, this message translates to:
+  /// **'La somme des parts doit égaler le montant.'**
+  String get expenseSplitsMismatch;
+
   /// No description provided for @navHome.
   ///
   /// In fr, this message translates to:

@@ -127,6 +127,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineBanner => 'No network connection';
 
   @override
+  String get offlineRetry =>
+      'Connection unavailable. Check your network and try again.';
+
+  @override
+  String get expenseGroupRequired => 'Choose a group.';
+
+  @override
+  String get expenseNameRequired => 'Add a description.';
+
+  @override
+  String get expenseAmountInvalid => 'Enter a positive amount.';
+
+  @override
+  String get expenseCategoryRequired => 'Choose a category.';
+
+  @override
+  String get expensePayerRequired => 'Choose who paid.';
+
+  @override
+  String get expenseSplitsRequired => 'Add at least one participant.';
+
+  @override
+  String get expenseSplitsDuplicate => 'Each participant can only appear once.';
+
+  @override
+  String get expenseSplitsMismatch => 'Split amounts must equal the total.';
+
+  @override
   String get navHome => 'Home';
 
   @override

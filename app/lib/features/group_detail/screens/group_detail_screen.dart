@@ -81,11 +81,17 @@ class _GroupDetailView extends StatelessWidget {
           GroupDetailLoaded(:final group, :final balances, :final expenses) =>
             _LoadedBody(group: group, balances: balances, expenses: expenses),
           GroupDetailError(:final message) => Scaffold(
-            body: TabbyErrorState(
-              message: context.l10nError(message),
-              retryLabel: context.l10n.retry,
-              onRetry: () => context.read<GroupDetailCubit>().load(),
-            ),
+            body: message == 'errorNetwork'
+                ? TabbyOfflineState(
+                    message: context.l10n.offlineRetry,
+                    retryLabel: context.l10n.retry,
+                    onRetry: () => context.read<GroupDetailCubit>().load(),
+                  )
+                : TabbyErrorState(
+                    message: context.l10nError(message),
+                    retryLabel: context.l10n.retry,
+                    onRetry: () => context.read<GroupDetailCubit>().load(),
+                  ),
           ),
           _ => const SizedBox.shrink(),
         };
