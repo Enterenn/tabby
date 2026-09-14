@@ -8,37 +8,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import ensure_can_manage_paid, get_current_user, require_group_member
+from app.core.deps import ensure_can_manage_paid, require_group_member
 from app.core.fcm import send_expense_notification, send_settle_confirmed_notification
 from app.models.models import Category, DeviceToken, Expense, ExpenseSplit, Group, GroupMember, User
-from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse, ExpenseUpdate, CategoryResponse, SplitItem
+from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
+from app.services.expense_service import (
+    custom_split_amounts,
+    equal_split_amounts,
+    money,
+    require_group_category,
+    require_group_member_user,
+    to_expense_response,
+)
 
 router = APIRouter(prefix="/groups", tags=["expenses"])
 
 
-def _to_response(expense: Expense) -> ExpenseResponse:
-    return ExpenseResponse(
-        id=str(expense.id),
-        name=expense.name,
-        amount=float(expense.amount),
-        category=CategoryResponse(
-            id=str(expense.category.id),
-            name=expense.category.name,
-            icon=expense.category.icon,
-            color=expense.category.color,
-            is_default=expense.category.is_default,
-            sort_order=expense.category.sort_order,
-        ),
-        paid_by=str(expense.paid_by),
-        paid_by_name=expense.paid_by_user.name,
-        expense_date=expense.expense_date,
-        created_at=expense.created_at,
-        status=expense.status,
-        splits=[
-            ExpenseSplitResponse(user_id=str(s.user_id), amount=float(s.amount))
-            for s in expense.splits
-        ],
-    )
+_to_response = to_expense_response
 
 
 @router.get("/{group_id}/expenses", response_model=list[ExpenseResponse])
@@ -91,21 +77,12 @@ async def create_expense(
     db: AsyncSession = Depends(get_db),
 ):
     # Valider la catégorie
-    category = await db.get(Category, body.category_id)
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
-    if category.user_id is not None or category.group_id != group_id and not category.is_default:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Category not available for this group",
-        )
+    await require_group_category(db, body.category_id, group_id)
 
     # Valider le payeur (doit être membre du groupe)
-    payer_member = await db.get(GroupMember, (group_id, body.paid_by))
-    if payer_member is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payer is not a member of this group")
+    await require_group_member_user(db, group_id, body.paid_by, detail="Payer is not a member of this group")
 
-    total = Decimal(str(body.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    total = money(body.amount)
 
     expense = Expense(
         id=uuid.uuid4(),
@@ -125,32 +102,22 @@ async def create_expense(
             select(GroupMember).where(GroupMember.group_id == group_id)
         )
         members = members_result.scalars().all()
-        n = len(members)
-        per_person = (total / n).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-        remainder = total - per_person * n
-
-        for m in members:
-            split_amount = per_person + (remainder if m.user_id == body.paid_by else Decimal("0"))
+        for user_id, split_amount in equal_split_amounts(total, list(members), body.paid_by):
             db.add(ExpenseSplit(
                 id=uuid.uuid4(),
                 expense_id=expense.id,
-                user_id=m.user_id,
+                user_id=user_id,
                 amount=split_amount,
             ))
     else:
         # Répartition personnalisée — validée par le schéma Pydantic + membership
-        for item in body.splits:  # type: ignore[union-attr]
-            split_member = await db.get(GroupMember, (group_id, item.user_id))
-            if split_member is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Split user is not a member of this group",
-                )
+        for user_id, split_amount in custom_split_amounts(body.splits or []):
+            await require_group_member_user(db, group_id, user_id)
             db.add(ExpenseSplit(
                 id=uuid.uuid4(),
                 expense_id=expense.id,
-                user_id=item.user_id,
-                amount=Decimal(str(item.amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                user_id=user_id,
+                amount=split_amount,
             ))
 
     await db.flush()
