@@ -140,6 +140,14 @@ nano .env
 ```
 *Colle les deux valeurs. Sauvegarde avec `Ctrl+O` puis Entrée, quitte avec `Ctrl+X`.*
 
+L'API s'exécute avec l'UID/GID `10001`. Donne-lui un accès en lecture au
+fichier Firebase sans l'ouvrir aux autres utilisateurs du serveur :
+
+```bash
+chown 10001:10001 firebase.json
+chmod 400 firebase.json
+```
+
 Par défaut, Docker publie l'API uniquement sur `127.0.0.1`. Si Nginx Proxy
 Manager tourne sur une autre machine du réseau, ajoute également dans `.env` :
 
@@ -187,10 +195,16 @@ Mise à jour type (depuis `backend/`) :
 
 ```bash
 git -C .. pull --ff-only
-docker compose up -d --build
+docker compose build api
+docker compose run --rm --user root api chown -R 10001:10001 /app/uploads
+docker compose up -d
 docker compose exec api alembic upgrade head
 ```
 *`git -C ..` pull depuis la racine du clone (là où vit `.git`), pas depuis `backend/`. Le sparse-checkout ne récupère toujours que `backend/`.*
+
+L'étape `chown` permet à l'utilisateur non-root de l'API d'écrire dans un
+volume d'avatars créé par une ancienne image. Elle est sans effet indésirable
+sur une installation neuve.
 
 Test rapide que l'API répond bien :
 ```bash

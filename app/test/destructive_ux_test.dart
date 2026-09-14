@@ -4,7 +4,6 @@ import 'package:tabby/core/theme/app_theme.dart';
 import 'package:tabby/design_system/design_system.dart';
 import 'package:tabby/features/group_detail/screens/create_group_screen.dart';
 import 'package:tabby/features/group_detail/screens/join_group_screen.dart';
-import 'package:tabby/l10n/app_localizations.dart';
 import 'package:tabby/l10n/l10n.dart';
 
 Widget _localizedApp(Widget home) => MaterialApp(

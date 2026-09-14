@@ -324,7 +324,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
 
       List<Map<String, dynamic>>? splits;
       if (!_recurring) {
-        final amounts = _previewAmounts(ready!.group!.members);
+        final amounts = _previewAmounts(ready.group!.members);
         splits = amounts.entries
             .where((e) => e.value > 0)
             .map((e) => {'user_id': e.key, 'amount': e.value})
@@ -334,7 +334,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       final editing = widget.editing;
       if (editing != null) {
         ok = await cubit.update(
-          groupId: ready!.group!.id,
+          groupId: ready.group!.id,
           expenseId: editing.id,
           name: name,
           amount: amount,
@@ -345,7 +345,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
         );
       } else {
         ok = await cubit.submit(
-          groupId: ready!.group!.id,
+          groupId: ready.group!.id,
           name: name,
           amount: amount,
           categoryId: _selectedCategory!.id,

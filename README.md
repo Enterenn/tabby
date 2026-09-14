@@ -162,13 +162,16 @@ La checklist complète est disponible dans [`docs/validation.md`](./docs/validat
 
 - secrets obligatoires et validés au démarrage ;
 - mots de passe hachés avec bcrypt ;
-- access et refresh tokens différenciés, rotation et révocation serveur ;
+- access et refresh tokens différenciés, rotation atomique et révocation des
+  familles en cas de réutilisation ;
 - tokens mobiles conservés avec `flutter_secure_storage` ;
 - HTTPS imposé sur les builds Android de production ;
+- captures, enregistrements et aperçu des apps récentes bloqués en release ;
 - limites dédiées sur l'authentification et plafond global par client sur l'API ;
 - contrôle d'appartenance aux groupes côté API ;
 - URLs d'avatars signées et fichiers redimensionnés ;
-- journaux réseau expurgés des mots de passe et tokens.
+- journaux réseau expurgés des mots de passe et tokens ;
+- conteneur API exécuté avec un utilisateur non-root.
 
 Consultez [`docs/api-contract-audit.md`](./docs/api-contract-audit.md) pour le contrat REST actuellement implémenté.
 
