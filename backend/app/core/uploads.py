@@ -72,11 +72,17 @@ def apply_exif_orientation(image: Image.Image) -> Image.Image:
     return oriented if oriented is not None else image
 
 
-def process_avatar(image: Image.Image) -> Image.Image:
-    image = apply_exif_orientation(image).convert("RGB")
+def validate_avatar_dimensions(image: Image.Image) -> tuple[int, int]:
+    """Reject decompression bombs from header metadata, before ``image.load()``."""
     width, height = image.size
     if width * height > MAX_AVATAR_PIXELS:
         raise ValueError("Avatar image has too many pixels")
+    return width, height
+
+
+def process_avatar(image: Image.Image) -> Image.Image:
+    image = apply_exif_orientation(image).convert("RGB")
+    width, height = validate_avatar_dimensions(image)
     side = min(width, height)
     left = (width - side) // 2
     top = (height - side) // 2

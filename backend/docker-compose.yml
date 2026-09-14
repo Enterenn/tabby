@@ -6,6 +6,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://tabby:${POSTGRES_PASSWORD}@db:5432/tabby
       SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
       DEBUG: ${DEBUG:-false}
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
       FIREBASE_CREDENTIALS_PATH: /run/secrets/firebase.json

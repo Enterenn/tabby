@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # JWT — no insecure default: startup fails closed if missing/weak.
     secret_key: str = ""
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
 
     # App

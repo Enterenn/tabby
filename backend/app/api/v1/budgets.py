@@ -20,6 +20,19 @@ router = APIRouter(prefix="/groups", tags=["budgets"])
 global_router = APIRouter(prefix="/budgets", tags=["budgets"])
 
 
+def _category_is_available_for_budget(
+    category: Category,
+    user_id: uuid.UUID,
+) -> bool:
+    """Budgets may target global defaults or categories owned by the user."""
+    is_global_default = (
+        category.is_default
+        and category.user_id is None
+        and category.group_id is None
+    )
+    return is_global_default or category.user_id == user_id
+
+
 def _status(percent: float) -> str:
     if percent >= 100:
         return "danger"
@@ -102,6 +115,11 @@ async def create_budget(
     category = await db.get(Category, cat_id)
     if category is None:
         raise HTTPException(status_code=404, detail="Category not found")
+    if not _category_is_available_for_budget(category, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Category not available for personal budget",
+        )
 
     existing = await db.execute(
         select(Budget).where(

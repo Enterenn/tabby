@@ -1,6 +1,7 @@
 import uuid
 
-from app.api.v1.budgets import _status
+from app.api.v1.budgets import _category_is_available_for_budget, _status
+from app.models.models import Category
 
 
 def test_budget_status_thresholds():
@@ -19,3 +20,29 @@ def test_missing_pairs_default_to_zero():
     spent_rows = {}
     out = {pair: spent_rows.get(pair, 0.0) for pair in pairs}
     assert out[(group, category)] == 0.0
+
+
+def test_budget_category_must_be_global_default_or_owned_by_user():
+    user_id = uuid.uuid4()
+    other_user_id = uuid.uuid4()
+
+    assert _category_is_available_for_budget(
+        Category(is_default=True, user_id=None, group_id=None),
+        user_id,
+    )
+    assert _category_is_available_for_budget(
+        Category(is_default=False, user_id=user_id, group_id=None),
+        user_id,
+    )
+    assert not _category_is_available_for_budget(
+        Category(is_default=False, user_id=other_user_id, group_id=None),
+        user_id,
+    )
+    assert not _category_is_available_for_budget(
+        Category(is_default=False, user_id=None, group_id=uuid.uuid4()),
+        user_id,
+    )
+    assert not _category_is_available_for_budget(
+        Category(is_default=True, user_id=None, group_id=uuid.uuid4()),
+        user_id,
+    )

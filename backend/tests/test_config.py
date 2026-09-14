@@ -6,6 +6,10 @@ _SECRET = "unit-test-secret-key-not-for-production-use"
 _SAFE_URL = "postgresql+asyncpg://tabby:strong-pass@db:5432/tabby"
 
 
+def test_default_access_token_lifetime_is_fifteen_minutes():
+    assert Settings.model_fields["access_token_expire_minutes"].default == 15
+
+
 def test_rejects_short_secret_key():
     with pytest.raises(RuntimeError, match="SECRET_KEY"):
         Settings(secret_key="too-short", database_url=_SAFE_URL, debug=True)

@@ -4,7 +4,7 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.core.deps import CurrentUser, DbSession
@@ -17,6 +17,20 @@ from app.models.models import Category, GroupMember
 from app.schemas.expense import CategoryResponse
 
 router = APIRouter(prefix="/stats", tags=["stats"])
+
+
+def _resolve_group_filter(
+    group_id: uuid.UUID | None,
+    accessible_group_ids: list[uuid.UUID],
+) -> list[uuid.UUID]:
+    if group_id is None:
+        return accessible_group_ids
+    if group_id not in accessible_group_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this group",
+        )
+    return [group_id]
 
 
 class CategoryStat:
@@ -49,10 +63,7 @@ async def get_stats(
     )
     accessible_group_ids = [row[0] for row in memberships.all()]
 
-    if group_id is not None and group_id in accessible_group_ids:
-        group_filter = [group_id]
-    else:
-        group_filter = accessible_group_ids
+    group_filter = _resolve_group_filter(group_id, accessible_group_ids)
 
     group_rows: list[tuple[uuid.UUID, float]] = []
     if scope in ("all", "groups") and group_filter:

@@ -21,10 +21,10 @@ from app.core.uploads import (
     ALLOWED_AVATAR_TYPES,
     MAX_AVATAR_BYTES,
     MIN_AVATAR_SIZE,
-    apply_exif_orientation,
     avatar_public_url,
     process_avatar,
     save_avatar,
+    validate_avatar_dimensions,
 )
 from app.models.models import User
 from app.schemas.auth import (
@@ -164,9 +164,25 @@ async def upload_avatar(
 
     try:
         image = Image.open(io.BytesIO(data))
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be JPEG, PNG or WebP",
+        ) from None
+
+    try:
+        validate_avatar_dimensions(image)
+    except ValueError as exc:
+        image.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    try:
         image.load()
-        image = apply_exif_orientation(image)
-    except (UnidentifiedImageError, OSError):
+    except (OSError, ValueError, Image.DecompressionBombError):
+        image.close()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be JPEG, PNG or WebP",
@@ -174,6 +190,7 @@ async def upload_avatar(
 
     width, height = image.size
     if width < MIN_AVATAR_SIZE or height < MIN_AVATAR_SIZE:
+        image.close()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Image must be at least 128x128",
