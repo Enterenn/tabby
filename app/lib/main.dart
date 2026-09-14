@@ -155,13 +155,8 @@ class _TabbyAppState extends State<TabbyApp> {
                   ...GlobalMaterialLocalizations.delegates,
                 ],
                 builder: (context, child) {
-                  // Pont officiel le temps que go_router / animations /
-                  // flutter_animate lisent encore flutter/material.dart.
-                  return MaterialUiCompatibilityBridge(
-                    // ignore: deprecated_member_use
-                    child: BiometricOfferListener(
-                      child: child ?? const SizedBox.shrink(),
-                    ),
+                  return BiometricOfferListener(
+                    child: child ?? const SizedBox.shrink(),
                   );
                 },
                 routerConfig: _router,

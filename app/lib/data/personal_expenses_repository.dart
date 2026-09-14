@@ -1,3 +1,7 @@
+// The analyzer's null-aware map-element lint targets a newer Dart syntax than
+// the SDK currently used by this project.
+// ignore_for_file: use_null_aware_elements
+
 import 'dart:async';
 
 import 'package:dio/dio.dart';
