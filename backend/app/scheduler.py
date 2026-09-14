@@ -5,7 +5,7 @@ import calendar
 import logging
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import selectinload
 
@@ -30,6 +30,9 @@ def period_expense_date(today: date, day_of_period: int) -> date | None:
     return date(today.year, today.month, min(day_of_period, last_day))
 
 
+SCHEDULER_LOCK_KEY = 7_314_159
+
+
 async def generate_recurring_expenses() -> int:
     """
     Pour chaque récurrence active dont day_of_period <= aujourd'hui,
@@ -43,6 +46,14 @@ async def generate_recurring_expenses() -> int:
     generated = 0
 
     async with async_session_factory() as db:
+        lock_result = await db.execute(
+            text("SELECT pg_try_advisory_xact_lock(:lock_key)"),
+            {"lock_key": SCHEDULER_LOCK_KEY},
+        )
+        if not lock_result.scalar():
+            logger.info("Recurring job skipped: another instance owns the lock")
+            return 0
+
         result = await db.execute(
             select(RecurringExpense)
             .where(RecurringExpense.active.is_(True))
@@ -55,14 +66,6 @@ async def generate_recurring_expenses() -> int:
             if expense_date is None:
                 continue
 
-            already = await db.execute(
-                select(Expense.id).where(
-                    Expense.recurring_source_id == rec.id,
-                    Expense.expense_date == expense_date,
-                )
-            )
-            if already.scalar_one_or_none() is not None:
-                continue
 
             members_result = await db.execute(
                 select(GroupMember).where(GroupMember.group_id == rec.group_id)
@@ -121,14 +124,6 @@ async def generate_recurring_expenses() -> int:
             if expense_date is None:
                 continue
 
-            already = await db.execute(
-                select(PersonalExpense.id).where(
-                    PersonalExpense.recurring_source_id == rec.id,
-                    PersonalExpense.expense_date == expense_date,
-                )
-            )
-            if already.scalar_one_or_none() is not None:
-                continue
 
             personal_expense_id = _uuid.uuid4()
             inserted = await db.execute(
