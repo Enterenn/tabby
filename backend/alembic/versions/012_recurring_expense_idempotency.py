@@ -30,6 +30,16 @@ def upgrade() -> None:
         ["group_id", "expense_date"],
     )
     op.create_index(
+        "ix_expense_group_date_created_id",
+        "expense",
+        ["group_id", "expense_date", "created_at", "id"],
+    )
+    op.create_index(
+        "ix_personal_expense_user_date",
+        "personal_expense",
+        ["user_id", "expense_date"],
+    )
+    op.create_index(
         "ix_expense_split_expense_id",
         "expense_split",
         ["expense_id"],
@@ -51,6 +61,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index("ix_group_member_user_id", table_name="group_member")
     op.drop_index("ix_expense_split_expense_id", table_name="expense_split")
+    op.drop_index("ix_personal_expense_user_date", table_name="personal_expense")
+    op.drop_index("ix_expense_group_date_created_id", table_name="expense")
     op.drop_index("ix_expense_group_date", table_name="expense")
     op.drop_index(
         "uq_personal_expense_recurring_source_date",

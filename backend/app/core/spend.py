@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+import calendar
 import uuid
+from datetime import date
 
-from sqlalchemy import extract, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.models import Expense, ExpenseSplit, GroupMember, PersonalExpense
+
+
+def month_bounds(year: int, month: int) -> tuple[date, date]:
+    start = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    return start, date(year, month, last_day)
 
 
 async def user_share_by_category(
@@ -21,6 +29,7 @@ async def user_share_by_category(
     """[(category_id, share)] pour les groupes donnés, mois donné."""
     if not group_ids:
         return []
+    start, end = month_bounds(year, month)
     result = await db.execute(
         select(
             Expense.category_id,
@@ -30,8 +39,8 @@ async def user_share_by_category(
         .where(
             Expense.group_id.in_(group_ids),
             ExpenseSplit.user_id == user_id,
-            extract("year", Expense.expense_date) == year,
-            extract("month", Expense.expense_date) == month,
+            Expense.expense_date >= start,
+            Expense.expense_date <= end,
             Expense.status != "pending",
         )
         .group_by(Expense.category_id)
@@ -53,7 +62,7 @@ async def user_share_for_pairs(
     if not pairs:
         return out
     group_ids = {group_id for group_id, _ in pairs}
-    category_ids = {category_id for _, category_id in pairs}
+    start, end = month_bounds(year, month)
     result = await db.execute(
         select(
             Expense.group_id,
@@ -63,10 +72,9 @@ async def user_share_for_pairs(
         .join(ExpenseSplit, ExpenseSplit.expense_id == Expense.id)
         .where(
             Expense.group_id.in_(group_ids),
-            Expense.category_id.in_(category_ids),
             ExpenseSplit.user_id == user_id,
-            extract("year", Expense.expense_date) == year,
-            extract("month", Expense.expense_date) == month,
+            Expense.expense_date >= start,
+            Expense.expense_date <= end,
             Expense.status != "pending",
         )
         .group_by(Expense.group_id, Expense.category_id)
@@ -85,6 +93,7 @@ async def personal_spend_by_category(
     year: int,
     month: int,
 ) -> list[tuple[uuid.UUID, float]]:
+    start, end = month_bounds(year, month)
     result = await db.execute(
         select(
             PersonalExpense.category_id,
@@ -92,8 +101,8 @@ async def personal_spend_by_category(
         )
         .where(
             PersonalExpense.user_id == user_id,
-            extract("year", PersonalExpense.expense_date) == year,
-            extract("month", PersonalExpense.expense_date) == month,
+            PersonalExpense.expense_date >= start,
+            PersonalExpense.expense_date <= end,
         )
         .group_by(PersonalExpense.category_id)
     )

@@ -148,7 +148,7 @@ class Expense(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     group_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("group.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("group.id", ondelete="CASCADE"), nullable=False, index=True
     )
     category_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("category.id"), nullable=False
@@ -172,6 +172,8 @@ class Expense(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
 
     __table_args__ = (
+        # The list endpoint sorts by date and creation time; the migration
+        # adds the matching PostgreSQL index for bounded history queries.
         # A recurring source can generate at most one expense per date.
         # The migration creates the PostgreSQL partial unique index because
         # nullable unique columns have different semantics across databases.

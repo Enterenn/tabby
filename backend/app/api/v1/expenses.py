@@ -1,7 +1,8 @@
 import uuid
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -43,18 +44,36 @@ def _to_response(expense: Expense) -> ExpenseResponse:
 @router.get("/{group_id}/expenses", response_model=list[ExpenseResponse])
 async def list_expenses(
     group_id: uuid.UUID,
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    category_id: uuid.UUID | None = Query(default=None),
+    status_filter: str | None = Query(default=None, alias="status", pattern="^(confirmed|pending)$"),
+    limit: int = Query(default=100, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     current_user: User = Depends(require_group_member),
     db: AsyncSession = Depends(get_db),
 ):
+    filters = [Expense.group_id == group_id]
+    if from_date is not None:
+        filters.append(Expense.expense_date >= from_date)
+    if to_date is not None:
+        filters.append(Expense.expense_date <= to_date)
+    if category_id is not None:
+        filters.append(Expense.category_id == category_id)
+    if status_filter is not None:
+        filters.append(Expense.status == status_filter)
+
     result = await db.execute(
         select(Expense)
-        .where(Expense.group_id == group_id)
+        .where(*filters)
         .options(
             selectinload(Expense.category),
             selectinload(Expense.paid_by_user),
             selectinload(Expense.splits),
         )
-        .order_by(Expense.expense_date.desc(), Expense.created_at.desc())
+        .order_by(Expense.expense_date.desc(), Expense.created_at.desc(), Expense.id.desc())
+        .limit(limit)
+        .offset(offset)
     )
     expenses = result.scalars().all()
     return [_to_response(e) for e in expenses]
